@@ -1177,6 +1177,7 @@ const sdlc = {
       title: 'An acceptance criterion as a test',
       intro: '<p>Here the fern criterion becomes a Swift Testing test. If someone later breaks the watering rule, this test fails before the change ever reaches a tester. Testing gets a module of its own later; for now, notice how directly the requirement maps onto code.</p>',
       run: 'swifttest',
+      expectTests: 1,
       lines: [
         ['import Testing', n(
           'The Swift compiler, linking Apple\'s Swift Testing library.',

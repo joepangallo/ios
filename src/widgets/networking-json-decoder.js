@@ -3,6 +3,8 @@
 // decoded value or the exact DecodingError case, coding path and message.
 // Every rule and message below was checked against Swift 6.2 on macOS 26.
 
+import { JSONNumber, parseJSONNumbers, swiftIntFromJSON } from '../shared/json-numbers.js';
+
 const NAME = 'networking-json-decoder';
 const BASE_TYPES = ['String', 'Int', 'Double', 'Bool'];
 
@@ -67,7 +69,7 @@ class DecodeError extends Error {
   constructor(info) { super(info.debug); Object.assign(this, info); }
 }
 
-const kindOf = (v) => (v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v === 'object' ? 'dictionary' : typeof v === 'string' ? 'string' : typeof v === 'number' ? 'number' : 'bool');
+const kindOf = (v) => (v === null ? 'null' : v instanceof JSONNumber ? 'number' : Array.isArray(v) ? 'array' : typeof v === 'object' ? 'dictionary' : typeof v === 'string' ? 'string' : 'bool');
 const PHRASE = { string: 'a string', number: 'number', bool: 'bool', dictionary: 'a dictionary', array: 'an array', null: 'null' };
 const DICT = 'Dictionary<String, Any>';
 
@@ -82,17 +84,24 @@ function decodeJSON(model, value, opts) {
     }
     const k = kindOf(v);
     const mismatch = (t) => new DecodeError({ kind: 'typeMismatch', type: t, path, found: k, debug: `Expected to decode ${t} but found ${PHRASE[k]} instead.` });
+    const unrepresentable = (type) => new DecodeError({ kind: 'dataCorrupted', path: [], number: v.raw, numberType: type,
+      debug: 'The given data was not valid JSON.', underlying: `Number ${v.raw} is not representable in Swift.` });
     const wrap = (x) => (optional ? { some: x } : x);
     switch (type) {
       case 'String': if (k !== 'string') throw mismatch('String'); return wrap({ str: v });
       case 'Bool': if (k !== 'bool') throw mismatch('Bool'); return wrap({ raw: String(v) });
-      case 'Double': if (k !== 'number') throw mismatch('Double'); return wrap({ raw: Number.isInteger(v) && Math.abs(v) < 1e16 ? `${v}.0` : String(v) });
-      case 'Int':
+      case 'Double': {
+        if (k !== 'number') throw mismatch('Double');
+        const number = Number(v.raw);
+        if (!Number.isFinite(number) || (number === 0 && /[1-9]/.test(v.raw.split(/[eE]/)[0]))) throw unrepresentable('Double');
+        return wrap({ raw: Object.is(number, -0) ? '-0.0' : Number.isInteger(number) && Math.abs(number) < 1e16 ? `${number}.0` : String(number) });
+      }
+      case 'Int': {
         if (k !== 'number') throw mismatch('Int');
-        if (!Number.isInteger(v) || Math.abs(v) > 9223372036854775807) {
-          throw new DecodeError({ kind: 'dataCorrupted', path: [], number: v, debug: 'The given data was not valid JSON.', underlying: `Number ${v} is not representable in Swift.` });
-        }
-        return wrap({ raw: String(v) });
+        const integer = swiftIntFromJSON(v.raw);
+        if (integer === null) throw unrepresentable('Int');
+        return wrap({ raw: integer });
+      }
       default: {
         if (k !== 'dictionary') throw mismatch(DICT);
         return wrap(decodeStruct(type, v, path));
@@ -153,8 +162,8 @@ function stripTrailingCommas(text) {
 }
 
 function parseJSON(text) {
-  try { return { ok: true, value: JSON.parse(text) }; } catch (e1) {
-    try { return { ok: true, value: JSON.parse(stripTrailingCommas(text)) }; } catch { return { ok: false, detail: text.trim() ? e1.message : 'Unexpected end of file' }; }
+  try { return { ok: true, value: parseJSONNumbers(text) }; } catch (e1) {
+    try { return { ok: true, value: parseJSONNumbers(stripTrailingCommas(text)) }; } catch { return { ok: false, detail: text.trim() ? e1.message : 'Unexpected end of file' }; }
   }
 }
 
@@ -341,7 +350,11 @@ export default {
           if (err.path.length === 0 && err.type === 'Array<Any>') return `The JSON is a single object. Decode ${state.model.root}.self instead of an array.`;
           return `The value at ${pathStr} is ${PHRASE[err.found] || 'something else'}, but the model expects ${err.type === DICT ? 'an object' : err.type}. Change the property type, or fix the JSON.`;
         case 'valueNotFound': return `The value at ${pathStr} is null, but the property is not optional. Mark it optional to accept null.`;
-        default: return err.number !== undefined ? `${err.number} has a fractional part, which Int cannot hold. Use Double for this property.` : 'The text is not valid JSON, so decoding never started. Check quotes, commas and brackets.';
+        default: return err.number !== undefined
+          ? err.numberType === 'Double'
+            ? `${err.number} is outside Double's representable range. Use a value within its supported range.`
+            : `${err.number} cannot be represented as a 64-bit Int. Use a whole number from -9223372036854775808 through 9223372036854775807, or Double for fractional values.`
+          : 'The text is not valid JSON, so decoding never started. Check quotes, commas and brackets.';
       }
     }
 
@@ -414,9 +427,9 @@ export default {
       const key = state.preset;
       try {
         const res = await ctx.fetchJSON(PRESETS[key].url, { timeoutMs: 8000 });
-        if (!res.ok || res.json === null) throw new Error('bad reply');
+        if (!res.ok || !parseJSON(res.text).ok) throw new Error('bad reply');
         if (state.preset !== key) return;
-        state.text = JSON.stringify(res.json, null, 2);
+        state.text = res.text;
         state.source = { live: true, ms: res.ms };
       } catch {
         if (state.preset !== key) return;

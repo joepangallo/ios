@@ -77,6 +77,9 @@ function checkStep(step, where, ctx) {
     if (step.run === 'swift' && step.expect === undefined && !step.expectError && !step.nondeterministic) {
       errors.push(`${where}: run:'swift' needs expect (exact stdout), expectError, or nondeterministic:true`);
     }
+    if (step.run === 'swifttest' && (!Number.isInteger(step.expectTests) || step.expectTests < 1)) {
+      errors.push(`${where}: run:'swifttest' needs expectTests (positive number of passing test cases)`);
+    }
     if (step.simulate && !widgets.has(step.simulate.widget)) errors.push(`${where}: simulate widget "${step.simulate.widget}" not found`);
     if (step.try && !Array.isArray(step.try)) errors.push(`${where}: try must be an array of strings`);
   }

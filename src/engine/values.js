@@ -230,6 +230,9 @@ export const userOps = { equals: null, less: null };
 
 export function equals(a, b) {
   if (a === b) return true;
+  // Int switches representation beyond Number's exact range. Compare numeric
+  // primitives directly so that converting BigInt to Number cannot round them.
+  if (isInt(a) && isInt(b)) return a == b;
   if (isNum(a) && isNum(b)) return numVal(a) === numVal(b);
   if (a === NIL || b === NIL) {
     const x = a === NIL ? b : a;
@@ -293,6 +296,7 @@ export function hashKey(v) {
 }
 
 export function compare(a, b) {
+  if (isInt(a) && isInt(b)) return a < b ? -1 : a > b ? 1 : 0;
   if (isNum(a) && isNum(b)) { const x = numVal(a), y = numVal(b); return x < y ? -1 : x > y ? 1 : 0; }
   if (typeof a === 'string' && typeof b === 'string') {
     // Swift compares strings by Unicode scalar values.

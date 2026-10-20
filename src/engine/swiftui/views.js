@@ -54,6 +54,16 @@ export class SwiftUIHost {
 
   attach(interp) { this.interp = interp; }
   invalidate() { if (this.ctl) this.ctl.invalidate(); }
+  // The preview owns persistent state outside Swift's lexical scopes. View
+  // nodes also retain user values through children, actions and modifiers.
+  *arcRoots() {
+    if (this.ctl) yield* this.ctl.state.values();
+    for (const env of this.envStack) yield* Object.values(env.objects || {});
+  }
+  arcReferences(value) {
+    if (!(value instanceof ViewNode)) return [];
+    return [...Object.values(value.props), ...value.children, ...value.mods.flatMap((m) => m.args.map((a) => a.value))];
+  }
   get env() { return this.envStack[this.envStack.length - 1]; }
   readEnv(key) {
     const env = this.env;

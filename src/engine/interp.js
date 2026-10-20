@@ -196,7 +196,7 @@ export class Interp {
   }
 
   declareType(decl, scope, parentType) {
-    if ((decl.kind === 'class' || decl.kind === 'actor') && decl.members.some((m) => m.k === 'deinit') && !this.arc) this.arc = new ARC(this);
+    if ((decl.kind === 'class' || decl.kind === 'actor') && !this.arc) this.arc = new ARC(this);
     const info = new TypeInfo(decl.name, decl.kind === 'actor' ? 'class' : decl.kind, scope, parentType);
     info.interp = this;
     info.decl = decl;
@@ -1855,9 +1855,11 @@ export class Interp {
         }
         v = this.coerce(v, ptype, m.arg && m.arg.expr, scope, 'argument type');
         if (p.inout) {
+          if (!m.arg || !m.arg.inout) throw this.compileError(`passing value of type '${diagTypeName(v)}' to an inout parameter requires explicit '&'`, line);
           const b = scope.declare(p.name, v, false, ptype);
-          b.inoutRef = m.arg && m.arg.inout;
+          b.inoutRef = m.arg.inout;
         } else {
+          if (m.arg && m.arg.inout) throw this.compileError(`'&' used with non-inout argument of type '${diagTypeName(v)}'`, line);
           scope.declare(p.name, copyValue(v), true, ptype);
           if (fn.isClosure && fn.implicitParams === false && p.name.startsWith('$')) { /* noop */ }
         }

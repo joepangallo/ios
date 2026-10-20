@@ -908,6 +908,7 @@ const testingBasics = {
       title: 'Your first tests',
       intro: `<p>Swift Testing marks tests with <code>@Test</code> and checks results with <code>#expect</code>. In a real project the function lives in the app target and tests sit in a separate test target that starts with <code>@testable import StudyBuddy</code>. Here both share one file. Press Command-U in Xcode to run every test.</p>`,
       run: 'swifttest',
+      expectTests: 2,
       lines: [
         [r`import Testing`, n(
           'The compiler, building the test target.',
@@ -986,6 +987,7 @@ const testingBasics = {
       title: 'Suites, readable names and #require',
       intro: `<p>A <code>@Suite</code> groups related tests under one heading in the Test navigator. Display names describe behavior in plain words. <code>#require</code> unwraps an optional and stops the test immediately if it is <code>nil</code>, so later lines never run on bad data. The <code>share</code> function from the previous step is compiled with this file.</p>`,
       run: 'swifttest',
+      expectTests: 2,
       context: shareFunction,
       lines: [
         [r`import Testing`, n(
@@ -1069,6 +1071,7 @@ const testingBasics = {
       title: 'One test, many inputs',
       intro: `<p>A <strong>parameterized test</strong> runs the same check for every element of <code>arguments</code>. Each element becomes its own test case, reported separately with its inputs, so one bad row never hides the others. Adding a case is one line of data instead of a new function.</p>`,
       run: 'swifttest',
+      expectTests: 7,
       context: shareFunction,
       lines: [
         [r`import Testing`, n(
@@ -1171,6 +1174,7 @@ const testingBasics = {
       title: 'Test a view model with stand-ins',
       intro: `<p>The <code>WeatherViewModel</code>, its protocol and <code>MockWeatherService</code> from the architecture lesson are compiled with this file. A failing stand-in drives the error branch on purpose. These tests run in milliseconds, offline, with the same result every time.</p>`,
       run: 'swifttest',
+      expectTests: 2,
       context: weatherContext,
       lines: [
         [r`import Testing`, n(
@@ -3180,6 +3184,7 @@ const capstone = {
       title: 'Turn acceptance criteria into tests',
       intro: `<p>Each acceptance criterion becomes a test, and the Given, When and Then become comments above the lines that perform them. When these tests pass, the story is verified. The <code>StudyPlanner</code> from the previous step is compiled with this file.</p>`,
       run: 'swifttest',
+      expectTests: 2,
       context: plannerContext,
       lines: [
         [r`import Testing`, n(

@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { run, runTests } from '../../src/engine/index.js';
+import { testResultProblems } from '../../tools/check-test-results.mjs';
 
 const DIR = path.resolve('src/content');
 const files = fs.readdirSync(DIR).filter((f) => /^\d\d-.*\.js$/.test(f)).sort();
@@ -24,7 +25,7 @@ for (const f of files) {
             const code = u.lines.map((l) => l[0]).join('\n') + '\n';
             if (u.run === 'swifttest') {
               const r = await runTests(code, { context: u.context || '' });
-              expect(r.error).toBeNull();
+              expect(testResultProblems(r, u.expectTests)).toEqual([]);
               return;
             }
             const r = await run(code);

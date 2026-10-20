@@ -319,6 +319,8 @@ class PreviewController {
       this.screen.innerHTML = '';
       this.screen.appendChild(next);
     }
+    // Errors are siblings of the canvas, so morphing the canvas does not clear them.
+    this.screen.querySelector('.error-pane')?.remove();
     this.navAnim = null;
     fitViewThatFits(this.screen);
     // forget state of views that left the hierarchy

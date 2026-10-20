@@ -2857,6 +2857,7 @@ func validate(_ response: URLResponse) throws {
       title: 'Test the model with a stub',
       intro: `<p>Because the model depends on a protocol, a test can hand it a <strong>stub</strong>: a fake service that returns fixed data instantly. No network, no flakiness, no waiting. This Swift Testing test checks two behaviors of the model from the previous step: a page appends its items, and an empty page ends pagination.</p>`,
       run: 'swifttest',
+      expectTests: 1,
       context: MODEL_CONTEXT,
       lines: [
         [R`import Testing`, n(

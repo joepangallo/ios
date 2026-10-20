@@ -448,6 +448,15 @@ export class Resolver {
       else this.ctl.setTab(P, i);
       this.ctl.invalidate();
     };
+    // Switching tabs hides a subtree without removing its state. Keep only
+    // existing tabs' state alive; resolving hidden content would run its lifecycle.
+    tabs.forEach((_, i) => {
+      if (i === selected) return;
+      const prefix = P + '/tab' + i + '/';
+      for (const key of this.ctl.state.keys()) {
+        if (key.startsWith(prefix)) this.ctl.liveState.add(key);
+      }
+    });
     const tab = tabs[selected];
     if (tab) {
       const node = tab.mods ? new ViewNode('Group', {}, [tab.node], tab.mods) : tab.node;

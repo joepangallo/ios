@@ -352,7 +352,8 @@ function renderCode(step, host, ctx) {
         : `<span class="o-test ok">${icon('checkmark.circle.fill', 14)} Test ${esc(t.name)} passed</span>`).join('') +
         `<span class="o-summary">${r.results.length} test${r.results.length === 1 ? '' : 's'}: ${r.results.length - failed.length} passed, ${failed.length} failed</span>`;
       editor.setMarks(failed.flatMap((t) => t.issues.map((i) => ({ line: i.line, kind: 'error', msg: i.msg }))));
-      setStatus(failed.length ? `${failed.length} failing` : 'All tests pass', failed.length ? 'bad' : 'ok');
+      setStatus(r.results.length === 0 ? 'No tests found' : failed.length ? `${failed.length} failing` : 'All tests pass',
+        r.results.length === 0 ? 'warn' : failed.length ? 'bad' : 'ok');
       return;
     }
     const r = await ctx.engine.run(code, { trace: true });

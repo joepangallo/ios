@@ -1,5 +1,5 @@
-// Automatic Reference Counting simulation, enabled only when a program declares
-// a class with `deinit`. When a strong reference is dropped (a variable set to
+// Automatic Reference Counting simulation, enabled when a program declares
+// a class. When a strong reference is dropped (a variable set to
 // nil, a property overwritten, a local going out of scope) we count the
 // remaining strong references to the object: from live variables, from other
 // live objects' non-weak properties, and from closures those objects store
@@ -33,7 +33,7 @@ export class ARC {
   // Called after a strong reference to `v` was removed.
   released(v, scope, extraRoots = []) {
     const objs = [];
-    directObjects(v, objs, new Set());
+    directObjects(v, objs, new Set(), this);
     for (const o of objs) this.check(o, scope, extraRoots);
   }
 
@@ -61,18 +61,21 @@ export class ARC {
       seenVals.add(v);
       if (v instanceof Opt) return visit(v.v);
       if (v instanceof StateBox) return visit(v.value);
+      if (Array.isArray(v)) { v.forEach(visit); return; }
       if (v instanceof SArray || v instanceof STuple) { v.items.forEach(visit); return; }
       if (v instanceof SDict) { for (const [k, x] of v.entries()) { visit(k); visit(x); } return; }
       if (v instanceof SSet) { v.values().forEach(visit); return; }
       if (v instanceof SStruct) { for (const x of v.fields.values()) visit(x); return; }
       if (v instanceof SEnum) { v.values.forEach(visit); return; }
       if (v instanceof SFunc) { this.closureRefs(v, visit); return; }
+      for (const x of this.interp.host?.arcReferences?.(v) || []) visit(x);
     };
     for (const s of this.rootScopes(scope)) {
       for (const b of s.vars.values()) if (!this.weakBindings.has(b)) visit(b.value);
       if (s.ctx && s.ctx.self) visit(s.ctx.self.value);
     }
     extraRoots.forEach(visit);
+    for (const v of this.interp.host?.arcRoots?.() || []) visit(v);
     for (const o of this.live) {
       if (o === target) {
         // self-references count too (a cycle of one)
@@ -141,15 +144,21 @@ function hasMember(obj, name) {
   return false;
 }
 
-function directObjects(v, out, seen) {
+function directObjects(v, out, seen, arc) {
   if (v === null || typeof v !== 'object' || seen.has(v)) return;
   seen.add(v);
   if (v instanceof SObject) { out.push(v); return; }
-  if (v instanceof Opt) return directObjects(v.v, out, seen);
-  if (v instanceof SArray || v instanceof STuple) { v.items.forEach((x) => directObjects(x, out, seen)); return; }
-  if (v instanceof SStruct) { for (const x of v.fields.values()) directObjects(x, out, seen); return; }
-  if (v instanceof SDict) { for (const [, x] of v.entries()) directObjects(x, out, seen); return; }
-  if (v instanceof SEnum) v.values.forEach((x) => directObjects(x, out, seen));
+  const visit = (x) => directObjects(x, out, seen, arc);
+  if (v instanceof Opt) return visit(v.v);
+  if (v instanceof StateBox) return visit(v.value);
+  if (Array.isArray(v)) { v.forEach(visit); return; }
+  if (v instanceof SArray || v instanceof STuple) { v.items.forEach(visit); return; }
+  if (v instanceof SStruct) { for (const x of v.fields.values()) visit(x); return; }
+  if (v instanceof SDict) { for (const [k, x] of v.entries()) { visit(k); visit(x); } return; }
+  if (v instanceof SSet) { v.values().forEach(visit); return; }
+  if (v instanceof SEnum) { v.values.forEach(visit); return; }
+  if (v instanceof SFunc) { arc.closureRefs(v, visit); return; }
+  for (const x of arc.interp.host?.arcReferences?.(v) || []) visit(x);
 }
 
 const FREE_CACHE = new WeakMap();

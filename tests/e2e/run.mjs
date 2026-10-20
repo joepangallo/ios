@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromium, webkit } from 'playwright';
+import { testResultProblems } from '../../tools/check-test-results.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
 const opt = Object.fromEntries(process.argv.slice(2).map((a) => { const [k, ...v] = a.replace(/^--/, '').split('='); return [k, v.join('=') || true]; }));
@@ -27,10 +28,23 @@ const warnings = [];
 const fail = (id, msg) => failures.push(`${id}: ${msg}`);
 let checked = 0;
 
+async function readTestResults() {
+  return page.evaluate(() => {
+    const status = document.querySelector('.console-status')?.textContent || '';
+    return {
+      error: /Build failed/.test(status) ? { message: document.querySelector('.out')?.textContent || status } : null,
+      results: [...document.querySelectorAll('.out .o-test')].map((test) => ({
+        name: test.textContent,
+        issues: test.classList.contains('bad') ? [{ msg: 'Test failed' }] : [],
+      })),
+    };
+  });
+}
+
 for (let i = Number(opt.from || 0); i < total; i++) {
   const info = await page.evaluate((i) => {
     const s = window.__course.steps[i];
-    return { id: s.id, kind: s.step.kind, run: s.step.run, expect: s.step.expect, expectError: s.step.expectError, nondet: s.step.nondeterministic, title: s.step.title, quizN: s.step.questions ? s.step.questions.length : 0 };
+    return { id: s.id, kind: s.step.kind, run: s.step.run, expect: s.step.expect, expectError: s.step.expectError, expectTests: s.step.expectTests, nondet: s.step.nondeterministic, title: s.step.title, quizN: s.step.questions ? s.step.questions.length : 0 };
   }, i);
   if (opt.only && !info.id.startsWith(opt.only + '.')) continue;
   errors.length = 0;
@@ -47,7 +61,11 @@ for (let i = Number(opt.from || 0); i < total; i++) {
       else if (info.nondet) { if (/bad/.test(status.cls)) fail(info.id, `nondeterministic example failed: ${status.out.slice(0, 160)}`); }
       else if (!/Same output/.test(status.text)) fail(info.id, `output differs from verified expect: status="${status.text}" out="${status.out.slice(0, 160)}"`);
     }
-    if (info.run === 'swifttest' && /Build failed/.test(status.text)) fail(info.id, `tests did not build: ${status.out.slice(0, 160)}`);
+    if (info.run === 'swifttest') {
+      const problems = testResultProblems(await readTestResults(), info.expectTests);
+      if (problems.length) fail(info.id, problems.join(' | '));
+      else if (status.text !== 'All tests pass') fail(info.id, `unexpected test status: ${status.text}`);
+    }
   }
   if ((info.kind === 'code' && info.run === 'swiftui') || info.kind === 'compare') {
     const pv = await page.evaluate(() => [...document.querySelectorAll('.phone-host, .cmp-phone')].map((h) => {
@@ -87,6 +105,26 @@ for (let i = Number(opt.from || 0); i < total; i++) {
   if (errors.length) fail(info.id, `page errors: ${[...new Set(errors)].join(' | ').slice(0, 400)}`);
   if (opt.shots) await page.screenshot({ path: path.join(opt.shots, `${String(i).padStart(3, '0')}-${info.id}.png`) });
   if (i % 50 === 0) process.stdout.write(`  …${i}/${total}\n`);
+}
+
+// Prove the same browser checks reject failing assertions and missing tests.
+const testStep = await page.evaluate(() => window.__course.steps.findIndex((s) => s.step.run === 'swifttest'));
+if (testStep >= 0) {
+  await page.evaluate((i) => window.__course.go(i), testStep);
+  for (const [label, code, expectedIssue] of [
+    ['failing assertion', 'import Testing\n@Test func broken() { #expect(1 == 2) }', 'Test failed'],
+    ['missing test', 'import Testing', 'Expected 1 tests, got 0'],
+  ]) {
+    await page.fill('.ed-ta', code);
+    await page.click('.run-btn');
+    await page.waitForFunction(() => !/Running/.test(document.querySelector('.console-status')?.textContent || 'Running'));
+    const problems = testResultProblems(await readTestResults(), 1);
+    if (!problems.some((p) => p.includes(expectedIssue))) fail('test validation', `${label} was not detected: ${problems.join(' | ')}`);
+    if (label === 'missing test' && await page.textContent('.console-status') !== 'No tests found') {
+      fail('test validation', 'an empty test file was not labelled No tests found');
+    }
+  }
+  await page.click('.reset-btn');
 }
 
 // navigation, keyboard, search, theme

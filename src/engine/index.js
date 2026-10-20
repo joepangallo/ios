@@ -5,7 +5,7 @@ import { parse } from './parser.js';
 import { SwiftError } from './lexer.js';
 import { Interp, SwiftThrow } from './interp.js';
 import { createBuiltins } from './builtins.js';
-import { hooks, describe, SType as ST } from './values.js';
+import { hooks, describe, Opt, SType as ST } from './values.js';
 
 export { mountPreview } from './swiftui/preview.js';
 
@@ -92,7 +92,7 @@ export async function runTests(code, { context = '' } = {}) {
           current.issues.push({ line: e.line, msg: `Requirement failed: ${text}` });
           throw new Error('__require_failed__');
         }
-        return v && v.v !== undefined && v.constructor && v.constructor.name === 'Opt' ? v.v : v;
+        return v instanceof Opt ? v.v : v;
       }
       if (v !== true) current.issues.push({ line: e.line, msg: `Expectation failed: ${text}` });
       return undefined;

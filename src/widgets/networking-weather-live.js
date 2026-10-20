@@ -265,6 +265,10 @@ export default {
 
     function render() {
       citySel.value = state.city.key;
+      citySel.disabled = state.busy;
+      offlineBox.checked = state.offline;
+      badBox.checked = state.badCoords;
+      offlineBox.disabled = badBox.disabled = state.busy;
       fetchBtn.disabled = state.busy;
       fetchBtn.textContent = state.busy ? 'Loading...' : 'Fetch weather';
       renderPhone();
@@ -354,9 +358,9 @@ export default {
         if (sample) {
           state.note = [el('span', { class: 'nwl-tag', text: 'Offline sample' }), 'The network was unavailable, so a stored reply was decoded instead.'];
         } else if (state.firstNetwork && net < state.firstNetwork * 0.7) {
-          state.note = `The network wait dropped from ${Math.round(state.firstNetwork)} ms to ${Math.round(net)} ms: the open connection was reused, so DNS, TCP and TLS were skipped.`;
+          state.note = `The network wait dropped from ${Math.round(state.firstNetwork)} ms to ${Math.round(net)} ms. Connection reuse, caching, or a faster server response could explain it; elapsed time alone does not identify the cause.`;
         } else {
-          state.note = `Almost all of the time was spent waiting for the network. Building the URL and decoding took well under a millisecond each. Fetch again to see a reused connection.`;
+          state.note = `The network took ${fmtMs(net)}; building the URL took ${fmtMs(state.timings.build.ms)}, and decoding took ${fmtMs(state.timings.decode.ms)}. Fetch again to compare timings. Connection reuse is one possible reason for a faster repeat request.`;
           if (!state.firstNetwork) state.firstNetwork = net;
         }
       } catch (err) {
@@ -377,9 +381,9 @@ export default {
 
     const on = (node, ev, fn) => { node.addEventListener(ev, fn); return () => node.removeEventListener(ev, fn); };
     const offs = [
-      on(citySel, 'change', () => { state.city = CITIES.find((c) => c.key === citySel.value); state.model = 'idle'; state.path = []; state.timings = {}; state.note = ''; render(); }),
-      on(offlineBox, 'change', () => { state.offline = offlineBox.checked; }),
-      on(badBox, 'change', () => { state.badCoords = badBox.checked; }),
+      on(citySel, 'change', () => { if (state.busy) { render(); return; } state.city = CITIES.find((c) => c.key === citySel.value); state.model = 'idle'; state.path = []; state.timings = {}; state.note = ''; render(); }),
+      on(offlineBox, 'change', () => { if (state.busy) { render(); return; } state.offline = offlineBox.checked; }),
+      on(badBox, 'change', () => { if (state.busy) { render(); return; } state.badCoords = badBox.checked; }),
       on(fetchBtn, 'click', run),
     ];
     render();
