@@ -1,0 +1,4 @@
+let count = 3
+if count {
+    print("yes")
+}

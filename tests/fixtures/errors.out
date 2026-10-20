@@ -1,0 +1,9 @@
+Got chips
+Need 1 more coins
+Error: invalidSelection
+nil
+ok 1
+fail invalidSelection
+working
+cleanup
+caught outOfStock

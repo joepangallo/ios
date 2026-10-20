@@ -1,0 +1,9 @@
+finished a
+finished b
+sequential: A B
+finished d
+finished c
+parallel: ["C", "D"]
+4
+99
+60

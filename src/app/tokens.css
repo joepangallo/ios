@@ -1,0 +1,65 @@
+/* Layout: one-viewport Xcode-style workbench (outline rail | stage | inspector), Swift orange as the single brand accent. */
+:root {
+  --bg: #f2f3f6;
+  --panel: #ffffff;
+  --panel-2: #eceef2;
+  --panel-3: #e2e5ea;
+  --ink: #15171c;
+  --ink-2: #474d59;
+  --ink-3: #6d7380;
+  --line: #d9dde4;
+  --accent: #f05138;
+  --accent-ink: #b9321c;
+  --accent-soft: #fde6e1;
+  --on-accent: #ffffff;
+  --link: #0a6cdc;
+  --focus: #0a84ff;
+  --ok: #1a7f45;
+  --ok-soft: #dcf3e5;
+  --warn: #9a6200;
+  --warn-soft: #fbefd5;
+  --bad: #c8281c;
+  --bad-soft: #fbe2df;
+  /* Xcode "Default (Light)" syntax colors */
+  --code-bg: #ffffff;
+  --code-gutter: #f6f7f9;
+  --code-line: #eef4ff;
+  --kw: #9b2393;
+  --str: #c41a16;
+  --num: #1c00cf;
+  --type: #0b4f79;
+  --cmt: #5d6c79;
+  --fn: #326d74;
+  --attr: #815f03;
+  --font-display: "Bricolage Grotesque", ui-rounded, -apple-system, system-ui, sans-serif;
+  --font-ui: "Figtree", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --shadow: 0 1px 2px rgba(20, 24, 33, 0.06), 0 8px 24px rgba(20, 24, 33, 0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111215; --panel: #1b1c21; --panel-2: #24252b; --panel-3: #2d2f36;
+    --ink: #eceef2; --ink-2: #b0b5bf; --ink-3: #868b96; --line: #30323a;
+    --accent: #f2603f; --accent-ink: #ff8d73; --accent-soft: #3a1f19; --on-accent: #ffffff;
+    --link: #5aa9ff; --focus: #3d9bff;
+    --ok: #4cd480; --ok-soft: #173325; --warn: #f5c451; --warn-soft: #3a2f12; --bad: #ff6b5e; --bad-soft: #3d1b18;
+    --code-bg: #1f1f24; --code-gutter: #1a1a1f; --code-line: #2a2e3a;
+    --kw: #fc5fa3; --str: #fc6a5d; --num: #d0bf69; --type: #5dd8ff; --cmt: #7f8c98; --fn: #67b7a4; --attr: #fd8f3f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111215; --panel: #1b1c21; --panel-2: #24252b; --panel-3: #2d2f36;
+  --ink: #eceef2; --ink-2: #b0b5bf; --ink-3: #868b96; --line: #30323a;
+  --accent: #f2603f; --accent-ink: #ff8d73; --accent-soft: #3a1f19; --on-accent: #ffffff;
+  --link: #5aa9ff; --focus: #3d9bff;
+  --ok: #4cd480; --ok-soft: #173325; --warn: #f5c451; --warn-soft: #3a2f12; --bad: #ff6b5e; --bad-soft: #3d1b18;
+  --code-bg: #1f1f24; --code-gutter: #1a1a1f; --code-line: #2a2e3a;
+  --kw: #fc5fa3; --str: #fc6a5d; --num: #d0bf69; --type: #5dd8ff; --cmt: #7f8c98; --fn: #67b7a4; --attr: #fd8f3f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}

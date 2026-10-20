@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+src/generated/
+.DS_Store
+# course syllabus (institution and contact details) stays local
+*Module-1-Month*.pdf
+# local, course-specific validator terms
+tools/banned-terms.local.txt
