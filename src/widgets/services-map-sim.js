@@ -3,11 +3,11 @@
 // and camera, adds Markers and Annotations by tapping, shows the user's
 // location, and runs a simulated MKLocalSearch. The SwiftUI code beside the
 // phone is regenerated from that state and the lines that changed light up.
-import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idFor } from './services-kit.js';
+import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idScope, snapshotHost } from './services-kit.js';
 
 const NAME = 'services-map-sim';
 const S = `.w-${NAME}`;
-const id = (role) => idFor(NAME, role);
+const id = idScope(NAME);
 
 const RAD = Math.PI / 180;
 const LAT0 = 37.8080;
@@ -301,6 +301,7 @@ ${layoutCss(`${S}.ms-compact`)}
 }
 `,
   mount(el, props = {}, ctx) {
+    const restoreHost = snapshotHost(el);
     el.classList.add(`w-${NAME}`);
     if (props.compact) el.classList.add('ms-compact');
     if (ctx.reducedMotion) el.classList.add('ms-reduced');
@@ -821,6 +822,7 @@ ${layoutCss(`${S}.ms-compact`)}
         el.removeEventListener('click', onClick);
         el.removeEventListener('change', onChange);
         el.innerHTML = '';
+        restoreHost();
       },
     };
   },

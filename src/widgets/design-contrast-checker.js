@@ -2,6 +2,8 @@
 // (src/wasm/SwiftCore.swift) running as WebAssembly. A JavaScript copy of the
 // same WCAG 2.x formula is used only when WebAssembly is unavailable.
 
+import { contrastRatioLabel, idScope } from './services-kit.js';
+
 const NAME = 'design-contrast-checker';
 let mountCount = 0;
 
@@ -81,14 +83,6 @@ function hslToRgb(h, s, l) {
   const c = (v) => Math.max(0, Math.min(255, Math.round(v * 255)));
   return (c(r) << 16) | (c(g) << 8) | c(b);
 }
-// Round to two decimals for display, except when rounding would lift a failing
-// value onto a threshold (4.496 must never read as 4.50): then truncate instead.
-const fmt = (r) => {
-  const rounded = r.toFixed(2);
-  return [3, 4.5, 7].some((t) => r < t && Number(rounded) >= t)
-    ? (Math.floor(r * 100) / 100).toFixed(2)
-    : rounded;
-};
 
 export default {
   name: 'design-contrast-checker',
@@ -198,7 +192,7 @@ export default {
   mount(el, props, ctx) {
     el.classList.add('w-' + NAME);
     const n = ++mountCount;
-    const id = (f) => (n === 1 ? `${NAME}-${f}` : `${NAME}-${f}-${n}`);
+    const id = idScope(NAME, n);
     const icon = (name, size = 14, label = '') => (ctx && ctx.icon ? ctx.icon(name, size, label) : '');
     if (ctx && ctx.reducedMotion) el.classList.add('is-still');
 
@@ -304,12 +298,12 @@ export default {
     function render({ announce = false } = {}) {
       const r = math.ratio(state.fg, state.bg);
       const lf = math.lum(state.fg), lb = math.lum(state.bg);
-      $('ratio').textContent = fmt(r);
+      $('ratio').textContent = contrastRatioLabel(r);
       $('verdict').textContent = verdictText(r);
       $('marker').style.left = `${Math.min(100, (Math.log(r) / Math.log(21)) * 100)}%`;
       for (const c of CHECKS) el.querySelector(`[data-check="${c.id}"]`).innerHTML = pill(r >= c.min);
       const hi = Math.max(lf, lb), lo = Math.min(lf, lb);
-      $('formula').textContent = `Luminance: text ${lf.toFixed(3)}, background ${lb.toFixed(3)}.  (${hi.toFixed(3)} + 0.05) / (${lo.toFixed(3)} + 0.05) = ${fmt(r)}`;
+      $('formula').textContent = `Luminance: text ${lf.toFixed(3)}, background ${lb.toFixed(3)}.  (${hi.toFixed(3)} + 0.05) / (${lo.toFixed(3)} + 0.05) = ${contrastRatioLabel(r)}`;
       const fgS = toHex(state.fg), bgS = toHex(state.bg);
       if (fgPick.value.toUpperCase() !== fgS) fgPick.value = fgS.toLowerCase();
       if (bgPick.value.toUpperCase() !== bgS) bgPick.value = bgS.toLowerCase();
@@ -327,9 +321,9 @@ export default {
         fig.querySelector('.cc-c-plain').style.color = fgS;
         const screen = fig.dataset.mode === 'light' ? 0xFFFFFF : 0x000000;
         const onR = math.ratio(state.fg, screen);
-        fig.querySelector('.cc-on').innerHTML = `${pill(onR >= 4.5, true)}<span><span class="cc-long">Text color on </span>${toHex(screen)}: ${fmt(onR)}:1</span>`;
+        fig.querySelector('.cc-on').innerHTML = `${pill(onR >= 4.5, true)}<span><span class="cc-long">Text color on </span>${toHex(screen)}: ${contrastRatioLabel(onR)}:1</span>`;
       }
-      if (announce) $('live').textContent = `${fmt(r)} to 1. ${verdictText(r)}`;
+      if (announce) $('live').textContent = `${contrastRatioLabel(r)} to 1. ${verdictText(r)}`;
       if (ctx && ctx.storage) ctx.storage.set(NAME, { fg: state.fg, bg: state.bg, target: state.target });
     }
 
@@ -347,7 +341,7 @@ export default {
       const probe = (rgb) => { probes += 1; return math.ratio(rgb, state.bg); };
       const start = probe(state.fg);
       if (start >= goal) {
-        msg.textContent = `Already ${fmt(start)}:1, above the ${goal}:1 goal. Nothing to change.`;
+        msg.textContent = `Already ${contrastRatioLabel(start)}:1, above the ${goal}:1 goal. Nothing to change.`;
         return;
       }
       const [h, s, l0] = rgbToHsl(state.fg);
@@ -367,7 +361,7 @@ export default {
       }
       if (!candidates.length) {
         const best = Math.max(math.ratio(0x000000, state.bg), math.ratio(0xFFFFFF, state.bg));
-        msg.textContent = `No shade of this hue reaches ${goal}:1 on this background: even black or white gives only ${fmt(best)}:1. Change the background instead.`;
+        msg.textContent = `No shade of this hue reaches ${goal}:1 on this background: even black or white gives only ${contrastRatioLabel(best)}:1. Change the background instead.`;
         return;
       }
       candidates.sort((a, b) => a.dl - b.dl);
@@ -378,7 +372,7 @@ export default {
       revertBtn.hidden = false;
       render();
       const who = math.swift ? 'each one a call to the Swift contrastRatio function' : 'each one computed in JavaScript';
-      msg.textContent = `Suggested ${toHex(pick.rgb)}, ${fmt(math.ratio(pick.rgb, state.bg))}:1. Same hue, ${pick.dir} by ${Math.round(pick.dl * 100)} lightness points. ${probes} probes, ${who}.`;
+      msg.textContent = `Suggested ${toHex(pick.rgb)}, ${contrastRatioLabel(math.ratio(pick.rgb, state.bg))}:1. Same hue, ${pick.dir} by ${Math.round(pick.dl * 100)} lightness points. ${probes} probes, ${who}.`;
     }
 
     const onFgPick = () => { state.fg = parseHex(fgPick.value); presetSel.value = ''; render(); };

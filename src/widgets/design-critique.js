@@ -5,6 +5,8 @@
 // same screen with every fix applied. The screen is modeled in points
 // (393 x 852, an iPhone 16) and scaled to fit, so every size quoted is real.
 
+import { esc, idScope, snapshotHost, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'design-critique';
 let instances = 0;
 
@@ -118,7 +120,6 @@ function jsContrast(a, b) {
 }
 
 const box = (x, y, w, h) => `left:${x}px;top:${y}px;width:${w}px;height:${h}px;`;
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const hex = (n) => '#' + n.toString(16).padStart(6, '0').toUpperCase();
 // Two decimals, but never rounded up onto a pass threshold (4.497 stays 4.49).
 function ratioText(v) {
@@ -258,7 +259,7 @@ export default {
 .w-design-critique.is-narrow[data-view="screen"] .dc-panel { display: none; }
 .w-design-critique.is-narrow[data-view="notes"] .dc-phonecol { display: none; }
 .w-design-critique .dc-phonecol { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 0; }
-.w-design-critique .dc-phone { background: #1d1d1f; padding: ${BEZEL}px; border-radius: calc(var(--s) * 58px + ${BEZEL}px); box-shadow: 0 0 0 1px var(--line), var(--shadow); }
+${phoneFrameCss('.w-design-critique', { frame: '.dc-phone', radius: `calc(var(--s) * 58px + ${BEZEL}px)`, pad: `${BEZEL}px`, shadow: '0 0 0 1px var(--line), var(--shadow)' })}
 .w-design-critique .dc-screenbox { position: relative; overflow: hidden; border-radius: calc(var(--s) * 52px); background: #fff; }
 .w-design-critique .dc-screen { position: absolute; left: 0; top: 0; width: ${SCREEN_W}px; height: ${SCREEN_H}px; transform: scale(var(--s)); transform-origin: 0 0; background: #fff; color: #000; font-family: -apple-system, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif; letter-spacing: -0.01em; }
 .w-design-critique .dc-layer { position: absolute; inset: 0; pointer-events: none; }
@@ -352,8 +353,9 @@ export default {
 `,
   mount(el, props = {}, ctx) {
     const n = ++instances;
-    const id = (f) => (n === 1 ? `${NAME}-${f}` : `${NAME}-${f}-${n}`);
+    const id = idScope(NAME, n);
     const icon = (name, size) => ctx.icon(name, size);
+    const restoreHost = snapshotHost(el);
     el.classList.add('w-design-critique');
     if (ctx.reducedMotion) el.classList.add('no-motion');
 
@@ -672,7 +674,7 @@ export default {
         openBtn.removeEventListener('click', openNotes);
         backBtn.removeEventListener('click', backToScreen);
         el.innerHTML = '';
-        el.classList.remove('w-design-critique', 'is-narrow', 'no-motion');
+        restoreHost();
       },
     };
   },

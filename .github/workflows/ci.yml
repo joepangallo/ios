@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  check:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Committed page must match the build
+        run: git diff --exit-code -- ios-development.html
+      - run: npx playwright install --with-deps chromium
+      - run: npm run check:browser
+
+  # Rebuilds src/wasm/SwiftCore.wasm with the swift.org toolchain and requires a
+  # byte-identical result. Weekly and on demand only, because the toolchain and
+  # SDK downloads are large. This job cannot be run on a local machine; on a Mac
+  # with the toolchain installed, `npm run wasm-check` performs the same comparison.
+  wasm:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install the swift.org 6.4.1 toolchain with swiftly
+        run: |
+          curl -fsSLO "https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz"
+          tar zxf "swiftly-$(uname -m).tar.gz"
+          ./swiftly init --assume-yes --skip-install
+          . "$HOME/.local/share/swiftly/env.sh"
+          swiftly install 6.4.1 --use
+          echo "$HOME/.local/share/swiftly/bin" >> "$GITHUB_PATH"
+          echo "SWIFT_TOOLCHAIN_BIN=$(dirname "$(swiftly run sh -c 'command -v swiftc')")" >> "$GITHUB_ENV"
+      - name: Install the Swift SDK for WebAssembly
+        run: |
+          curl -fsSLO https://download.swift.org/swift-6.4.1-release/wasm-sdk/swift-6.4.1-RELEASE/swift-6.4.1-RELEASE_wasm.artifactbundle.tar.gz
+          swift sdk install swift-6.4.1-RELEASE_wasm.artifactbundle.tar.gz
+      - name: Committed WebAssembly module must match a fresh build
+        run: node tools/wasm-check.mjs
+        env:
+          WASM_CHECK_REQUIRED: '1'

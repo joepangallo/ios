@@ -103,13 +103,17 @@ export function toast(message) {
   setTimeout(() => t.remove(), 3100);
 }
 
-export function createContext(engine = null) {
+// `runner` (run-worker.js) runs widget programs in the Web Worker with the
+// watchdog, and cancels them when the step changes; without one they run on
+// the engine directly.
+export function createContext(engine = null, runner = null) {
   const reducedMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   return {
     wasm: loadSwiftCore(),
-    async runSwift(code) {
-      if (!engine) return { stdout: '', error: { message: 'Swift engine not loaded', line: 0 } };
-      const r = await engine.run(code);
+    async runSwift(code, opts = {}) {
+      const run = runner ? runner.run : engine ? engine.run : null;
+      if (!run) return { stdout: '', error: { message: 'Swift engine not loaded', line: 0 } };
+      const r = await run(code, opts.signal ? { signal: opts.signal } : {});
       return { stdout: r.stdout, error: r.error };
     },
     mountPreview(el, code, opts = {}) {

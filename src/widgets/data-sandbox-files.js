@@ -5,6 +5,8 @@
 //   NotesStore (JSONEncoder + Data.write to Documents/notes.json), including
 //   what a crash during a non-atomic write does to the file.
 
+import { esc, iosThemeCss } from './services-kit.js';
+
 const P = 'data-sandbox-files';
 
 const START_NOTES = [
@@ -72,7 +74,6 @@ const PLIST_EMPTY = `<?xml version="1.0" encoding="UTF-8"?>
 const enc = new TextEncoder();
 const byteCount = (s) => enc.encode(s).length;
 const fmtBytes = (n) => `${n.toLocaleString('en-US')} byte${n === 1 ? '' : 's'}`;
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // JSONEncoder writes "/" as "\/" and keeps other characters as UTF-8.
 const jstr = (s) => JSON.stringify(s).replace(/\//g, '\\/');
@@ -121,16 +122,9 @@ function initialState(mode) {
 export default {
   name: 'data-sandbox-files',
   css: `
+${iosThemeCss('.w-data-sandbox-files', { light: { 'ios-bg': '#F2F2F7', 'ios-sep': '#C6C6C8', 'ios-tint': '#007AFF', 'ios-fill': '#E9E9EE' }, dark: { 'ios-sep': '#38383A', 'ios-tint': '#0A84FF', 'ios-fill': '#2C2C2E' } })}
 .w-data-sandbox-files { height: 100%; box-sizing: border-box; container-type: inline-size; overflow: hidden;
-  font: 14px/1.45 var(--font-ui); color: var(--ink);
-  --ios-bg: #F2F2F7; --ios-cell: #FFFFFF; --ios-label: #000000; --ios-secondary: #8E8E93; --ios-sep: #C6C6C8; --ios-tint: #007AFF;
-  --ios-red: #FF3B30; --ios-fill: #E9E9EE; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .w-data-sandbox-files {
-  --ios-bg: #000000; --ios-cell: #1C1C1E; --ios-label: #FFFFFF; --ios-secondary: #8E8E93; --ios-sep: #38383A; --ios-tint: #0A84FF;
-  --ios-red: #FF453A; --ios-fill: #2C2C2E; } }
-:root[data-theme="dark"] .w-data-sandbox-files {
-  --ios-bg: #000000; --ios-cell: #1C1C1E; --ios-label: #FFFFFF; --ios-secondary: #8E8E93; --ios-sep: #38383A; --ios-tint: #0A84FF;
-  --ios-red: #FF453A; --ios-fill: #2C2C2E; }
+  font: 14px/1.45 var(--font-ui); color: var(--ink); }
 .w-data-sandbox-files * { box-sizing: border-box; }
 .w-data-sandbox-files .sbx { height: 100%; display: grid; gap: 10px 12px; padding: 12px; min-height: 0; }
 .w-data-sandbox-files .sec { font: 700 11px var(--font-ui); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin: 0; }

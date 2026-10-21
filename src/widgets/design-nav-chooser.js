@@ -2,6 +2,8 @@
 // Each pick gets reasoning, the SwiftUI types to use, and a wireframe of the
 // pick next to the recommended pattern, so the difference is visible.
 
+import { esc, idScope } from './services-kit.js';
+
 const NAME = 'design-nav-chooser';
 const STORE = 'design-nav-chooser:v1';
 let instances = 0;
@@ -151,8 +153,6 @@ const RULES = [
   ['A short task with an end', 'Sheet (.sheet) with Cancel and a confirm button'],
 ];
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-
 export default {
   name: 'design-nav-chooser',
   css: `
@@ -285,7 +285,7 @@ export default {
 `,
   mount(el, props = {}, ctx) {
     const n = ++instances;
-    const id = (field) => (n === 1 ? `${NAME}-${field}` : `${NAME}-${field}-${n}`);
+    const id = idScope(NAME, n);
     const icon = (name, size, label = '') => (ctx && ctx.icon ? ctx.icon(name, size, label) : '');
     el.classList.add('w-design-nav-chooser');
 

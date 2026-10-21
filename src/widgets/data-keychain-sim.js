@@ -3,14 +3,14 @@
 // calls and OSStatus codes. A comparison card shows the same token sitting in
 // a UserDefaults plist as plain text.
 
+import { esc } from './services-kit.js';
+
 const STATUS = {
   0: 'errSecSuccess',
   '-25299': 'errSecDuplicateItem',
   '-25300': 'errSecItemNotFound',
   '-25308': 'errSecInteractionNotAllowed',
 };
-
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 // Deterministic "ciphertext" so the same token always shows the same bytes.
 function cipherBytes(token) {

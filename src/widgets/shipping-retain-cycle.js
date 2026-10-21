@@ -4,6 +4,8 @@
 // (verified with the real compiler). Whatever is left alive but unreachable
 // is a leak, and the strong arrows among those objects form the cycle.
 
+import { esc, reducedMotionCss, highlightSwift } from './services-kit.js';
+
 const NAME = 'shipping-retain-cycle';
 let uid = 0;
 
@@ -84,24 +86,8 @@ const SCENARIOS = {
 };
 
 const NODE_H = 52;
-const KW = /\b(final|class|var|let|init|deinit|func|protocol|weak|self|in|struct|return)\b/g;
 
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-// Tiny Swift highlighter: strings first, then keywords, types and numbers
-// outside of strings.
-function highlight(line) {
-  const parts = line.split(/("(?:[^"\\]|\\.)*")/);
-  return parts.map((p, i) => {
-    if (i % 2 === 1) return `<span class="t-str">${esc(p)}</span>`;
-    return esc(p)
-      .replace(KW, '<span class="t-kw">$1</span>')
-      .replace(/\b([A-Z][A-Za-z]+)\b/g, '<span class="t-type">$1</span>')
-      .replace(/\b(\d+)\b/g, '<span class="t-num">$1</span>');
-  }).join('');
-}
+const highlight = (line) => highlightSwift(line, { prefix: 't-' });
 
 function center(n) { return { x: n.x + n.w / 2, y: n.y + NODE_H / 2 }; }
 
@@ -205,7 +191,7 @@ export default {
 .w-shipping-retain-cycle .rc-status.bad svg { color:var(--bad); }
 .w-shipping-retain-cycle .rc-status b { font-weight:700; }
 .w-shipping-retain-cycle .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-.w-shipping-retain-cycle.still * { transition:none !important; }
+${reducedMotionCss('.w-shipping-retain-cycle', { still: 'still' })}
 @media (max-width:560px) {
   .w-shipping-retain-cycle .rc-main { grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); }
   .w-shipping-retain-cycle .rc-graph svg { height:184px; flex:none; }

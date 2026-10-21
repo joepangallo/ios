@@ -3,10 +3,21 @@
 // it with naive string concatenation, shows what the server will parse, and
 // can send the request for real.
 
+import { el, on, idScope, frameThrottle } from './services-kit.js';
+
 const NAME = 'networking-url-anatomy';
 const HOST = 'geocoding-api.open-meteo.com';
 const PATH = '/v1/search';
 const PRESETS = ['São Paulo', 'New York', 'A&W #2', 'C++'];
+// Longest city the field accepts, like a real city name field.
+const MAX_CITY = 200;
+
+// At most MAX_CITY UTF-16 units, without splitting a surrogate pair.
+function clipCity(text) {
+  if (text.length <= MAX_CITY) return text;
+  const cut = text.slice(0, MAX_CITY);
+  return /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut;
+}
 
 // Characters URLComponents leaves alone inside a query item (measured with
 // Foundation on macOS 26 for every printable ASCII character).
@@ -56,18 +67,6 @@ function serverReads(query) {
     return { name: decodeForm(rawName), value: decodeForm(rawValue), plus: rawValue.includes('+') };
   });
   return { items, fragment };
-}
-
-function el(tag, attrs = {}, ...kids) {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === false || v == null) continue;
-    if (k === 'class') node.className = v;
-    else if (k === 'text') node.textContent = v;
-    else node.setAttribute(k, v === true ? '' : v);
-  }
-  for (const kid of kids) if (kid != null) node.append(kid);
-  return node;
 }
 
 export default {
@@ -120,10 +119,10 @@ export default {
 `,
   mount(root, props = {}, ctx) {
     root.classList.add(`w-${NAME}`);
-    const id = (s) => `${NAME}-${s}`;
-    const state = { city: props.city || 'São Paulo', mode: 'components', busy: false };
+    const id = idScope(NAME);
+    const state = { city: clipCity(props.city || 'São Paulo'), mode: 'components', busy: false };
 
-    const input = el('input', { class: 'nua-input', id: id('city'), type: 'text', value: state.city, autocomplete: 'off', spellcheck: 'false' });
+    const input = el('input', { class: 'nua-input', id: id('city'), type: 'text', value: state.city, maxlength: String(MAX_CITY), autocomplete: 'off', spellcheck: 'false' });
     const chips = el('div', { class: 'nua-chips', role: 'group', 'aria-label': 'Example inputs' },
       ...PRESETS.map((p, i) => el('button', { type: 'button', class: 'nua-chip', id: id(`preset-${i}`), text: p })));
     const segA = el('button', { type: 'button', role: 'radio', id: id('mode-components'), 'aria-checked': 'true', text: 'URLComponents' });
@@ -170,27 +169,37 @@ export default {
       segA.setAttribute('aria-checked', String(state.mode === 'components'));
       segB.setAttribute('aria-checked', String(state.mode === 'naive'));
       const span = (cls, text) => el('span', { class: cls, text });
-      const hashAt = state.mode === 'naive' ? b.query.indexOf('#') : -1;
-      const parts = [span('s-scheme', 'https'), span('s-punct', '://'), span('s-host', HOST), span('s-path', PATH), span('s-punct', '?'), span('s-query', 'name=')];
+      const line = document.createDocumentFragment();
+      line.append(span('s-scheme', 'https'), span('s-punct', '://'), span('s-host', HOST), span('s-path', PATH), span('s-punct', '?'), span('s-query', 'name='));
+      // One span per run of characters that share a color, not one per character.
+      const runs = [];
       let inFragment = false;
       for (const p of b.pieces) {
         if (!p.encoded && p.text === '#') inFragment = true;
         const cls = inFragment ? 's-frag' : p.encoded ? 's-enc' : 's-query';
-        const node = span(cls, p.text);
-        if (p.encoded && p.source) node.title = `"${p.source}" encoded as UTF-8 bytes`;
-        parts.push(node);
+        let run = runs[runs.length - 1];
+        if (!run || run.cls !== cls) { run = { cls, text: '', source: '' }; runs.push(run); }
+        run.text += p.text;
+        if (p.encoded && p.source) run.source += p.source;
       }
-      parts.push(span(inFragment ? 's-frag' : 's-query', '&count=1'));
-      url.replaceChildren(...parts);
+      for (const r of runs) {
+        const node = span(r.cls, r.text);
+        if (r.source) node.title = `"${r.source}" encoded as UTF-8 bytes`;
+        line.append(node);
+      }
+      line.append(span(inFragment ? 's-frag' : 's-query', '&count=1'));
+      url.replaceChildren(line);
 
       const reads = serverReads(b.query);
-      tbody.replaceChildren(...(reads.items.length ? reads.items : [{ name: '(nothing)', value: '' }]).map((it) => {
+      const readRows = document.createDocumentFragment();
+      for (const it of reads.items.length ? reads.items : [{ name: '(nothing)', value: '' }]) {
         const unexpected = !['name', 'count'].includes(it.name);
         const changed = it.name === 'name' && it.value !== state.city;
-        return el('tr', {},
+        readRows.append(el('tr', {},
           el('td', { class: unexpected ? 'bad' : '', text: it.name || '(empty)' }),
-          el('td', { class: changed ? 'bad' : '', text: JSON.stringify(it.value) }));
-      }));
+          el('td', { class: changed ? 'bad' : '', text: JSON.stringify(it.value) })));
+      }
+      tbody.replaceChildren(readRows);
 
       const list = [];
       const nameItem = reads.items.find((i) => i.name === 'name');
@@ -231,9 +240,14 @@ export default {
       }
     }
 
-    const on = (node, ev, fn) => { node.addEventListener(ev, fn); return () => node.removeEventListener(ev, fn); };
+    // Typing re-renders at most once per animation frame.
+    const paint = frameThrottle(render);
     const offs = [
-      on(input, 'input', () => { state.city = input.value; render(); }),
+      on(input, 'input', () => {
+        state.city = clipCity(input.value);
+        if (input.value !== state.city) input.value = state.city;
+        paint.request();
+      }),
       on(segA, 'click', () => { state.mode = 'components'; render(); }),
       on(segB, 'click', () => { state.mode = 'naive'; render(); }),
       on(seg, 'keydown', (e) => {
@@ -247,6 +261,6 @@ export default {
       ...[...chips.children].map((c) => on(c, 'click', () => { state.city = c.textContent; input.value = state.city; render(); })),
     ];
     render();
-    return { destroy() { offs.forEach((off) => off()); root.replaceChildren(); root.classList.remove(`w-${NAME}`); } };
+    return { destroy() { paint.cancel(); offs.forEach((off) => off()); root.replaceChildren(); root.classList.remove(`w-${NAME}`); } };
   },
 };

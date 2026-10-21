@@ -4,7 +4,9 @@ const KW = new Set(('associatedtype class deinit enum extension fileprivate func
   'fallthrough for guard if in repeat return throw switch where while as false is nil self Self super throws true try await async ' +
   'some any actor mutating nonmutating override final lazy weak unowned required convenience get set willSet didSet indirect nonisolated').split(' '));
 
-const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// HTML-escapes text for innerHTML and for attribute values in either quote
+// style (& < > " '). Shared by the app shell.
+export const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 // Returns HTML for one line. `state` carries an open block comment across lines.
 // Very long lines or deeply nested interpolation fall back to plain escaped text.
@@ -52,7 +54,9 @@ export function highlightLine(line, state = {}, depth = 0) {
           // interpolation: highlight the inner code normally
           let parens = 1, k = j + 2;
           while (k < n && parens) { if (line[k] === '(') parens++; else if (line[k] === ')') parens--; k++; }
-          html += `<span class="t-str">${esc(buf)}</span><span class="t-interp">\\(</span>${highlightLine(line.slice(j + 2, k - 1), {}, depth + 1).html}<span class="t-interp">)</span>`;
+          // an interpolation still being typed has no closing ) yet: show what is there, add nothing
+          const closed = parens === 0;
+          html += `<span class="t-str">${esc(buf)}</span><span class="t-interp">\\(</span>${highlightLine(line.slice(j + 2, closed ? k - 1 : k), {}, depth + 1).html}${closed ? '<span class="t-interp">)</span>' : ''}`;
           buf = '';
           j = k;
           continue;
@@ -85,13 +89,17 @@ export function highlightLine(line, state = {}, depth = 0) {
     if (/[A-Za-z_]/.test(c)) {
       const m = /^[A-Za-z_][A-Za-z0-9_]*/.exec(rest);
       const w = m[0];
-      const prev = line.slice(0, i).trimEnd();
+      // The four characters before the word, skipping spaces (the old code trimmed the
+      // whole prefix for every word, which is quadratic in the line length).
+      let p = i;
+      while (p > 0 && /\s/.test(line[p - 1])) p--;
+      const prev = line.slice(Math.max(0, p - 4), p);
       let cls = '';
       if (KW.has(w)) cls = 't-kw';
       else if (/^[A-Z]/.test(w)) cls = 't-type';
       else if (prev.endsWith('.')) cls = 't-member';
-      else if (/^\s*\(/.test(line.slice(i + w.length)) && !/func\s*$/.test(prev)) cls = 't-fn';
-      else if (/(func|let|var|case)\s*$/.test(prev)) cls = 't-decl';
+      else if (/^\s*\(/.test(line.slice(i + w.length)) && !prev.endsWith('func')) cls = 't-fn';
+      else if (['func', 'let', 'var', 'case'].some((k) => prev.endsWith(k))) cls = 't-decl';
       out += cls ? `<span class="${cls}">${esc(w)}</span>` : esc(w);
       i += w.length;
       continue;

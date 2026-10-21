@@ -4,9 +4,15 @@
 // Every rule and message below was checked against Swift 6.2 on macOS 26.
 
 import { JSONNumber, parseJSONNumbers, swiftIntFromJSON } from '../shared/json-numbers.js';
+import { esc, el, on, idScope, highlightSwift, JSON_MAX_DEPTH, jsonDepthError } from './services-kit.js';
 
 const NAME = 'networking-json-decoder';
 const BASE_TYPES = ['String', 'Int', 'Double', 'Bool'];
+// A document up to this size decodes on every keystroke; a larger one waits
+// until typing pauses for DECODE_DELAY_MS, so a pasted megabyte of JSON is
+// parsed once per pause instead of once per key.
+const LARGE_TEXT = 20000;
+const DECODE_DELAY_MS = 150;
 
 const TODO_FIELDS = [
   { name: 'userId', type: 'Int' }, { name: 'id', type: 'Int' },
@@ -54,15 +60,61 @@ const PRESETS = {
   },
 };
 
-// Foundation's convertFromSnakeCase: keep leading and trailing underscores,
-// lowercase the first word, capitalize each later run of letters.
+// Foundation's convertFromSnakeCase in one linear pass (no backtracking regex), the
+// same algorithm as the engine's src/engine/foundation.js: leading and trailing
+// underscores are kept; the rest splits on runs of underscores; a single word is left
+// as it is (it may already be camelCase); otherwise the first word is lowercased
+// and each later word capitalized like NSString.capitalized ("user_ID" -> "userId").
+// An underscore followed by a combining mark is part of one character, not a separator.
+const EXTEND = /[\p{M}\u200D\uFE00-\uFE0F\u{1F3FB}-\u{1F3FF}]/u;
+const LU = /\p{Lu}/u, LL = /\p{Ll}/u, LT = /\p{Lt}/u;
+// Unicode 4 case-ignorable characters, which capitalization skips over.
+const CASE_IGNORABLE = /[\p{Mn}\p{Me}\p{Cf}\p{Lm}\p{Sk}'\u00AD\u2019]/u;
+// Titlecase where it differs from toUpperCase(): SpecialCasing titles and digraphs.
+const TITLE = new Map([
+  ['\u00DF', 'Ss'], ['\uFB00', 'Ff'], ['\uFB01', 'Fi'], ['\uFB02', 'Fl'], ['\uFB03', 'Ffi'], ['\uFB04', 'Ffl'], ['\uFB05', 'St'], ['\uFB06', 'St'],
+  ['\u0587', '\u0535\u0582'], ['\uFB13', '\u0544\u0576'], ['\uFB14', '\u0544\u0565'], ['\uFB15', '\u0544\u056B'], ['\uFB16', '\u054E\u0576'], ['\uFB17', '\u0544\u056D'],
+  ['\u01C6', '\u01C5'], ['\u01C9', '\u01C8'], ['\u01CC', '\u01CB'], ['\u01F3', '\u01F2'],
+  ['\u1FB3', '\u1FBC'], ['\u1FC3', '\u1FCC'], ['\u1FF3', '\u1FFC'],
+  ['\u1FB2', '\u1FBA\u0345'], ['\u1FB4', '\u0386\u0345'], ['\u1FB7', '\u0391\u0342\u0345'], ['\u1FC2', '\u1FCA\u0345'], ['\u1FC4', '\u0389\u0345'],
+  ['\u1FC7', '\u0397\u0342\u0345'], ['\u1FF2', '\u1FFA\u0345'], ['\u1FF4', '\u038F\u0345'], ['\u1FF7', '\u03A9\u0342\u0345'],
+]);
+for (const base of [0x1F80, 0x1F90, 0x1FA0]) for (let i = 0; i < 8; i++) TITLE.set(String.fromCharCode(base + i), String.fromCharCode(base + 8 + i));
+function lowerScalars(s) {
+  let out = '';
+  for (const ch of s) out += ch.toLowerCase(); // per scalar: no final-sigma context
+  return out;
+}
+function capitalizeWord(w) {
+  let out = '', cased = false;
+  for (const ch of w) {
+    const lu = LU.test(ch), ll = !lu && LL.test(ch), lt = !lu && !ll && LT.test(ch);
+    if (cased) out += lu || lt ? ch.toLowerCase() : ch;
+    else out += ll ? (TITLE.get(ch) ?? ch.toUpperCase()) : ch;
+    if (!CASE_IGNORABLE.test(ch)) cased = lu || ll || lt;
+  }
+  return out;
+}
 function convertFromSnakeCase(key) {
-  const m = /^(_*)(.*?)(_*)$/.exec(key);
-  if (!m[2]) return key;
-  const words = m[2].split('_').filter(Boolean);
+  const n = key.length;
+  const sep = (i) => key.charCodeAt(i) === 95 && !(i + 1 < n && key.charCodeAt(i + 1) >= 0x300 && EXTEND.test(String.fromCodePoint(key.codePointAt(i + 1))));
+  let start = 0;
+  while (start < n && sep(start)) start++;
+  if (start === n) return key;
+  let end = n;
+  while (end > start && sep(end - 1)) end--;
+  const words = [];
+  for (let i = start; i < end;) {
+    let j = i;
+    while (j < end && !sep(j)) j++;
+    words.push(key.slice(i, j));
+    while (j < end && sep(j)) j++;
+    i = j;
+  }
   if (words.length === 1) return key;
-  const cap = (w) => w.toLowerCase().replace(/(^|[^\p{L}])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
-  return m[1] + words[0].toLowerCase() + words.slice(1).map(cap).join('') + m[3];
+  let out = key.slice(0, start) + lowerScalars(words[0]);
+  for (let w = 1; w < words.length; w++) out += capitalizeWord(words[w]);
+  return out + key.slice(end);
 }
 
 class DecodeError extends Error {
@@ -110,10 +162,16 @@ function decodeJSON(model, value, opts) {
   };
   const decodeStruct = (name, obj, path) => {
     const fields = [];
+    // each JSON key converted once; the first one that converts to a coding key wins
+    let converted = null;
+    if (opts.snake) {
+      converted = new Map();
+      for (const k of Object.keys(obj)) { const c = convertFromSnakeCase(k); if (!converted.has(c)) converted.set(c, k); }
+    }
     for (const prop of structs[name] || []) {
       const codingKey = (prop.key || '').trim() || prop.name;
       let jsonKey = null;
-      if (opts.snake) jsonKey = Object.keys(obj).find((k) => convertFromSnakeCase(k) === codingKey) ?? null;
+      if (converted) jsonKey = converted.get(codingKey) ?? null;
       else if (Object.prototype.hasOwnProperty.call(obj, codingKey)) jsonKey = codingKey;
       if (jsonKey === null) {
         if (prop.optional) { fields.push([prop.name, { nil: true }]); continue; }
@@ -134,13 +192,30 @@ function decodeJSON(model, value, opts) {
   return decodeValue(model.root, false, value, []);
 }
 
-function swiftDescription(v) {
-  if (v.nil) return 'nil';
-  if ('some' in v) return `Optional(${swiftDescription(v.some)})`;
-  if ('str' in v) return JSON.stringify(v.str);
-  if ('raw' in v) return v.raw;
-  if (v.array) return `[${v.array.map(swiftDescription).join(', ')}]`;
-  return `${v.struct}(${v.fields.map(([k, x]) => `${k}: ${swiftDescription(x)}`).join(', ')})`;
+// How print() shows a decoded value. With a `limit`, building stops as soon
+// as the text is longer than that, so a 50,000-element array costs no more
+// than the part that is shown; the result is then a prefix of the full text.
+function swiftDescription(v, limit = Infinity) {
+  let out = '';
+  const STOP = {};
+  const put = (text) => { out += text; if (out.length > limit) throw STOP; };
+  const walk = (x) => {
+    if (x.nil) return put('nil');
+    if ('some' in x) { put('Optional('); walk(x.some); return put(')'); }
+    // Only the first limit + 1 characters of a long string can ever be shown.
+    if ('str' in x) return put(JSON.stringify(x.str.length > limit ? x.str.slice(0, limit + 1) : x.str));
+    if ('raw' in x) return put(x.raw);
+    if (x.array) {
+      put('[');
+      x.array.forEach((item, i) => { if (i) put(', '); walk(item); });
+      return put(']');
+    }
+    put(`${x.struct}(`);
+    x.fields.forEach(([k, f], i) => { put(`${i ? ', ' : ''}${k}: `); walk(f); });
+    return put(')');
+  };
+  try { walk(v); } catch (e) { if (e !== STOP) throw e; }
+  return out;
 }
 
 // JSONDecoder tolerates trailing commas; the browser's JSON.parse does not.
@@ -161,7 +236,28 @@ function stripTrailingCommas(text) {
   return out;
 }
 
+// Foundation's JSON scanner refuses more than 512 nested arrays and objects.
+// The number-preserving parser recurses once per level, so deeper input is
+// stopped here, with JSONDecoder's message, before it can overflow the stack.
+function nestingError(text) {
+  let depth = 0;
+  let inString = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inString) {
+      if (c === '\\') i++;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === '[' || c === '{') {
+      if (++depth > JSON_MAX_DEPTH) return jsonDepthError(text, i).message;
+    } else if ((c === ']' || c === '}') && depth > 0) depth--;
+  }
+  return null;
+}
+
 function parseJSON(text) {
+  const tooDeep = nestingError(text);
+  if (tooDeep) return { ok: false, detail: tooDeep };
   try { return { ok: true, value: parseJSONNumbers(text) }; } catch (e1) {
     try { return { ok: true, value: parseJSONNumbers(stripTrailingCommas(text)) }; } catch { return { ok: false, detail: text.trim() ? e1.message : 'Unexpected end of file' }; }
   }
@@ -190,33 +286,7 @@ function swiftModelCode(model, opts) {
   return out.join('\n');
 }
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-function highlight(code) {
-  return code.split('\n').map((line) => {
-    let out = '';
-    const re = /("(?:[^"\\]|\\.)*")|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_][A-Za-z0-9_]*\b)|([\s\S])/g;
-    let m;
-    while ((m = re.exec(line))) {
-      if (m[1]) out += `<span class="t-str">${esc(m[1])}</span>`;
-      else if (m[2]) out += `<span class="t-num">${m[2]}</span>`;
-      else if (m[3]) out += ['let', 'var', 'struct', 'enum', 'case', 'try', 'self'].includes(m[3]) ? `<span class="t-kw">${m[3]}</span>` : /^[A-Z]/.test(m[3]) ? `<span class="t-type">${m[3]}</span>` : m[3];
-      else out += esc(m[4]);
-    }
-    return out;
-  }).join('\n');
-}
-
-function el(tag, attrs = {}, ...kids) {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === false || v == null) continue;
-    if (k === 'class') node.className = v;
-    else if (k === 'text') node.textContent = v;
-    else node.setAttribute(k, v === true ? '' : v);
-  }
-  for (const kid of kids) if (kid != null) node.append(kid);
-  return node;
-}
+const highlight = (code) => highlightSwift(code, { prefix: 't-' });
 
 const clonePreset = (p) => ({ root: p.root, structs: Object.fromEntries(Object.entries(p.structs).map(([k, v]) => [k, v.map((f) => ({ optional: false, key: '', ...f }))])) });
 
@@ -277,7 +347,7 @@ export default {
 `,
   mount(root, props = {}, ctx) {
     root.classList.add(`w-${NAME}`);
-    const id = (s) => `${NAME}-${s}`;
+    const id = idScope(NAME);
     const state = { preset: 'todo', model: clonePreset(PRESETS.todo), decodeAs: 'single', snake: false, tab: 'model', text: '', source: null, busy: false };
 
     const segBtns = Object.entries(PRESETS).map(([key, p]) => el('button', { type: 'button', role: 'radio', id: id(`preset-${key}`), 'aria-checked': 'false', text: p.label }));
@@ -326,10 +396,10 @@ export default {
           const keyIn = el('input', { type: 'text', id: id(`key-${pid}`), value: p.key || '', placeholder: p.name, 'aria-label': `${p.name} JSON key`, spellcheck: 'false' });
           const x = el('button', { type: 'button', class: 'njd-x', id: id(`remove-${pid}`), 'aria-label': `Remove ${p.name}` });
           x.innerHTML = ctx.icon('xmark', 13);
-          nameIn.addEventListener('input', () => { p.name = nameIn.value.trim(); keyIn.placeholder = p.name; update(); });
+          nameIn.addEventListener('input', () => { p.name = nameIn.value.trim(); keyIn.placeholder = p.name; decodeSoon(); });
           typeSel.addEventListener('change', () => { p.type = typeSel.value; update(); });
           opt.addEventListener('change', () => { p.optional = opt.checked; update(); });
-          keyIn.addEventListener('input', () => { p.key = keyIn.value; update(); });
+          keyIn.addEventListener('input', () => { p.key = keyIn.value; decodeSoon(); });
           x.addEventListener('click', () => { props.splice(i, 1); renderModel(); update(); });
           return el('div', { class: 'njd-prow' }, nameIn, typeSel, el('span', { class: 'njd-opt' }, opt), keyIn, x);
         });
@@ -372,7 +442,7 @@ export default {
       }
       try {
         const value = decodeJSON(state.model, parsed.value, { decodeAs: state.decodeAs, snake: state.snake });
-        const text = swiftDescription(value);
+        const text = swiftDescription(value, 600);
         result.className = 'njd-result ok';
         result.replaceChildren(...row('Decoded', state.decodeAs === 'array' ? `[${state.model.root}] with ${value.array.length} element${value.array.length === 1 ? '' : 's'}` : state.model.root, 'v case'),
           ...row('Value', text.length > 600 ? text.slice(0, 600) + '...' : text));
@@ -442,7 +512,14 @@ export default {
       }
     }
 
-    const on = (node, ev, fn) => { node.addEventListener(ev, fn); return () => node.removeEventListener(ev, fn); };
+    let decodeTimer = 0;
+    function decodeSoon() {
+      clearTimeout(decodeTimer);
+      decodeTimer = 0;
+      if (state.text.length <= LARGE_TEXT) update();
+      else decodeTimer = setTimeout(() => { decodeTimer = 0; update(); }, DECODE_DELAY_MS);
+    }
+
     const offs = [
       ...segBtns.map((b) => on(b, 'click', () => loadPreset(b.id.replace(id('preset-'), '')))),
       on(seg, 'keydown', (e) => {
@@ -455,7 +532,7 @@ export default {
       }),
       on(liveBtn, 'click', loadLive),
       on(resetBtn, 'click', () => loadPreset(state.preset)),
-      on(textarea, 'input', () => { state.text = textarea.value; state.source = { ...(state.source || {}), edited: true }; update(); }),
+      on(textarea, 'input', () => { state.text = textarea.value; state.source = { ...(state.source || {}), edited: true }; decodeSoon(); }),
       on(decodeAsSel, 'change', () => { state.decodeAs = decodeAsSel.value; update(); }),
       on(strategySel, 'change', () => { state.snake = strategySel.value === 'snake'; update(); }),
       on(tabModel, 'click', () => { state.tab = 'model'; update(); }),
@@ -469,6 +546,6 @@ export default {
       })),
     ];
     loadPreset(props.preset && PRESETS[props.preset] ? props.preset : 'todo');
-    return { destroy() { offs.forEach((off) => off()); root.replaceChildren(); root.classList.remove(`w-${NAME}`); } };
+    return { destroy() { clearTimeout(decodeTimer); offs.forEach((off) => off()); root.replaceChildren(); root.classList.remove(`w-${NAME}`); } };
   },
 };

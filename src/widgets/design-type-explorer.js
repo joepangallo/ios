@@ -4,6 +4,8 @@
 // next to the same screen with fixed sizes or a fixed row height (the bugs).
 // Point sizes were measured with UIFont.preferredFont on the iOS 26.1 simulator.
 
+import { listenerBag, idScope, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'design-type-explorer';
 let seq = 0;
 
@@ -63,16 +65,11 @@ const MIN_ROW = 24;     // smallest row height in the style list, in CSS pixels
 export default {
   name: 'design-type-explorer',
   css: `
+${iosThemeCss('.w-design-type-explorer', { light: { 'ios-green': '#248A3D', 'ios-orange': '#C93400' } })}
 .w-design-type-explorer {
-  --ios-bg: #FFFFFF; --ios-label: #000000; --ios-label-2: rgba(60,60,67,.6); --ios-sep: rgba(60,60,67,.29);
-  --ios-blue: #007AFF; --ios-green: #248A3D; --ios-orange: #C93400;
   width: 100%; height: 100%; box-sizing: border-box; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
   font: 13px/1.4 var(--font-ui); color: var(--ink); overflow: hidden;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .w-design-type-explorer { --ios-bg: #000000; --ios-label: #FFFFFF; --ios-label-2: rgba(235,235,245,.6); --ios-sep: rgba(84,84,88,.6); --ios-blue: #0A84FF; --ios-green: #30D158; --ios-orange: #FF9F0A; }
-}
-:root[data-theme="dark"] .w-design-type-explorer { --ios-bg: #000000; --ios-label: #FFFFFF; --ios-label-2: rgba(235,235,245,.6); --ios-sep: rgba(84,84,88,.6); --ios-blue: #0A84FF; --ios-green: #30D158; --ios-orange: #FF9F0A; }
 .w-design-type-explorer * { box-sizing: border-box; }
 .w-design-type-explorer .te-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; align-items: center; }
 .w-design-type-explorer .te-now { display: flex; flex-direction: column; min-width: 150px; }
@@ -118,12 +115,12 @@ export default {
 .w-design-type-explorer .te-seg { display: flex; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; background: var(--panel-2); width: 100%; }
 .w-design-type-explorer .te-seg button { padding: 4px 4px; font-size: 11px; }
 .w-design-type-explorer .te-label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); height: 22px; display: flex; align-items: center; }
-.w-design-type-explorer .te-phone { background: #1d1d1f; padding: 5px; border-radius: 26px; box-shadow: var(--shadow); flex: none; }
+${phoneFrameCss('.w-design-type-explorer', { frame: '.te-phone', island: '.te-island', radius: '26px', pad: '5px', islandTop: '5px', islandHeight: '3.6%' })}
+.w-design-type-explorer .te-phone { flex: none; }
 .w-design-type-explorer .te-screen { position: relative; width: 100%; height: 100%; border-radius: 21px; overflow: hidden; background: var(--ios-bg); color: var(--ios-label); font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; }
 .w-design-type-explorer .te-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
 .w-design-type-explorer .te-scroll::-webkit-scrollbar { display: none; }
 .w-design-type-explorer .te-scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: -3px; }
-.w-design-type-explorer .te-island { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); width: 31%; height: 3.6%; border-radius: 999px; background: #000; z-index: 2; }
 .w-design-type-explorer .te-status { display: flex; align-items: flex-end; font-weight: 600; }
 .w-design-type-explorer .te-title { font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
 .w-design-type-explorer .te-row { display: flex; align-items: center; border-bottom: 1px solid var(--ios-sep); }
@@ -150,8 +147,7 @@ export default {
 `,
   mount(el, props, ctx) {
     seq += 1;
-    const uid = seq === 1 ? '' : `-${seq}`;
-    const id = (f) => `${NAME}-${f}${uid}`;
+    const id = idScope(NAME, seq);
     el.classList.add('w-design-type-explorer');
 
     const state = { size: DEFAULT, bug: 'fixed', view: 'styles', k: 0.9, scale: 0.4, narrow: false };
@@ -305,28 +301,27 @@ export default {
       }
     }
 
-    const listeners = [];
-    const on = (t, ev, fn) => { t.addEventListener(ev, fn); listeners.push([t, ev, fn]); };
-    on(slider, 'input', () => { state.size = +slider.value; render(); });
-    on($('#' + id('bug-fixed')), 'click', () => { state.bug = 'fixed'; render(); });
-    on($('#' + id('bug-height')), 'click', () => { state.bug = 'height'; render(); });
+    const bag = listenerBag();
+    bag.on(slider, 'input', () => { state.size = +slider.value; render(); });
+    bag.on($('#' + id('bug-fixed')), 'click', () => { state.bug = 'fixed'; render(); });
+    bag.on($('#' + id('bug-height')), 'click', () => { state.bug = 'height'; render(); });
     const setView = (v) => {
       state.view = v;
       $('#' + id('tab-styles')).setAttribute('aria-pressed', String(v === 'styles'));
       $('#' + id('tab-phones')).setAttribute('aria-pressed', String(v === 'phones'));
       layout();
     };
-    on($('#' + id('tab-styles')), 'click', () => setView('styles'));
-    on($('#' + id('tab-phones')), 'click', () => setView('phones'));
+    bag.on($('#' + id('tab-styles')), 'click', () => setView('styles'));
+    bag.on($('#' + id('tab-phones')), 'click', () => setView('phones'));
 
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => layout()) : null;
-    if (ro) ro.observe(el); else on(window, 'resize', layout);
+    if (ro) ro.observe(el); else bag.on(window, 'resize', layout);
     render();
     layout();
 
     return {
       destroy() {
-        listeners.forEach(([t, ev, fn]) => t.removeEventListener(ev, fn));
+        bag.off();
         if (ro) ro.disconnect();
         el.innerHTML = '';
         el.classList.remove('w-design-type-explorer', 'te-narrow', 'te-show-phones');

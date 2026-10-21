@@ -1,4 +1,6 @@
-/* Layout: one-viewport Xcode-style workbench (outline rail | stage | inspector), Swift orange as the single brand accent. */
+/* Layout: one-viewport Xcode-style workbench (outline rail | stage | inspector), Swift orange as the single brand accent.
+   Contrast contract (checked by tests/unit/shell-fixes.test.js): every text/background pair below reaches WCAG AA 4.5:1 in both themes.
+   --accent is a filled surface for --on-accent text, so light mode uses a deeper Swift orange and dark mode puts dark ink on the bright one. */
 :root {
   --bg: #f2f3f6;
   --panel: #ffffff;
@@ -6,20 +8,23 @@
   --panel-3: #e2e5ea;
   --ink: #15171c;
   --ink-2: #474d59;
-  --ink-3: #6d7380;
+  --ink-3: #5e6472;
   --line: #d9dde4;
-  --accent: #f05138;
+  --accent: #cc3a1e;
+  --accent-hover: #b8331a;
   --accent-ink: #b9321c;
   --accent-soft: #fde6e1;
   --on-accent: #ffffff;
   --link: #0a6cdc;
   --focus: #0a84ff;
-  --ok: #1a7f45;
+  --ok: #13763d;
   --ok-soft: #dcf3e5;
-  --warn: #9a6200;
+  --on-ok: #ffffff;
+  --warn: #8a5700;
   --warn-soft: #fbefd5;
   --bad: #c8281c;
   --bad-soft: #fbe2df;
+  --on-bad: #ffffff;
   /* Xcode "Default (Light)" syntax colors */
   --code-bg: #ffffff;
   --code-gutter: #f6f7f9;
@@ -42,10 +47,10 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #111215; --panel: #1b1c21; --panel-2: #24252b; --panel-3: #2d2f36;
-    --ink: #eceef2; --ink-2: #b0b5bf; --ink-3: #868b96; --line: #30323a;
-    --accent: #f2603f; --accent-ink: #ff8d73; --accent-soft: #3a1f19; --on-accent: #ffffff;
+    --ink: #eceef2; --ink-2: #b0b5bf; --ink-3: #9a9fa9; --line: #30323a;
+    --accent: #f2603f; --accent-hover: #ff7554; --accent-ink: #ff8d73; --accent-soft: #3a1f19; --on-accent: #111215;
     --link: #5aa9ff; --focus: #3d9bff;
-    --ok: #4cd480; --ok-soft: #173325; --warn: #f5c451; --warn-soft: #3a2f12; --bad: #ff6b5e; --bad-soft: #3d1b18;
+    --ok: #4cd480; --ok-soft: #173325; --on-ok: #111215; --warn: #f5c451; --warn-soft: #3a2f12; --bad: #ff6b5e; --bad-soft: #3d1b18; --on-bad: #111215;
     --code-bg: #1f1f24; --code-gutter: #1a1a1f; --code-line: #2a2e3a;
     --kw: #fc5fa3; --str: #fc6a5d; --num: #d0bf69; --type: #5dd8ff; --cmt: #7f8c98; --fn: #67b7a4; --attr: #fd8f3f;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
@@ -54,10 +59,10 @@
 }
 :root[data-theme="dark"] {
   --bg: #111215; --panel: #1b1c21; --panel-2: #24252b; --panel-3: #2d2f36;
-  --ink: #eceef2; --ink-2: #b0b5bf; --ink-3: #868b96; --line: #30323a;
-  --accent: #f2603f; --accent-ink: #ff8d73; --accent-soft: #3a1f19; --on-accent: #ffffff;
+  --ink: #eceef2; --ink-2: #b0b5bf; --ink-3: #9a9fa9; --line: #30323a;
+  --accent: #f2603f; --accent-hover: #ff7554; --accent-ink: #ff8d73; --accent-soft: #3a1f19; --on-accent: #111215;
   --link: #5aa9ff; --focus: #3d9bff;
-  --ok: #4cd480; --ok-soft: #173325; --warn: #f5c451; --warn-soft: #3a2f12; --bad: #ff6b5e; --bad-soft: #3d1b18;
+  --ok: #4cd480; --ok-soft: #173325; --on-ok: #111215; --warn: #f5c451; --warn-soft: #3a2f12; --bad: #ff6b5e; --bad-soft: #3d1b18; --on-bad: #111215;
   --code-bg: #1f1f24; --code-gutter: #1a1a1f; --code-line: #2a2e3a;
   --kw: #fc5fa3; --str: #fc6a5d; --num: #d0bf69; --type: #5dd8ff; --cmt: #7f8c98; --fn: #67b7a4; --attr: #fd8f3f;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);

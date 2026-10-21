@@ -2,6 +2,8 @@
 // a running app, with Simulator/device and Debug/Release variants and three
 // classic problems that stop the build at the exact stage that catches them.
 
+import { esc, idScope, reducedMotionCss } from './services-kit.js';
+
 const NAME = 'ecosystem-build-pipeline';
 let mounted = 0;
 
@@ -94,8 +96,6 @@ const STAGES = [
   },
 ];
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-
 const CSS = `
 .w-${NAME} { container-type: inline-size; height: 100%; color: var(--ink); font-family: var(--font-ui); }
 .w-${NAME} * { box-sizing: border-box; }
@@ -156,15 +156,14 @@ const CSS = `
   .w-${NAME} .node { font-size: 10.5px; }
   .w-${NAME} .bp-controls select { flex: 1 1 100%; }
 }
-@media (prefers-reduced-motion: reduce) { .w-${NAME} *, .w-${NAME} *::before, .w-${NAME} *::after { transition: none !important; animation: none !important; } }
+${reducedMotionCss(`.w-${NAME}`)}
 `;
 
 export default {
   name: 'ecosystem-build-pipeline',
   css: CSS,
   mount(el, props = {}, ctx) {
-    const sfx = mounted++ ? `-${mounted}` : '';
-    const id = (s) => `${NAME}-${s}${sfx}`;
+    const id = idScope(NAME, ++mounted);
     el.classList.add(`w-${NAME}`);
     const icon = (n, s = 20) => (ctx && ctx.icon ? ctx.icon(n, s) : '');
     const reduced = !!ctx?.reducedMotion;

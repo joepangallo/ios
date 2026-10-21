@@ -5,9 +5,10 @@
 //  types-actor-race: two tasks increment a shared counter five times each,
 //    unprotected (lost updates) or through an actor (always 10).
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
 // Small Swift highlighter for the fixed snippets these widgets show.
+
+import { esc, idScope, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 function swiftHTML(line) {
   const parts = [];
   const re = /(\/\/.*$)|("[^"]*")|\b(func|let|var|async|await|actor|final|class|for|in|_)\b|\b(\d+(?:\.\d+)?)\b|\b(download|downloadSync|show|loadScreen|increment)\b|\b(Counter)\b/g;
@@ -32,7 +33,7 @@ const codeColors = (n) => `
 /* ------------------------------------------------------------------ */
 
 const TL = 'types-async-timeline';
-const TLID = (s) => `${TL}-${s}`;
+const TLID = idScope(TL);
 const AXIS = 4;
 
 const MODES = {
@@ -178,14 +179,12 @@ ${codeColors(TL)}
 .w-${TL} .tl-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .w-${TL} .tl-legend i { display: inline-block; width: 18px; height: 10px; border-radius: 3px; }
 
-.w-${TL} .tl-phone { grid-area: phone; align-self: start; --ios-bg: #F2F2F7; --ios-card: #FFFFFF; --ios-label: #000000; --ios-sec: #8E8E93;
-  --ios-blue: #007AFF; --ios-red: #FF3B30; --ios-sep: #E5E5EA;
-  width: 184px; height: 300px; padding: 7px; border-radius: 30px; background: #1C1C1E; box-shadow: var(--shadow); }
-.w-${TL} .tl-phone.dark { --ios-bg: #000000; --ios-card: #1C1C1E; --ios-label: #FFFFFF; --ios-blue: #0A84FF; --ios-red: #FF453A;
-  --ios-sep: #38383A; background: #3A3A3C; }
+${iosThemeCss(`.w-${TL} .tl-phone`, { darkSelector: `.w-${TL} .tl-phone.dark`, light: { 'ios-bg': '#F2F2F7', 'ios-sec': '#8E8E93', 'ios-sep': '#E5E5EA' }, dark: { 'ios-sec': '#8E8E93', 'ios-sep': '#38383A' } })}
+${phoneFrameCss(`.w-${TL}`, { frame: '.tl-phone', island: '.tl-island', islandWidth: '52px', islandHeight: '14px' })}
+.w-${TL} .tl-phone { grid-area: phone; align-self: start; width: 184px; height: 300px; }
+.w-${TL} .tl-phone.dark { background: #3A3A3C; }
 .w-${TL} .tl-screen { position: relative; height: 100%; border-radius: 24px; background: var(--ios-bg); color: var(--ios-label);
   font-family: -apple-system, system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 30px 10px 12px; gap: 10px; overflow: hidden; }
-.w-${TL} .tl-island { position: absolute; top: 7px; left: 50%; width: 52px; height: 14px; margin-left: -26px; border-radius: 999px; background: #000; }
 .w-${TL} .tl-ptitle { align-self: stretch; font-size: 17px; font-weight: 700; }
 .w-${TL} .tl-pbody { flex: 1; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
   font-size: 11px; color: var(--ios-sec); text-align: center; }

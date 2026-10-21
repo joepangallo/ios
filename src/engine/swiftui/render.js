@@ -1,9 +1,22 @@
 // Resolves a SwiftUI view value into a tree of primitive nodes (running each
 // view's `body` with its persistent @State attached), then renders that tree
 // to DOM that looks and behaves like an iOS 26 screen.
-import { Dbl, NIL, Opt, SArray, SStruct, SObject, SEnum, SFunc, SImplicit, SBinding, StateBox, SKeyPath, describe, equals, numVal, hashKey, copyValue } from '../values.js';
-import { ViewNode, flatten, runSync } from './views.js';
+import { Dbl, NIL, Opt, SArray, SStruct, SObject, SEnum, SFunc, SImplicit, SBinding, StateBox, SKeyPath, FixedInt, describe, strOf, equals, numVal, hashKey, copyValue, fitsFixedInt, typeNameOf } from '../values.js';
+import { ViewNode, EnvBox, flatten, flattenAll, slotted, runSync, caseName, shortKey, MAX_VIEW_NODES, MAX_TEXT_CHARS, tooManyViews } from './views.js';
+export { MAX_VIEW_NODES, MAX_TEXT_CHARS };
 import { icon } from '../../app/icons.js';
+
+// The number a field, slider or stepper writes back keeps the bound value's
+// type: Double, Float and CGFloat stay themselves, a fixed-width integer keeps
+// its width, an Int stays an Int. Undefined when the number does not fit.
+function numberLike(old, n) {
+  if (old instanceof Opt) { const v = numberLike(old.v, n); return v === undefined ? undefined : new Opt(v); }
+  if (old instanceof Dbl) return new old.constructor(n);
+  if (old === NIL || old === undefined) return Number.isInteger(n) ? n : new Dbl(n);
+  const whole = Math.trunc(n);
+  if (old instanceof FixedInt) return fitsFixedInt(whole, old.name) ? new FixedInt(BigInt(whole), old.name) : undefined;
+  return Number.isSafeInteger(whole) ? whole : undefined;
+}
 
 // ------------------------------------------------------------------ fonts & colors
 export const TEXT_STYLES = {
@@ -21,7 +34,7 @@ const SYS_COLORS = {
   systemBackground: ['var(--bg)', 'var(--bg)'], secondarySystemBackground: ['var(--bg2)', 'var(--bg2)'], systemGroupedBackground: ['var(--grouped)', 'var(--grouped)'],
   systemGray6: ['#F2F2F7', '#1C1C1E'], systemGray5: ['#E5E5EA', '#2C2C2E'], systemGray4: ['#D1D1D6', '#3A3A3C'], systemGray: ['#8E8E93', '#8E8E93'],
 };
-export function cssColor(v, scheme = 'light') {
+export function cssColor(v, scheme = 'light', warn = null) {
   if (v === undefined || v === null) return null;
   const d = scheme === 'dark' ? 1 : 0;
   if (v instanceof SImplicit) {
@@ -29,11 +42,12 @@ export function cssColor(v, scheme = 'light') {
     return SYS_COLORS[v.name] ? SYS_COLORS[v.name][d] : null;
   }
   if (v instanceof ViewNode && v.kind === 'Color') {
+    chargeWork(v.mods.length);
     let base = colorSpec(v.props.color, d);
     for (const m of v.mods) if (m.name === 'opacity') base = withAlpha(base, numVal(m.args[0].value));
     return base;
   }
-  if (v instanceof ViewNode && v.kind === 'Gradient') return gradientCss(v, scheme);
+  if (v instanceof ViewNode && v.kind === 'Gradient') return gradientCss(v, scheme, warn);
   return null;
 }
 function colorSpec(c, d) {
@@ -47,13 +61,27 @@ function withAlpha(c, a) {
   if (c.startsWith('var(')) return `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transparent)`;
   return c;
 }
-function gradientCss(g, scheme) {
+// A gradient draws at most this many color stops and a lazy grid lays out at
+// most this many tracks; the rest are dropped with a runtime warning, so a
+// shared 10,000-stop array costs the same small CSS in every view that uses it.
+export const MAX_GRADIENT_STOPS = 64;
+export const MAX_GRID_TRACKS = 64;
+function gradientCss(g, scheme, warn) {
   const dir = { top: 'to bottom', bottom: 'to top', leading: 'to right', trailing: 'to left', topLeading: 'to bottom right', bottomTrailing: 'to top left', topTrailing: 'to bottom left', bottomLeading: 'to top right' }[g.props.start] || 'to bottom';
-  const stops = g.props.colors.map((c) => cssColor(c, scheme) || '#888');
+  const all = g.props.colors;
+  if (all.length > MAX_GRADIENT_STOPS && warn) warn(`${g.props.kind || 'Gradient'} with ${all.length.toLocaleString('en-US')} color stops: the preview draws the first ${MAX_GRADIENT_STOPS}`);
+  const shown = all.length > MAX_GRADIENT_STOPS ? all.slice(0, MAX_GRADIENT_STOPS) : all;
+  chargeWork(shown.length);
+  const stops = shown.map((c) => cssColor(c, scheme, warn) || '#888');
   return `linear-gradient(${dir}, ${stops.join(', ')})`;
 }
 
 // ------------------------------------------------------------------ resolve
+// Modifiers that set an environment value for the subtree (see envMod). An
+// .onSubmit is one too: a field runs its own handler, then each ancestor's.
+const ENV_VALUE_MODS = new Set(['environment', 'environmentObject', 'disabled', 'buttonStyle', 'controlSize', 'listStyle', 'pickerStyle', 'textFieldStyle', 'labelStyle', 'toggleStyle', 'onSubmit']);
+const APPEARANCE_HOOKS = new Set(['onAppear', 'onDisappear', 'task']);
+
 export class Resolver {
   constructor(ctl, interp, host) {
     this.ctl = ctl;
@@ -62,12 +90,32 @@ export class Resolver {
     this.overlays = [];
     this.lifecycle = [];
     this.inspector = [];
+    this.changeSeq = new Map();
+    this.nodes = 0;
   }
 
-  attachState(view, path) {
+  // Every resolved view costs an interpreter step and counts toward the cap.
+  countNode(line) {
+    this.interp.chargeBulk(1, line);
+    if (++this.nodes > MAX_VIEW_NODES) throw tooManyViews(this.interp, line);
+  }
+
+  // Modifiers become DOM wrappers (every .padding is an element), so each one
+  // counts toward the view cap like a view, all of them before any is applied.
+  countMods(n, line) {
+    this.nodes += n;
+    if (this.nodes > MAX_VIEW_NODES) throw tooManyViews(this.interp, line);
+    this.interp.chargeBulk(n, line);
+  }
+
+  // State identity is the view's position plus its type: `if a { A() } else { B() }`
+  // must not hand B the state A left behind in the same slot.
+  attachState(view, path, env) {
+    const base = path + '>' + this.host.typeSegment(view.type.name) + '.';
     for (const [k, v] of view.fields) {
+      if (v instanceof EnvBox) { v.envAt = env; continue; }
       if (v instanceof StateBox && v.stateName && !v.env && !v.appStorage) {
-        const key = path + '.' + k;
+        const key = base + k;
         const stored = this.ctl.state.get(key);
         if (stored) view.fields.set(k, stored);
         else { this.ctl.state.set(key, v); v.onSet = () => this.ctl.invalidate(); }
@@ -90,23 +138,32 @@ export class Resolver {
     if (view === undefined || view === null) return null;
     if (view instanceof SStruct) {
       if (!this.host.isView(view)) throw this.interp.compileError(`type '${view.type.name}' does not conform to protocol 'View'`, this.interp.line);
-      this.attachState(view, path);
+      this.countNode(view.type.decl?.line);
+      this.attachState(view, path, env);
       const body = this.evalBody(view, env);
-      const r = this.resolve(body, path + '>' + view.type.name, env);
+      const r = this.resolve(body, path + '>' + this.host.typeSegment(view.type.name), env);
       if (r) { r.userViews = [...(r.userViews || []), view.type.name]; }
       return r;
     }
     if (view instanceof SObject) throw this.interp.compileError(`type '${view.type.name}' cannot be shown as a view`, this.interp.line);
     if (!(view instanceof ViewNode)) {
-      if (typeof view === 'string') return this.resolve(new ViewNode('Text', { text: view }), path, env);
+      if (strOf(view) !== null) return this.resolve(new ViewNode('Text', { text: strOf(view) }), path, env);
       return null;
     }
-    // environment-affecting modifiers apply to the whole subtree
+    this.countNode(view.props.line);
+    if (view.mods.length) this.countMods(view.mods.length, view.props.line);
+    // environment-affecting modifiers apply to the whole subtree. For an
+    // environment value the modifier closest to the view wins, as in SwiftUI
+    // (`.environment(\.colorScheme, .dark).environment(\.colorScheme, .light)`
+    // reads dark), so those apply outermost first; the rest keep source order.
     let childEnv = env;
-    for (const m of view.mods) childEnv = this.envMod(m, childEnv, path);
+    for (let i = view.mods.length - 1; i >= 0; i--) if (ENV_VALUE_MODS.has(view.mods[i].name)) childEnv = this.envMod(view.mods[i], childEnv, path);
+    for (const m of view.mods) if (!ENV_VALUE_MODS.has(m.name)) childEnv = this.envMod(m, childEnv, path);
     if (view.kind === 'User') {
       const inner = this.resolve(view.props.view, path, childEnv);
       if (!inner) return null;
+      // a ForEach row that is a custom view keeps its row key, so DOM morphing matches it by identity
+      if (view.key !== undefined) inner.key = view.key;
       return this.withMods(inner, view.mods, path, childEnv);
     }
     const r = { t: view.kind, p: { ...view.props }, c: [], mods: [], path, key: view.key, line: view.props.line, env: childEnv };
@@ -116,7 +173,8 @@ export class Resolver {
 
   withMods(r, mods, path, env) {
     if (!mods.length) return r;
-    const out = r.mods.length ? { t: 'Wrap', p: {}, c: [r], mods: [], path: r.path + '~', env } : r;
+    if (r.mods.length) this.countNode(r.line);
+    const out = r.mods.length ? { t: 'Wrap', p: {}, c: [r], mods: [], path: r.path + '~', env, key: r.key } : r;
     for (const m of mods) this.applyResolveMod(m, out, path, env);
     return out;
   }
@@ -129,12 +187,21 @@ export class Resolver {
         if (m.args.length === 2 && a0 instanceof SKeyPath) {
           const key = a0.path.join('.');
           const v = m.args[1].value;
-          if (key === 'colorScheme') return { ...env, colorScheme: v instanceof SImplicit ? v.name : env.colorScheme };
-          if (key === 'dynamicTypeSize') return { ...env, dynamicTypeSize: v instanceof SImplicit ? v.name : env.dynamicTypeSize };
+          if (key === 'colorScheme') return { ...env, colorScheme: caseName(v) || env.colorScheme };
+          if (key === 'dynamicTypeSize') return { ...env, dynamicTypeSize: caseName(v) || env.dynamicTypeSize };
+          if (key === 'isEnabled' && typeof v === 'boolean') return { ...env, disabled: !v };
         }
         return env;
       }
-      case 'preferredColorScheme': if (a0 instanceof Opt ? a0.v instanceof SImplicit : a0 instanceof SImplicit) this.ctl.preferredScheme = (a0 instanceof Opt ? a0.v : a0).name; return env;
+      case 'onSubmit': {
+        const fn = m.args.find((a) => a.value instanceof SFunc);
+        if (!fn) return env;
+        const of = m.args.find((a) => a.label === 'of');
+        const key = of && caseName(of.value) === 'search' ? 'searchSubmit' : 'submit';
+        return { ...env, [key]: [fn.value, ...(env[key] || [])] };
+      }
+      case 'environmentObject': if (a0 instanceof SObject) return { ...env, envObjects: { ...(env.envObjects || {}), [a0.type.name]: a0 } }; return env;
+      case 'preferredColorScheme': { const s = caseName(a0 instanceof Opt ? a0.v : a0); if (s) this.ctl.preferredScheme = s; return env; }
       case 'disabled': return { ...env, disabled: env.disabled || a0 === true };
       case 'buttonStyle': return { ...env, buttonStyle: a0 instanceof SImplicit ? a0.name : 'automatic' };
       case 'controlSize': return { ...env, controlSize: a0 instanceof SImplicit ? a0.name : env.controlSize };
@@ -149,7 +216,7 @@ export class Resolver {
           const isPresented = m.args.find((a) => a.label === 'isPresented');
           const fn = m.args.find((a) => a.value instanceof SFunc && a.lazy !== undefined || a.value instanceof SFunc);
           if (forType) env.nav.destinations.push({ type: forType.value, fn: fn.value });
-          if (isPresented && isPresented.value instanceof SBinding && isPresented.value.get() === true) env.nav.flagPush = { fn: fn.value, binding: isPresented.value };
+          if (isPresented && isPresented.value instanceof SBinding && isPresented.value.get() === true) env.nav.flagPushes.push({ fn: fn.value, binding: isPresented.value });
         }
         return env;
       }
@@ -162,22 +229,24 @@ export class Resolver {
     const a0 = args[0] ? args[0].value : undefined;
     const lab = (l) => { const a = args.find((x) => x.label === l); return a ? a.value : undefined; };
     switch (m.name) {
-      case 'navigationTitle': if (env.screen) env.screen.title = typeof a0 === 'string' ? a0 : a0 instanceof ViewNode ? a0.props.text : describe(a0); return;
+      case 'navigationTitle': if (env.screen) env.screen.title = a0 instanceof ViewNode ? a0.props.text : this.host.describeBounded(a0); return;
       case 'navigationBarTitleDisplayMode': if (env.screen) env.screen.mode = a0 instanceof SImplicit ? a0.name : 'automatic'; return;
       case 'toolbar': {
         if (env.screen && a0 !== undefined) {
-          const items = flatten(a0);
-          for (const it of items) {
+          // keyed by structural slot, so an item after a hidden `if` keeps its state
+          const items = slotted([a0]).filter(({ view }) => !(view instanceof ViewNode && view.kind === 'EmptyView'));
+          for (const { view: it, key } of items) {
+            const base = path + '#tb' + key;
             if (it instanceof ViewNode && it.kind === 'ToolbarItem') {
-              env.screen.toolbar.push({ placement: it.props.placement, views: it.children.map((c, i) => this.resolve(c, path + '#tb' + env.screen.toolbar.length + '/' + i, env)) });
+              env.screen.toolbar.push({ placement: it.props.placement, views: it.children.map((c, i) => this.resolve(c, base + '/' + i, env)) });
             } else {
-              env.screen.toolbar.push({ placement: 'automatic', views: [this.resolve(it, path + '#tb' + env.screen.toolbar.length, env)] });
+              env.screen.toolbar.push({ placement: 'automatic', views: [this.resolve(it, base, env)] });
             }
           }
         }
         return;
       }
-      case 'searchable': if (env.screen) env.screen.search = { binding: lab('text'), prompt: lab('prompt') }; return;
+      case 'searchable': if (env.screen) env.screen.search = { binding: lab('text'), prompt: lab('prompt'), submit: env.searchSubmit || null }; return;
       case 'tabItem': r.tabItem = a0; return;
       case 'sheet': case 'fullScreenCover': case 'popover': {
         const isPresented = lab('isPresented');
@@ -185,18 +254,22 @@ export class Resolver {
         const fn = args.find((x) => x.value instanceof SFunc && !x.label || x.label === 'content');
         if (!fn) return;
         const onDismiss = lab('onDismiss');
+        // onDismiss runs when the presentation ends, however it ends (the
+        // preview compares what each render presents: PreviewController.trackPresentations)
+        const kind = m.name === 'fullScreenCover' ? 'cover' : 'sheet';
         if (isPresented instanceof SBinding && isPresented.get() === true) {
-          this.overlays.push({ kind: m.name === 'fullScreenCover' ? 'cover' : 'sheet', path: path + '#sheet', fn: fn.value, params: [], dismiss: () => { isPresented.set(false); if (onDismiss) this.ctl.runAction(onDismiss); }, env });
+          this.overlays.push({ kind, path: path + '#sheet', fn: fn.value, params: [], dismiss: () => isPresented.set(false), onDismiss, env });
         } else if (item instanceof SBinding) {
           const v = item.get();
-          if (v instanceof Opt) this.overlays.push({ kind: 'sheet', path: path + '#sheet:' + hashKey(v.v), fn: fn.value, params: [v.v], dismiss: () => item.set(NIL), env });
+          // keyed by the item's id, so editing other fields keeps the sheet's @State
+          if (v instanceof Opt) this.overlays.push({ kind, path: path + '#sheet:' + shortKey(hashKey(runSync(this.interp, this.host.identity(v.v, m.line)))), fn: fn.value, params: [v.v], dismiss: () => item.set(NIL), onDismiss, env });
         }
         return;
       }
       case 'alert': {
         const isPresented = lab('isPresented');
         if (!(isPresented instanceof SBinding) || isPresented.get() !== true) return;
-        const title = typeof a0 === 'string' ? a0 : a0 instanceof ViewNode ? a0.props.text : 'Alert';
+        const title = strOf(a0) ?? (a0 instanceof ViewNode ? a0.props.text : 'Alert');
         const actions = args.find((x) => x.value instanceof SFunc && (!x.label || x.label === 'actions'));
         const message = args.find((x) => x.label === 'message');
         this.overlays.push({ kind: 'alert', path: path + '#alert', title, actionsFn: actions ? actions.value : null, messageFn: message ? message.value : null, dismiss: () => isPresented.set(false), env });
@@ -204,31 +277,70 @@ export class Resolver {
       }
       case 'onAppear': case 'task': case 'onDisappear': {
         const fn = args.find((x) => x.value instanceof SFunc);
-        if (fn) this.lifecycle.push({ kind: m.name, path: path + '@' + m.name + (r.key ? ':' + r.key : ''), fn: fn.value, id: lab('id') });
+        if (!fn) return;
+        // each modifier has its own key (source line, then occurrence), so two
+        // .onAppear or .task on one view both run
+        const base = `${path}@${m.name}${r.key ? ':' + r.key : ''}:${m.line || 0}`;
+        const n = this.changeSeq.get(base) || 0;
+        this.changeSeq.set(base, n + 1);
+        this.lifecycle.push({ kind: m.name, path: n ? `${base}#${n}` : base, fn: fn.value, id: lab('id') });
         return;
       }
       case 'onChange': {
         const fn = args.find((x) => x.value instanceof SFunc);
-        if (fn) this.lifecycle.push({ kind: 'onChange', path: path + '@onChange' + this.lifecycle.length, fn: fn.value, value: lab('of'), initial: lab('initial') === true });
+        if (!fn) return;
+        // keyed by view path and source line (not list position), so a sibling that
+        // conditionally adds a hook does not shift which previous value this one compares against
+        const base = `${path}@onChange:${m.line || 0}`;
+        const n = this.changeSeq.get(base) || 0;
+        this.changeSeq.set(base, n + 1);
+        this.lifecycle.push({ kind: 'onChange', path: n ? `${base}#${n}` : base, fn: fn.value, value: lab('of'), initial: lab('initial') === true });
         return;
       }
       case 'onDelete': r.onDelete = args.find((x) => x.value instanceof SFunc)?.value; return;
+      case 'overlay': case 'background': {
+        // Layer content is resolved now, with this resolver, so its lifecycle hooks,
+        // sheets, alerts and @State are tracked like any other view; mod() only renders it.
+        const content = m.name === 'overlay' ? (args.find((x) => x.label !== 'alignment')?.value ?? a0) : a0;
+        const layer = content instanceof ViewNode || content instanceof SStruct ? this.resolve(content, `${path}#${m.name}${r.mods.length}`, env) : null;
+        r.mods.push({ ...m, layer });
+        return;
+      }
       case 'environment': case 'preferredColorScheme': case 'disabled': case 'buttonStyle': case 'controlSize': case 'listStyle':
       case 'pickerStyle': case 'textFieldStyle': case 'labelStyle': case 'navigationDestination': case 'toggleStyle':
         if (m.name === 'disabled') r.mods.push(m);
         return;
       case 'tag': r.tag = a0; r.mods.push(m); return;
-      case 'swipeActions': r.swipe = args.find((x) => x.value instanceof SFunc)?.value; return;
+      case 'swipeActions': {
+        const fn = args.find((x) => x.value instanceof SFunc)?.value;
+        if (!fn) return;
+        const views = slotted([runSync(this.interp, this.host.buildContent(fn, m.line || this.interp.line))]);
+        const rows = views.map(({ view, key }) => this.resolve(view, `${path}#swipe${key}`, env)).filter(Boolean);
+        for (const rr of rows) { let x = rr; while (x.t === 'Wrap' && x.c[0]) x = x.c[0]; x.p.variant = 'swipe'; }
+        r.swipe = rows.length ? rows : null;
+        return;
+      }
       case 'id': return;
       default:
         r.mods.push(m);
     }
   }
 
+  // The children of an `if` take one slot, named by the branch taken, so the
+  // siblings after it keep their identity and the other branch never sees its state.
+  spliceConditional(cond, base, env, out) {
+    const kids = cond.mods.length ? cond.children.map((c) => addMods(c, cond.mods)) : cond.children;
+    out.push(...this.resolveChildren(kids, base, env));
+  }
+
   resolveChildren(children, path, env) {
     const out = [];
     let i = 0;
     for (const ch of children) {
+      if (ch instanceof ViewNode && ch.kind === 'Conditional' && !ch.key) {
+        this.spliceConditional(ch, `${path}/${i++}?${ch.props.branch}`, env, out);
+        continue;
+      }
       const list = ch instanceof ViewNode && ch.kind === 'ForEach' && !ch.mods.length ? null : [ch];
       if (!list) {
         // ForEach expands into its rows; each row's identity includes the ForEach's position
@@ -252,8 +364,8 @@ export class Resolver {
       if (ch instanceof ViewNode && ch.kind === 'Group' && !ch.key) {
         // Group: modifiers apply to each child
         for (const g of ch.children.flatMap(flatten)) {
-          const gv = g instanceof ViewNode ? new ViewNode(g.kind, g.props, g.children, [...g.mods, ...ch.mods]) : (ch.mods.length ? new ViewNode('User', { view: g }, [], ch.mods) : g);
-          if (g instanceof ViewNode && g.key) gv.key = g.key;
+          const gv = addMods(g, ch.mods);
+          if (gv instanceof ViewNode && gv.kind === 'Conditional' && !gv.key) { this.spliceConditional(gv, `${path}/${i++}?${gv.props.branch}`, env, out); continue; }
           const r = this.resolve(gv, path + '/' + (g.key ?? i++), env);
           if (r) out.push(r);
         }
@@ -261,7 +373,7 @@ export class Resolver {
       }
       // .id(x) gives a view an explicit identity: a new id means a new view with fresh state
       const idMod = ch instanceof ViewNode ? ch.mods.find((m) => m.name === 'id') : null;
-      const seg = ch && ch.key !== undefined ? ch.key : idMod ? `${i}#${hashKey(idMod.args[0].value)}` : i;
+      const seg = ch && ch.key !== undefined ? ch.key : idMod ? `${i}#${shortKey(hashKey(idMod.args[0].value))}` : i;
       const r = this.resolve(ch, path + '/' + seg, env);
       i++;
       if (r) out.push(r);
@@ -276,7 +388,17 @@ export class Resolver {
       case 'ProgressView': case 'TextField': case 'SecureField': case 'TextEditor': case 'Slider':
         r.p.disabled = !!env.disabled;
         r.p.textFieldStyle = env.textFieldStyle;
+        r.p.submit = env.submit || null;
         r.p.listStyleCtx = env.inList;
+        if (view.props.labelView) r.labelR = this.resolve(view.props.labelView, path + '/label', env);
+        return;
+      case 'LabeledContent':
+        if (view.props.labelView) r.labelR = this.resolve(view.props.labelView, path + '/label', env);
+        r.c = this.resolveChildren(view.children, path, env);
+        return;
+      case 'Conditional':
+        // reached only when the `if` is a view's whole body or a keyed ForEach row
+        r.c = this.resolveChildren(view.children, `${path}?${view.props.branch}`, env);
         return;
       case 'Label': {
         if (view.props.titleView) r.c = this.resolveChildren(flatten(view.props.titleView), path + '/title', env);
@@ -287,7 +409,7 @@ export class Resolver {
       }
       case 'Button': {
         r.c = this.resolveChildren(view.children, path, { ...env, inButton: true });
-        r.p.style = env.buttonStyle || 'automatic';
+        r.p.variant = env.buttonStyle || 'automatic';
         r.p.size = env.controlSize || 'regular';
         r.p.disabled = !!env.disabled;
         r.p.inList = !!env.inList;
@@ -301,12 +423,12 @@ export class Resolver {
         return;
       case 'Picker':
         r.c = this.resolveChildren(view.children, path, env);
-        r.p.style = env.pickerStyle || (env.inList ? 'menu' : 'menu');
+        r.p.variant = env.pickerStyle || (env.inList ? 'menu' : 'menu');
         r.p.disabled = !!env.disabled;
         return;
       case 'List': case 'Form': {
         const listEnv = { ...env, inList: view.kind === 'Form' ? 'form' : (env.listStyle || 'insetGrouped') };
-        r.p.style = view.kind === 'Form' ? 'insetGrouped' : (env.listStyle || 'insetGrouped');
+        r.p.variant = view.kind === 'Form' ? 'insetGrouped' : (env.listStyle || 'insetGrouped');
         r.c = this.resolveChildren(view.children, path, listEnv);
         return;
       }
@@ -323,6 +445,7 @@ export class Resolver {
         r.c = this.resolveChildren(view.children, path, { ...env, inButton: true });
         r.p.inList = !!env.inList;
         r.p.nav = env.nav || null;
+        r.p.disabled = !!env.disabled;
         return;
       }
       case 'ContentUnavailableView': {
@@ -343,42 +466,70 @@ export class Resolver {
     const P = r.path;
     const st = this.ctl.navState(P);
     const pathBinding = view.props.path instanceof SBinding ? view.props.path : null;
-    const nav = { stackPath: P, destinations: [], push: null, pop: null };
+    const nav = { stackPath: P, destinations: [], flagPushes: [], push: null, pop: null };
     const makeScreen = () => ({ title: '', mode: 'automatic', toolbar: [], search: null });
     // root screen
     const rootScreen = makeScreen();
-    const rootEnv = { ...env, nav, screen: rootScreen, dismiss: null };
+    // the root screen dismisses whatever presented the stack (a sheet), if anything
+    const rootEnv = { ...env, nav, screen: rootScreen, dismiss: env.dismiss || null };
+    // Only the top screen is on screen: covered screens keep their state but not
+    // their .onAppear/.onDisappear/.task hooks (each screen's hooks are a range of this.lifecycle).
+    const hookRanges = [];
+    let hooksFrom = this.lifecycle.length;
     const rootContent = this.resolveChildren(view.children, P + '/root', rootEnv);
+    hookRanges.push([hooksFrom, this.lifecycle.length]);
     const screens = [{ screen: rootScreen, content: rootContent, path: P + '/root' }];
-    // pushed entries come from the path binding or our own stack
+    // Pushed entries come from the path binding or our own stack. With a bound
+    // path, a destination link (NavigationLink { Destination() }) pushes a view
+    // that is not a value of the path, as in SwiftUI: it is kept in our stack
+    // with the path length it was pushed at, shown above the path's screens up
+    // to that point, and dropped once the path shrinks below it.
     let entries;
+    const boundItems = () => { const arr = pathBinding.get(); return arr instanceof SArray ? arr.items : arr && arr.items ? arr.items : []; };
     if (pathBinding) {
-      const arr = pathBinding.get();
-      entries = (arr instanceof SArray ? arr.items : arr && arr.items ? arr.items : []).map((v) => ({ value: v }));
+      const bound = boundItems();
+      st.stack = st.stack.filter((e) => e.base <= bound.length);
+      entries = [];
+      for (let k = 0; k <= bound.length; k++) {
+        for (const e of st.stack) if (e.base === k) entries.push(e);
+        if (k < bound.length) entries.push({ value: bound[k], bound: true });
+      }
     } else entries = st.stack;
     nav.push = (entry) => {
       if (pathBinding && entry.value !== undefined) {
         const arr = pathBinding.get();
         const copy = new SArray([...(arr.items || []), entry.value], arr.elemType);
         pathBinding.set(copy);
-      } else st.stack.push(entry);
+      } else st.stack.push(pathBinding ? { ...entry, base: boundItems().length } : entry);
       this.ctl.navAnim = 'push';
       this.ctl.invalidate();
     };
+    // Pops to `toDepth` screens above the root (the top one when null).
     nav.pop = (toDepth = null) => {
+      const keep = toDepth === null ? Math.max(0, entries.length - 1) : toDepth;
       if (pathBinding) {
+        const kept = entries.slice(0, keep);
+        st.stack = st.stack.filter((e) => kept.includes(e));
+        const boundKept = kept.filter((e) => e.bound).length;
         const arr = pathBinding.get();
-        const copy = new SArray(arr.items.slice(0, toDepth === null ? -1 : toDepth), arr.elemType);
-        pathBinding.set(copy);
-      } else if (toDepth === null) st.stack.pop(); else st.stack.length = toDepth;
+        if (boundKept !== boundItems().length) pathBinding.set(new SArray(arr.items.slice(0, boundKept), arr.elemType));
+      } else st.stack.length = Math.min(st.stack.length, keep);
       this.ctl.navAnim = 'pop';
       this.ctl.invalidate();
     };
-    if (rootEnv.nav.flagPush) entries = [...entries, { fn: rootEnv.nav.flagPush.fn, flag: rootEnv.nav.flagPush.binding }];
-    entries.forEach((entry, depth) => {
+    // A presented navigationDestination(isPresented:) pushes above the screen that
+    // declares it, so one inside another Boolean destination pushes on top of it.
+    const flagEntries = () => nav.flagPushes.splice(0).map((f) => ({ fn: f.fn, flag: f.binding }));
+    entries = [...entries, ...flagEntries()];
+    for (let depth = 0; depth < entries.length; depth++) {
+      const entry = entries[depth];
       const screen = makeScreen();
-      const sp = P + '/push' + depth + ':' + (entry.value !== undefined ? hashKey(entry.value) : entry.id || depth);
-      const dismiss = () => { if (entry.flag) entry.flag.set(false); else nav.pop(depth); };
+      const sp = P + '/push' + depth + ':' + (entry.value !== undefined ? shortKey(hashKey(entry.value)) : entry.id || depth);
+      // Popping a screen pops everything above it; a Boolean destination among them is set to false.
+      const dismiss = () => {
+        for (const e of entries.slice(depth)) if (e.flag) e.flag.set(false);
+        nav.pop(depth);
+      };
       const senv = { ...env, nav, screen, dismiss };
       let content = [];
       let viewValue = null;
@@ -389,10 +540,16 @@ export class Resolver {
         if (dest) viewValue = runSync(this.interp, this.host.buildContent(dest.fn, this.interp.line, [entry.value]));
         else viewValue = new ViewNode('Text', { text: `No navigationDestination for this value` });
       }
+      hooksFrom = this.lifecycle.length;
       this.host.envStack.push(senv);
       try { content = this.resolveChildren(flatten(viewValue), sp, senv); } finally { this.host.envStack.pop(); }
+      hookRanges.push([hooksFrom, this.lifecycle.length]);
       screens.push({ screen, content, path: sp, dismiss });
-    });
+      entries.push(...flagEntries());
+    }
+    const covered = new Set();
+    hookRanges.slice(0, -1).forEach(([a, b]) => { for (let i = a; i < b; i++) if (APPEARANCE_HOOKS.has(this.lifecycle[i].kind)) covered.add(i); });
+    if (covered.size) this.lifecycle = this.lifecycle.filter((_, i) => !covered.has(i));
     r.screens = screens;
     r.nav = nav;
   }
@@ -400,22 +557,20 @@ export class Resolver {
   valueMatchesType(v, t) {
     const name = t && t.name;
     if (!name) return true;
-    if (name === 'Int') return typeof v === 'number';
-    if (name === 'String') return typeof v === 'string';
-    if (name === 'Double') return v instanceof Dbl;
-    if (v && v.type) return v.type.name === name;
-    return false;
+    return typeNameOf(v) === name;
   }
 
   resolveTabs(view, r, env) {
     const P = r.path;
     const sel = view.props.selection instanceof SBinding ? view.props.selection : null;
     const tabs = [];
-    const kids = view.children.flatMap(flatten);
-    kids.forEach((k, i) => {
+    const kids = slotted(view.children).filter(({ view: k }) => !(k instanceof ViewNode && k.kind === 'EmptyView'));
+    kids.forEach(({ view: k, key }, i) => {
+      // a tab's content is keyed by its structural slot (and the `if` branch it came through)
+      const seg = '/tab' + key;
       if (k instanceof ViewNode && k.kind === 'Tab') {
         const badge = k.mods.find((m) => m.name === 'badge');
-        tabs.push({ title: k.props.title, icon: k.props.icon, value: k.props.value !== undefined ? k.props.value : i, node: new ViewNode('Group', {}, k.children), mods: k.mods.filter((m) => m.name !== 'badge'), role: k.props.role, badge: badge ? badge.args[0].value : null });
+        tabs.push({ seg, title: k.props.title, icon: k.props.icon, value: k.props.value !== undefined ? k.props.value : i, node: new ViewNode('Group', {}, k.children), mods: k.mods.filter((m) => m.name !== 'badge'), role: k.props.role, badge: badge ? badge.args[0].value : null });
       } else {
         // view with .tabItem { Label(...) } and .tag(x)
         let tabItem = null, tag = i;
@@ -425,14 +580,14 @@ export class Resolver {
           if (m.name === 'tag') tag = m.args[0].value;
         }
         let title = '', ic = null;
-        const items = flatten(tabItem);
+        const items = flattenAll(tabItem);
         for (const it of items) {
           if (it instanceof ViewNode && it.kind === 'Label') { title = it.props.title; ic = it.props.icon; }
           if (it instanceof ViewNode && it.kind === 'Text') title = it.props.text;
           if (it instanceof ViewNode && it.kind === 'Image') ic = it.props.system;
         }
         const stripped = k instanceof ViewNode ? new ViewNode(k.kind, k.props, k.children, k.mods.filter((m) => m.name !== 'tabItem' && m.name !== 'tag')) : k;
-        tabs.push({ title, icon: ic, value: tag, node: stripped });
+        tabs.push({ seg, title, icon: ic, value: tag, node: stripped });
       }
     });
     let selected = 0;
@@ -440,19 +595,25 @@ export class Resolver {
       const v = sel.get();
       const idx = tabs.findIndex((t) => equals(t.value, v));
       selected = idx >= 0 ? idx : 0;
-    } else selected = Math.min(this.ctl.tabState(P), Math.max(0, tabs.length - 1));
+    } else {
+      // the selection is the tab's identity (its structural slot), re-derived each
+      // render, so hiding an earlier conditional tab does not move the selection
+      const key = this.ctl.tabState(P);
+      const idx = key === null ? -1 : tabs.findIndex((t) => t.seg === key);
+      selected = idx >= 0 ? idx : 0;
+    }
     r.tabs = tabs.map((t) => ({ title: t.title, icon: t.icon, role: t.role, badge: t.badge }));
     r.selected = selected;
     r.select = (i) => {
       if (sel) sel.set(copyValue(tabs[i].value));
-      else this.ctl.setTab(P, i);
+      else this.ctl.setTab(P, tabs[i].seg);
       this.ctl.invalidate();
     };
     // Switching tabs hides a subtree without removing its state. Keep only
     // existing tabs' state alive; resolving hidden content would run its lifecycle.
-    tabs.forEach((_, i) => {
+    tabs.forEach((t, i) => {
       if (i === selected) return;
-      const prefix = P + '/tab' + i + '/';
+      const prefix = P + t.seg + '/';
       for (const key of this.ctl.state.keys()) {
         if (key.startsWith(prefix)) this.ctl.liveState.add(key);
       }
@@ -460,16 +621,16 @@ export class Resolver {
     const tab = tabs[selected];
     if (tab) {
       const node = tab.mods ? new ViewNode('Group', {}, [tab.node], tab.mods) : tab.node;
-      r.c = this.resolveChildren([node], P + '/tab' + selected, { ...env, inTab: true });
+      r.c = this.resolveChildren([node], P + tab.seg, { ...env, inTab: true });
     }
   }
 
   // Sheets and alerts are resolved after the main tree.
   resolveOverlay(o) {
     if (o.kind === 'alert') {
-      const actions = o.actionsFn ? flatten(runSync(this.interp, this.host.buildContent(o.actionsFn, this.interp.line))) : [];
-      const msg = o.messageFn ? flatten(runSync(this.interp, this.host.buildContent(o.messageFn, this.interp.line))) : [];
-      return { kind: 'alert', title: o.title, actions: actions.map((a, i) => this.resolve(a, o.path + '/' + i, o.env)).filter(Boolean), message: msg.map((m) => (m instanceof ViewNode ? m.props.text : '')).join(' '), dismiss: o.dismiss };
+      const actions = o.actionsFn ? slotted([runSync(this.interp, this.host.buildContent(o.actionsFn, this.interp.line))]) : [];
+      const msg = o.messageFn ? flattenAll(runSync(this.interp, this.host.buildContent(o.messageFn, this.interp.line))) : [];
+      return { kind: 'alert', title: o.title, actions: actions.map(({ view, key }) => this.resolve(view, o.path + '/' + key, o.env)).filter(Boolean), message: this.host.joinViewText(msg, ' ', this.interp.line), dismiss: o.dismiss };
     }
     const senv = { ...o.env, dismiss: o.dismiss, nav: null, screen: null };
     this.host.envStack.push(senv);
@@ -485,10 +646,51 @@ const FULL_BLEED = new Set(['NavigationStack', 'TabView', 'List', 'Form']);
 const GREEDY_W = new Set(['TextField', 'SecureField', 'TextEditor', 'Slider', 'Toggle', 'Stepper', 'Color', 'Shape', 'Gradient', 'ScrollView', 'List', 'Form', 'Divider', 'ProgressViewBar', 'Picker', 'LazyGrid', 'NavigationStack', 'TabView', 'LabeledContent', 'GroupBox']);
 const GREEDY_H = new Set(['Color', 'Shape', 'Gradient', 'ScrollView', 'List', 'Form', 'NavigationStack', 'TabView', 'TextEditor']);
 
-function el(tag, cls, attrs) {
+// ------------------------------------------------------------------ page writer
+// page-writer:begin
+// Every string the preview puts into the page is written by these helpers:
+// text, attributes, inline styles, class names, data attributes, markup and
+// form values. While a render paints, each write adds its length to that
+// render's text budget (SwiftUIHost.chargeText: one interpreter step per 64
+// characters and the capacity error past MAX_TEXT_CHARS), so no output of the
+// renderer can grow the page without paying for it. Writes outside a paint are
+// not charged: event handlers, the preview's own chrome and error pane, and
+// morph() copying a tree that a paint already paid for into the live page.
+// tests/unit/preview-fixes.test.js fails if render.js, views.js or preview.js
+// writes to the DOM anywhere else.
+let painting = null;
+let paintLine;
+export function paint(host, fn) {
+  const prev = painting, prevLine = paintLine;
+  painting = host;
+  try { return fn(); } finally { painting = prev; paintLine = prevLine; }
+}
+function paid(v) {
+  const s = typeof v === 'string' ? v : v === undefined || v === null ? '' : String(v);
+  if (painting) painting.chargeText(s, paintLine);
+  return s;
+}
+export function setText(e, v) { e.textContent = paid(v); }
+export function setNodeValue(n, v) { n.nodeValue = paid(v); }
+export function setAttr(e, name, v) { e.setAttribute(name, paid(v)); }
+export function setStyle(e, prop, v) { e.style[prop] = paid(v); }
+export function setStyleVar(e, name, v) { e.style.setProperty(name, paid(v)); }
+export function setClass(e, v) { e.className = paid(v); }
+export function addClass(e, ...names) { for (const n of names) e.classList.add(paid(n)); }
+export function toggleClass(e, name, on) { e.classList.toggle(paid(name), on); }
+export function setData(e, key, v) { e.dataset[key] = paid(v); }
+export function setHtml(e, v) { e.innerHTML = paid(v); }
+export function appendHtml(e, v) { e.insertAdjacentHTML('beforeend', paid(v)); }
+export function setProp(e, name, v) { e[name] = typeof v === 'string' ? paid(v) : v; }
+// Work done while painting that is not a write (walking gradient stops or grid
+// tracks) is charged as interpreter steps too.
+export function chargeWork(n) { if (painting && n > 0) painting.interp.chargeBulk(n, paintLine); }
+// page-writer:end
+
+export function el(tag, cls, attrs) {
   const e = document.createElement(tag);
-  if (cls) e.className = cls;
-  if (attrs) for (const k in attrs) if (attrs[k] !== undefined && attrs[k] !== null) e.setAttribute(k, attrs[k]);
+  if (cls) setClass(e, cls);
+  if (attrs) for (const k in attrs) if (attrs[k] !== undefined && attrs[k] !== null) setAttr(e, k, attrs[k]);
   return e;
 }
 function on(e, type, fn) { (e.__h || (e.__h = {}))[type] = fn; }
@@ -520,46 +722,59 @@ function fontCss(v, dt) {
 export class DomRenderer {
   constructor(ctl, scheme) { this.ctl = ctl; this.scheme = scheme; }
 
-  color(v) { return cssColor(v, this.scheme); }
+  // A value shown in the page (a bound field's value, accessibility text, a
+  // badge) is described no further than the text budget has room for; writing
+  // the description charges it.
+  describeText(v) {
+    const host = this.ctl && this.ctl.host;
+    return host ? host.describeBounded(v) : describe(v);
+  }
+
+  color(v) { return cssColor(v, this.scheme, this.warn); }
+  get warn() { return this.ctl && this.ctl.runtimeWarning ? (msg) => this.ctl.runtimeWarning(msg) : null; }
 
   render(r, axis = 'v') {
     if (!r) return document.createComment('empty');
+    if (r.line) paintLine = r.line;
     let e = this.core(r, axis);
-    e.dataset.path = r.path;
-    if (r.key !== undefined) e.dataset.key = r.key;
-    if (r.line) e.dataset.line = r.line;
+    setData(e, 'path', r.path);
+    if (r.key !== undefined) setData(e, 'key', r.key);
+    if (r.line) setData(e, 'line', r.line);
     // SwiftUI layout: greedy views (TextField, Spacer, Color, shapes, lists...) take all
     // offered space along an axis, and a stack containing a greedy child becomes greedy too.
-    if (GREEDY_W.has(r.t) || (r.t === 'ProgressView' && r.p.value !== null) || (r.t === 'Spacer' && axis === 'h')) e.dataset.gw = '1';
-    if (GREEDY_H.has(r.t) || (r.t === 'Spacer' && axis === 'v')) e.dataset.gh = '1';
+    if (GREEDY_W.has(r.t) || (r.t === 'ProgressView' && r.p.value !== null) || (r.t === 'Spacer' && axis === 'h')) setData(e, 'gw', '1');
+    if (GREEDY_H.has(r.t) || (r.t === 'Spacer' && axis === 'v')) setData(e, 'gh', '1');
     propagateGreed(e);
     for (const m of r.mods) e = this.mod(e, m, r, axis);
+    // a modifier wrapper is what the parent morphs, so it carries the row key and path too
+    if (r.key !== undefined && e.dataset && e.dataset.key === undefined) setData(e, 'key', r.key);
+    if (e.dataset && e.dataset.path === undefined) setData(e, 'path', r.path);
     return e;
   }
 
   stack(r, dir, axis) {
     const e = el('div', `v-stack ${dir === 'h' ? 'v-h' : dir === 'z' ? 'v-z' : 'v-v'}`);
     const al = r.p.alignment;
-    if (dir === 'v') e.style.alignItems = al === 'leading' ? 'flex-start' : al === 'trailing' ? 'flex-end' : 'center';
-    if (dir === 'h') e.style.alignItems = al === 'top' ? 'flex-start' : al === 'bottom' ? 'flex-end' : al === 'firstTextBaseline' || al === 'lastTextBaseline' ? 'baseline' : 'center';
+    if (dir === 'v') setStyle(e, 'alignItems', al === 'leading' ? 'flex-start' : al === 'trailing' ? 'flex-end' : 'center');
+    if (dir === 'h') setStyle(e, 'alignItems', al === 'top' ? 'flex-start' : al === 'bottom' ? 'flex-end' : al === 'firstTextBaseline' || al === 'lastTextBaseline' ? 'baseline' : 'center');
     if (dir === 'z') {
       const map = { center: 'center', top: 'start center', bottom: 'end center', leading: 'center start', trailing: 'center end', topLeading: 'start start', topTrailing: 'start end', bottomLeading: 'end start', bottomTrailing: 'end end' };
-      e.style.placeItems = map[al] || 'center';
+      setStyle(e, 'placeItems', map[al] || 'center');
     }
-    if (r.p.spacing !== undefined) e.style.gap = `${r.p.spacing}px`;
+    if (r.p.spacing !== undefined) setStyle(e, 'gap', `${r.p.spacing}px`);
     for (const c of r.c) e.appendChild(this.render(c, dir === 'z' ? 'z' : dir));
     return e;
   }
 
   textEl(text, cls = 'v-text') {
     const e = el('span', cls);
-    e.textContent = text;
+    setText(e, text);
     return e;
   }
 
   iconEl(name, cls = 'v-img') {
     const e = el('span', cls);
-    e.innerHTML = icon(name, 24);
+    setHtml(e, icon(name, 24));
     return e;
   }
 
@@ -570,8 +785,8 @@ export class DomRenderer {
       case 'Image': {
         if (p.system) return this.iconEl(p.system);
         const e = el('span', 'v-img v-asset');
-        e.innerHTML = icon('photo', 24);
-        e.title = p.asset;
+        setHtml(e, icon('photo', 24));
+        setProp(e, 'title', p.asset);
         return e;
       }
       case 'Label': {
@@ -584,17 +799,18 @@ export class DomRenderer {
           if (r.c.length) r.c.forEach((c) => e.appendChild(this.render(c, 'h')));
           else e.appendChild(this.textEl(p.title));
         }
-        if (p.inList) e.classList.add('in-list');
+        if (p.inList) addClass(e, 'in-list');
         return e;
       }
       case 'Button': return this.button(r);
       case 'VStack': return this.stack(r, 'v', axis);
       case 'HStack': return this.stack(r, 'h', axis);
       case 'ZStack': return this.stack(r, 'z', axis);
-      case 'Group': case 'Wrap': case 'WindowGroup': case 'ForEach': case 'GlassEffectContainer': case 'ControlGroup': {
+      case 'Group': case 'Conditional': case 'Wrap': case 'WindowGroup': case 'ForEach': case 'GlassEffectContainer': case 'ControlGroup': {
         if (r.c.length === 1) return this.render(r.c[0], axis);
+        if (!r.c.length && r.t !== 'GlassEffectContainer') return el('span', 'v-empty');
         const e = el('div', `v-stack ${axis === 'h' ? 'v-h' : 'v-v'} v-group`);
-        if (r.t === 'GlassEffectContainer') e.classList.add('glass-container');
+        if (r.t === 'GlassEffectContainer') addClass(e, 'glass-container');
         for (const c of r.c) e.appendChild(this.render(c, axis));
         return e;
       }
@@ -603,10 +819,10 @@ export class DomRenderer {
         // whose ideal (unwrapped) size fits the space offered, falling back to the last.
         if (!r.c.length) return el('span');
         const e = el('div', 'v-fits');
-        e.dataset.gw = '1';
+        setData(e, 'gw', '1');
         r.c.forEach((c, k) => {
           const opt = el('div', 'v-fit-option');
-          opt.dataset.key = 'fit' + k;
+          setData(opt, 'key', 'fit' + k);
           opt.appendChild(this.render(c, axis));
           if (k > 0) opt.hidden = true;
           e.appendChild(opt);
@@ -615,27 +831,27 @@ export class DomRenderer {
       }
       case 'Spacer': {
         const e = el('div', 'v-spacer');
-        if (p.minLength !== undefined) e.style.setProperty('--min', p.minLength + 'px');
+        if (p.minLength !== undefined) setStyleVar(e, '--min', p.minLength + 'px');
         return e;
       }
       case 'Divider': return el('div', 'v-divider');
       case 'EmptyView': return el('span', 'v-empty');
       case 'Color': {
         const e = el('div', 'v-color');
-        e.style.background = this.color(new ViewNode('Color', p, [], []));
+        setStyle(e, 'background', this.color(new ViewNode('Color', p, [], [])));
         return e;
       }
       case 'Shape': {
         const e = el('div', 'v-shape');
-        if (p.shape === 'Circle') e.classList.add('circle');
-        if (p.shape === 'Capsule') e.style.borderRadius = '9999px';
-        if (p.shape === 'Ellipse') e.style.borderRadius = '50%';
-        if (p.shape === 'RoundedRectangle') e.style.borderRadius = `${p.radius}px`;
+        if (p.shape === 'Circle') addClass(e, 'circle');
+        if (p.shape === 'Capsule') setStyle(e, 'borderRadius', '9999px');
+        if (p.shape === 'Ellipse') setStyle(e, 'borderRadius', '50%');
+        if (p.shape === 'RoundedRectangle') setStyle(e, 'borderRadius', `${p.radius}px`);
         return e;
       }
       case 'Gradient': {
         const e = el('div', 'v-color');
-        e.style.background = gradientCss({ props: p }, this.scheme);
+        setStyle(e, 'background', gradientCss({ props: p }, this.scheme, this.warn));
         return e;
       }
       case 'ScrollView': {
@@ -659,8 +875,9 @@ export class DomRenderer {
       case 'TextField': case 'SecureField': return this.textField(r);
       case 'TextEditor': {
         const e = el('textarea', 'v-texteditor', { 'aria-label': 'Text editor' });
+        if (p.disabled) e.disabled = true;
         const b = p.binding;
-        e.value = b ? describe(b.get()) : '';
+        setProp(e, 'value', b ? this.describeText(b.get()) : '');
         on(e, 'input', (ev) => { if (b) b.set(ev.target.value); });
         return e;
       }
@@ -675,10 +892,15 @@ export class DomRenderer {
           if (p.title) e.appendChild(this.textEl(p.title, 'v-text secondary'));
           return e;
         }
-        const e = el('div', 'v-progressbar', { role: 'progressbar', 'aria-valuenow': String(Math.round((p.value / p.total) * 100)) });
+        const bar = el('div', 'v-progressbar', { role: 'progressbar', 'aria-valuenow': String(Math.round((p.value / p.total) * 100)), 'aria-label': p.title || null });
         const fill = el('div', 'fill');
-        fill.style.width = `${Math.max(0, Math.min(1, p.value / p.total)) * 100}%`;
-        e.appendChild(fill);
+        setStyle(fill, 'width', `${Math.max(0, Math.min(1, p.value / p.total)) * 100}%`);
+        bar.appendChild(fill);
+        if (!p.title && !r.labelR) return bar;
+        // the label sits above the bar, leading-aligned, as in the default linear style
+        const e = el('div', 'v-progress-labeled');
+        e.appendChild(r.labelR ? this.render(r.labelR, 'v') : this.textEl(p.title));
+        e.appendChild(bar);
         return e;
       }
       case 'ContentUnavailableView': {
@@ -702,9 +924,9 @@ export class DomRenderer {
       }
       case 'LabeledContent': {
         const e = el('div', 'v-labeled');
-        e.appendChild(this.textEl(p.title));
+        e.appendChild(r.labelR ? this.render(r.labelR, 'h') : this.textEl(p.title ?? ''));
         const val = el('span', 'v-labeled-value');
-        if (p.value !== null) val.textContent = p.value;
+        if (p.value !== null) setText(val, p.value);
         for (const c of r.c) val.appendChild(this.render(c, 'h'));
         e.appendChild(val);
         return e;
@@ -720,17 +942,17 @@ export class DomRenderer {
 
   button(r) {
     const p = r.p;
-    const style = p.style;
+    const style = p.variant;
     const e = el('button', `v-button style-${style} size-${p.size}`, { type: 'button' });
-    if (p.role === 'destructive') e.classList.add('destructive');
-    if (p.role === 'cancel') e.classList.add('cancel');
-    if (p.disabled) { e.disabled = true; e.classList.add('disabled'); }
+    if (p.role === 'destructive') addClass(e, 'destructive');
+    if (p.role === 'cancel') addClass(e, 'cancel');
+    if (p.disabled) { e.disabled = true; addClass(e, 'disabled'); }
     if (r.c.length) for (const c of r.c) e.appendChild(this.render(c, 'h'));
     else if (p.icon && p.title !== undefined && p.labelStyle !== 'titleOnly') {
       const l = el('span', 'v-label');
       l.appendChild(this.iconEl(p.icon, 'v-img v-label-icon'));
       if (p.labelStyle !== 'iconOnly') l.appendChild(this.textEl(p.title));
-      else e.setAttribute('aria-label', p.title);
+      else setAttr(e, 'aria-label', p.title);
       e.appendChild(l);
     } else if (p.icon && p.title === undefined) e.appendChild(this.iconEl(p.icon));
     else e.appendChild(this.textEl(p.title ?? ''));
@@ -741,6 +963,7 @@ export class DomRenderer {
   navLink(r) {
     const p = r.p;
     const e = el('button', `v-button v-navlink style-automatic ${p.inList ? 'in-list' : ''}`, { type: 'button' });
+    if (p.disabled) { e.disabled = true; addClass(e, 'disabled'); }
     if (r.c.length) for (const c of r.c) e.appendChild(this.render(c, 'h'));
     else e.appendChild(this.textEl(p.title ?? ''));
     const nav = p.nav;
@@ -758,23 +981,34 @@ export class DomRenderer {
     const wrap = el('label', `v-textfield ${p.textFieldStyle === 'roundedBorder' ? 'bordered' : ''}`);
     const multi = p.vertical;
     const input = el(multi ? 'textarea' : 'input', '', { placeholder: p.prompt, 'aria-label': p.prompt, rows: multi ? '1' : null });
-    if (!multi) input.type = r.t === 'SecureField' ? 'password' : p.numeric ? 'text' : 'text';
+    if (!multi) setProp(input, 'type', r.t === 'SecureField' ? 'password' : p.numeric ? 'text' : 'text');
     const b = p.binding;
     const cur = b ? b.get() : '';
-    input.value = cur === NIL || cur === undefined ? '' : cur instanceof Opt ? describe(cur.v) : describe(cur);
+    const formatted = cur === NIL || cur === undefined ? '' : this.describeText(cur instanceof Opt ? cur.v : cur);
+    setProp(input, 'value', formatted);
     if (p.disabled) input.disabled = true;
-    on(input, 'input', (ev) => {
-      if (!b) return;
-      const val = ev.target.value;
-      if (p.numeric) {
+    if (p.numeric) {
+      // TextField(value:format:) commits when editing ends (Return or focus loss), like
+      // SwiftUI; committing per keystroke would rewrite "1." as "1.0" under the user's cursor.
+      setData(input, 'numeric', '1');
+      const commit = (ev) => {
+        if (!b) return;
+        const raw = ev.target.value.trim();
+        const n = Number(raw);
+        if (raw === '' || !Number.isFinite(n)) { setProp(ev.target, 'value', formatted); return; } // SwiftUI keeps the previous value
         const old = b.get();
-        const n = Number(val);
-        if (val.trim() !== '' && !Number.isNaN(n)) b.set(old instanceof Dbl ? new Dbl(n) : Math.trunc(n));
-        return;
-      }
-      b.set(val);
-    });
-    on(input, 'keydown', (ev) => { if (ev.key === 'Enter' && r.onSubmit) this.ctl.runAction(r.onSubmit); });
+        const next = numberLike(old, n);
+        if (next === undefined || equals(old, next)) { setProp(ev.target, 'value', formatted); return; }
+        b.set(next);
+      };
+      on(input, 'change', commit);
+      on(input, 'commit', commit);
+    } else {
+      on(input, 'input', (ev) => { if (b) b.set(ev.target.value); });
+    }
+    // Return commits a numeric field first, as SwiftUI does, then runs the field's
+    // .onSubmit and each ancestor's, innermost first
+    on(input, 'keydown', (ev) => { if (ev.key === 'Enter') { if (input.__h.commit) input.__h.commit(ev); for (const fn of p.submit || []) this.ctl.runAction(fn); } });
     wrap.appendChild(input);
     return wrap;
   }
@@ -784,7 +1018,7 @@ export class DomRenderer {
     const e = el('label', 'v-toggle');
     const title = el('span', 'v-toggle-label');
     if (r.c.length) for (const c of r.c) title.appendChild(this.render(c, 'h'));
-    else title.textContent = p.title || '';
+    else setText(title, p.title || '');
     const b = p.binding;
     const isOn = b ? b.get() === true : false;
     const sw = el('button', `v-switch ${isOn ? 'on' : ''}`, { type: 'button', role: 'switch', 'aria-checked': String(isOn), 'aria-label': p.title || 'Toggle' });
@@ -807,14 +1041,16 @@ export class DomRenderer {
     const b = p.binding;
     const e = el('div', 'v-slider');
     const input = el('input', '', { type: 'range', min: String(p.min), max: String(p.max), step: p.step !== undefined ? String(p.step) : 'any', 'aria-label': 'Slider' });
+    if (p.disabled) input.disabled = true;
     const v = b ? numVal(b.get()) : 0;
-    input.value = String(v);
-    e.style.setProperty('--pct', `${((v - p.min) / (p.max - p.min || 1)) * 100}%`);
+    setProp(input, 'value', String(v));
+    setStyleVar(e, '--pct', `${((v - p.min) / (p.max - p.min || 1)) * 100}%`);
     on(input, 'input', (ev) => {
       if (!b) return;
       const n = Number(ev.target.value);
       const old = b.get();
-      b.set(old instanceof Dbl || !Number.isInteger(n) ? new Dbl(n) : n);
+      const next = typeof old === 'number' && !Number.isInteger(n) ? new Dbl(n) : numberLike(old, n);
+      if (next !== undefined) b.set(next);
     });
     e.appendChild(input);
     return e;
@@ -826,21 +1062,23 @@ export class DomRenderer {
     const e = el('div', 'v-stepper');
     const title = el('span', 'v-stepper-label');
     if (r.c.length) for (const c of r.c) title.appendChild(this.render(c, 'h'));
-    else title.textContent = p.title || '';
+    else setText(title, p.title || '');
     const ctl = el('span', 'v-stepper-ctl');
     const minus = el('button', '', { type: 'button', 'aria-label': 'Decrement' });
-    minus.innerHTML = icon('minus', 18);
+    setHtml(minus, icon('minus', 18));
     const plus = el('button', '', { type: 'button', 'aria-label': 'Increment' });
-    plus.innerHTML = icon('plus', 18);
+    setHtml(plus, icon('plus', 18));
     const cur = b ? numVal(b.get()) : 0;
     if (b && cur <= p.min) minus.disabled = true;
     if (b && cur >= p.max) plus.disabled = true;
+    if (p.disabled) { minus.disabled = true; plus.disabled = true; }
     const change = (dir) => {
       if (b) {
         const old = b.get();
         let n = numVal(old) + dir * p.step;
         n = Math.max(p.min, Math.min(p.max, n));
-        b.set(old instanceof Dbl ? new Dbl(n) : n);
+        const next = numberLike(old, n);
+        if (next !== undefined) b.set(next);
       } else if (dir > 0 && p.onIncrement) this.ctl.runAction(p.onIncrement);
       else if (dir < 0 && p.onDecrement) this.ctl.runAction(p.onDecrement);
     };
@@ -877,20 +1115,22 @@ export class DomRenderer {
     const cur = b ? b.get() : undefined;
     const sel = opts.findIndex((o) => equals(o.tag, cur));
     const choose = (i) => { if (b && opts[i]) b.set(copyValue(opts[i].tag)); };
-    if (p.style === 'segmented') {
+    if (p.variant === 'segmented') {
       const e = el('div', 'v-segmented', { role: 'radiogroup', 'aria-label': p.title });
       opts.forEach((o, i) => {
         const s = el('button', `seg ${i === sel ? 'on' : ''}`, { type: 'button', role: 'radio', 'aria-checked': String(i === sel) });
-        if (o.icon && !o.label) s.innerHTML = icon(o.icon, 18); else s.textContent = o.label;
+        if (p.disabled) s.disabled = true;
+        if (o.icon && !o.label) setHtml(s, icon(o.icon, 18)); else setText(s, o.label);
         on(s, 'click', () => choose(i));
         e.appendChild(s);
       });
       return e;
     }
-    if (p.style === 'inline' || p.style === 'radioGroup') {
+    if (p.variant === 'inline' || p.variant === 'radioGroup') {
       const e = el('div', 'v-picker-inline');
       opts.forEach((o, i) => {
         const s = el('button', `v-button style-plain pick-row ${i === sel ? 'on' : ''}`, { type: 'button' });
+        if (p.disabled) s.disabled = true;
         s.appendChild(this.textEl(o.label));
         if (i === sel) s.appendChild(this.iconEl('checkmark', 'v-img check'));
         on(s, 'click', () => choose(i));
@@ -902,12 +1142,12 @@ export class DomRenderer {
     e.appendChild(this.textEl(p.title, 'v-text v-picker-title'));
     const box = el('span', 'v-picker-value');
     const select = el('select', '', { 'aria-label': p.title || 'Picker' });
-    opts.forEach((o, i) => { const op = el('option'); op.value = String(i); op.textContent = o.label; if (i === sel) op.selected = true; select.appendChild(op); });
+    opts.forEach((o, i) => { const op = el('option'); setProp(op, 'value', String(i)); setText(op, o.label); if (i === sel) op.selected = true; select.appendChild(op); });
     on(select, 'change', (ev) => choose(Number(ev.target.value)));
     const shown = el('span', 'shown');
-    shown.textContent = sel >= 0 ? opts[sel].label : '';
+    setText(shown, sel >= 0 ? opts[sel].label : '');
     box.appendChild(shown);
-    box.insertAdjacentHTML('beforeend', `<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="m7 9 5-5 5 5M7 15l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
+    appendHtml(box, `<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="m7 9 5-5 5 5M7 15l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
     box.appendChild(select);
     e.appendChild(box);
     if (p.disabled) select.disabled = true;
@@ -918,40 +1158,43 @@ export class DomRenderer {
     const p = r.p;
     const e = el('div', 'v-grid');
     if (r.t === 'LazyGrid') {
-      const cols = p.columns.map((g) => {
+      if (p.columns.length > MAX_GRID_TRACKS && this.warn) this.warn(`${p.horizontal ? 'LazyHGrid' : 'LazyVGrid'} with ${p.columns.length.toLocaleString('en-US')} ${p.horizontal ? 'rows' : 'columns'}: the preview lays out the first ${MAX_GRID_TRACKS}`);
+      const tracks = p.columns.length > MAX_GRID_TRACKS ? p.columns.slice(0, MAX_GRID_TRACKS) : p.columns;
+      chargeWork(tracks.length);
+      const cols = tracks.map((g) => {
         const s = g && g.size ? g.size : { kind: 'flexible' };
         if (s.kind === 'fixed') return `${s.value}px`;
         if (s.kind === 'adaptive') return `repeat(auto-fill, minmax(${s.value}px, 1fr))`;
         return 'minmax(0, 1fr)';
       });
-      if (p.horizontal) { e.style.gridAutoFlow = 'column'; e.style.gridTemplateRows = cols.join(' '); }
-      else e.style.gridTemplateColumns = cols.join(' ') || 'minmax(0,1fr)';
+      if (p.horizontal) { setStyle(e, 'gridAutoFlow', 'column'); setStyle(e, 'gridTemplateRows', cols.join(' ')); }
+      else setStyle(e, 'gridTemplateColumns', cols.join(' ') || 'minmax(0,1fr)');
       const gap = p.spacing ?? 8;
-      e.style.gap = `${gap}px`;
+      setStyle(e, 'gap', `${gap}px`);
       for (const c of r.c) e.appendChild(this.render(c, 'v'));
       return e;
     }
     const rows = r.c;
     const n = Math.max(1, ...rows.map((row) => (row.t === 'GridRow' ? row.c.length : 1)));
-    e.style.gridTemplateColumns = `repeat(${n}, auto)`;
-    e.style.columnGap = `${p.hspacing ?? 8}px`;
-    e.style.rowGap = `${p.vspacing ?? 8}px`;
+    setStyle(e, 'gridTemplateColumns', `repeat(${n}, auto)`);
+    setStyle(e, 'columnGap', `${p.hspacing ?? 8}px`);
+    setStyle(e, 'rowGap', `${p.vspacing ?? 8}px`);
     for (const row of rows) {
       if (row.t === 'GridRow') for (const c of row.c) e.appendChild(this.render(c, 'h'));
-      else { const x = this.render(row, 'h'); x.style.gridColumn = '1 / -1'; e.appendChild(x); }
+      else { const x = this.render(row, 'h'); setStyle(x, 'gridColumn', '1 / -1'); e.appendChild(x); }
     }
     return e;
   }
 
   // ---------------------------------------------------------------- lists
   list(r) {
-    const style = r.p.style;
+    const style = r.p.variant;
     const e = el('div', `v-list style-${style}`);
     // group loose rows into an implicit section
     const sections = [];
     let loose = null;
-    for (const c of r.c) {
-      if (c.t === 'Section' && !c.mods.length) { loose = null; sections.push({ sec: c, rows: c.c }); }
+    for (const c of visible(r.c)) {
+      if (c.t === 'Section' && !c.mods.length) { loose = null; sections.push({ sec: c, rows: visible(c.c) }); }
       else { if (!loose) { loose = { sec: null, rows: [] }; sections.push(loose); } loose.rows.push(c); }
     }
     for (const s of sections) e.appendChild(this.listSection(s, style));
@@ -963,7 +1206,7 @@ export class DomRenderer {
     const sec = s.sec;
     if (sec && (sec.p.title || sec.headerR)) {
       const h = el('div', 'v-section-header');
-      if (sec.headerR) h.appendChild(this.render(sec.headerR, 'h')); else h.textContent = sec.p.title;
+      if (sec.headerR) h.appendChild(this.render(sec.headerR, 'h')); else setText(h, sec.p.title);
       box.appendChild(h);
     }
     const rows = el('div', 'v-rows');
@@ -983,34 +1226,32 @@ export class DomRenderer {
     const kind = row.t;
     content = this.render(row, 'h');
     if (kind === 'NavigationLink' || (kind === 'Wrap' && row.c[0] && row.c[0].t === 'NavigationLink')) {
-      e.classList.add('nav');
+      addClass(e, 'nav');
       const chev = el('span', 'v-chevron');
-      chev.innerHTML = icon('chevron.right', 16);
+      setHtml(chev, icon('chevron.right', 16));
       content.appendChild(chev);
     }
-    if (kind === 'Button') e.classList.add('button-row');
+    if (kind === 'Button') addClass(e, 'button-row');
     e.appendChild(content);
     const deleteFn = row.onDelete;
     if (deleteFn && row.forEachIndex !== undefined) {
       const del = el('button', 'v-row-delete', { type: 'button', 'aria-label': 'Delete' });
-      del.innerHTML = icon('trash', 16);
+      setHtml(del, icon('trash', 16));
       on(del, 'click', (ev) => {
         ev.stopPropagation();
         this.ctl.runAction(deleteFn, [this.ctl.makeIndexSet(row.forEachIndex)]);
       });
       e.appendChild(del);
-      e.classList.add('deletable');
+      addClass(e, 'deletable');
     }
     if (row.swipe) {
-      e.classList.add('deletable', 'has-swipe');
+      addClass(e, 'deletable', 'has-swipe');
       const more = el('button', 'v-row-more', { type: 'button', 'aria-label': 'Show swipe actions' });
-      more.innerHTML = icon('ellipsis', 16);
-      on(more, 'click', (ev) => { ev.stopPropagation(); const row = ev.target.closest('.v-row'); if (row) row.classList.toggle('swiped'); });
+      setHtml(more, icon('ellipsis', 16));
+      on(more, 'click', (ev) => { ev.stopPropagation(); const row = ev.target.closest('.v-row'); if (row) toggleClass(row, 'swiped'); });
       e.appendChild(more);
       const sw = el('span', 'v-row-swipe');
-      const views = flatten(runSync(this.ctl.interp, this.ctl.host.buildContent(row.swipe, 0)));
-      const res = new Resolver(this.ctl, this.ctl.interp, this.ctl.host);
-      views.forEach((v, i) => { const rr = res.resolve(v, row.path + '#swipe' + i, row.env || {}); if (rr) { rr.p.style = 'swipe'; sw.appendChild(this.render(rr, 'h')); } });
+      for (const rr of row.swipe) sw.appendChild(this.render(rr, 'h'));
       e.appendChild(sw);
     }
     return e;
@@ -1018,10 +1259,10 @@ export class DomRenderer {
 
   sectionLoose(r) {
     const e = el('div', 'v-stack v-v v-loose-section');
-    e.style.alignItems = 'stretch';
+    setStyle(e, 'alignItems', 'stretch');
     if (r.p.title || r.headerR) {
       const h = el('div', 'v-section-header');
-      if (r.headerR) h.appendChild(this.render(r.headerR, 'h')); else h.textContent = r.p.title;
+      if (r.headerR) h.appendChild(this.render(r.headerR, 'h')); else setText(h, r.p.title);
       e.appendChild(h);
     }
     for (const c of r.c) e.appendChild(this.render(c, 'v'));
@@ -1042,8 +1283,8 @@ export class DomRenderer {
     const right = el('div', 'v-navbar-side right');
     if (depth > 0) {
       const back = el('button', 'v-glass-circle v-back', { type: 'button', 'aria-label': prev ? `Back to ${prev}` : 'Back' });
-      back.innerHTML = icon('chevron.left', 20);
-      on(back, 'click', () => r.nav.pop());
+      setHtml(back, icon('chevron.left', 20));
+      on(back, 'click', () => (top.dismiss ? top.dismiss() : r.nav.pop()));
       left.appendChild(back);
     }
     for (const item of s.toolbar) {
@@ -1055,7 +1296,7 @@ export class DomRenderer {
       target.appendChild(g);
     }
     const title = el('div', 'v-navtitle');
-    title.textContent = s.title;
+    setText(title, s.title);
     bar.appendChild(left);
     if (!large) bar.appendChild(title);
     bar.appendChild(right);
@@ -1063,22 +1304,24 @@ export class DomRenderer {
     const body = el('div', 'v-navbody');
     if (large && s.title) {
       const lt = el('div', 'v-largetitle');
-      lt.textContent = s.title;
+      setText(lt, s.title);
       body.appendChild(lt);
     }
     if (s.search) {
       const sb = el('label', 'v-search');
-      sb.innerHTML = icon('magnifyingglass', 16);
-      const input = el('input', '', { placeholder: s.search.prompt ? describe(s.search.prompt) : 'Search', 'aria-label': 'Search', type: 'search' });
+      setHtml(sb, icon('magnifyingglass', 16));
+      const input = el('input', '', { placeholder: s.search.prompt ? this.describeText(s.search.prompt) : 'Search', 'aria-label': 'Search', type: 'search' });
       const b = s.search.binding;
-      input.value = b ? describe(b.get()) : '';
+      setProp(input, 'value', b ? this.describeText(b.get()) : '');
       on(input, 'input', (ev) => b && b.set(ev.target.value));
+      on(input, 'keydown', (ev) => { if (ev.key === 'Enter') for (const fn of s.search.submit || []) this.ctl.runAction(fn); });
       sb.appendChild(input);
       body.appendChild(sb);
     }
     const content = el('div', 'v-navcontent');
-    const fullList = top.content.length === 1 && (top.content[0].t === 'List' || top.content[0].t === 'Form' || top.content[0].t === 'ScrollView');
-    if (fullList) content.classList.add('fills');
+    const shown = visible(top.content);
+    const fullList = shown.length === 1 && (shown[0].t === 'List' || shown[0].t === 'Form' || shown[0].t === 'ScrollView');
+    if (fullList) addClass(content, 'fills');
     for (const c of top.content) content.appendChild(this.render(c, 'v'));
     body.appendChild(content);
     e.appendChild(body);
@@ -1088,15 +1331,16 @@ export class DomRenderer {
       bottomItems.forEach((item) => item.views.forEach((v) => v && bb.appendChild(this.render(v, 'h'))));
       e.appendChild(bb);
     }
-    e.dataset.depth = String(depth);
-    if (this.ctl.navAnim) e.classList.add('anim-' + this.ctl.navAnim);
+    setData(e, 'depth', String(depth));
+    if (this.ctl.navAnim) addClass(e, 'anim-' + this.ctl.navAnim);
     return e;
   }
 
   tabView(r) {
     const e = el('div', 'v-tabview');
     const content = el('div', 'v-tabcontent');
-    const fills = r.c.length === 1 && ['NavigationStack', 'List', 'Form', 'ScrollView'].includes(unwrapKind(r.c[0]));
+    const shown = visible(r.c);
+    const fills = shown.length === 1 && ['NavigationStack', 'List', 'Form', 'ScrollView'].includes(unwrapKind(shown[0]));
     const holder = fills ? content : el('div', 'v-tab-centered');
     for (const c of r.c) holder.appendChild(this.render(c, 'v'));
     if (!fills) content.appendChild(holder);
@@ -1104,11 +1348,11 @@ export class DomRenderer {
     const bar = el('nav', 'v-tabbar', { 'aria-label': 'Tabs' });
     r.tabs.forEach((t, i) => {
       const b = el('button', `v-tab ${i === r.selected ? 'on' : ''}`, { type: 'button', 'aria-selected': String(i === r.selected), role: 'tab' });
-      if (t.icon) b.appendChild(this.iconEl(t.icon + (i === r.selected && !t.icon.endsWith('.fill') ? '' : ''), 'v-img'));
+      if (t.icon) b.appendChild(this.iconEl(t.icon, 'v-img'));
       const l = el('span', 'v-tab-title');
-      l.textContent = t.title;
+      setText(l, t.title);
       b.appendChild(l);
-      if (t.badge !== null && t.badge !== undefined && t.badge !== 0) { const bd = el('span', 'v-badge'); bd.textContent = describe(t.badge); b.appendChild(bd); }
+      if (t.badge !== null && t.badge !== undefined && t.badge !== 0) { const bd = el('span', 'v-badge'); setText(bd, this.describeText(t.badge)); b.appendChild(bd); }
       on(b, 'click', () => r.select(i));
       bar.appendChild(b);
     });
@@ -1121,8 +1365,8 @@ export class DomRenderer {
     const w = el('div', cls);
     w.appendChild(inner);
     // a wrapper inherits the child's greediness so layout stays the same
-    if (inner.dataset && inner.dataset.gw) w.dataset.gw = '1';
-    if (inner.dataset && inner.dataset.gh) w.dataset.gh = '1';
+    if (inner.dataset && inner.dataset.gw) setData(w, 'gw', '1');
+    if (inner.dataset && inner.dataset.gh) setData(w, 'gh', '1');
     return w;
   }
 
@@ -1136,13 +1380,13 @@ export class DomRenderer {
         const w = this.wrap(e, 'v-wrap v-pad');
         let edges = 'all', amount = 16;
         if (a0 instanceof SImplicit) { edges = a0.name; if (args[1]) amount = num(args[1].value, 16); }
-        else if (a0 && a0.insets) { const i = a0.insets; w.style.padding = `${i.top}px ${i.trailing}px ${i.bottom}px ${i.leading}px`; return w; }
+        else if (a0 && a0.insets) { const i = a0.insets; setStyle(w, 'padding', `${i.top}px ${i.trailing}px ${i.bottom}px ${i.leading}px`); return w; }
         else if (a0 instanceof SArray) { edges = a0.items.map((x) => x.name); if (args[1]) amount = num(args[1].value, 16); }
         else if (a0 !== undefined) amount = num(a0, 16);
-        const set = (side) => { w.style[`padding${side}`] = `${amount}px`; };
+        const set = (side) => { setStyle(w, `padding${side}`, `${amount}px`); };
         const list = Array.isArray(edges) ? edges : [edges];
         for (const ed of list) {
-          if (ed === 'all') w.style.padding = `${amount}px`;
+          if (ed === 'all') setStyle(w, 'padding', `${amount}px`);
           if (ed === 'horizontal') { set('Left'); set('Right'); }
           if (ed === 'vertical') { set('Top'); set('Bottom'); }
           if (ed === 'top') set('Top');
@@ -1157,17 +1401,17 @@ export class DomRenderer {
         const width = lab('width'), height = lab('height');
         const maxW = lab('maxWidth'), maxH = lab('maxHeight'), minW = lab('minWidth'), minH = lab('minHeight');
         const isInf = (v) => v instanceof SImplicit && v.name === 'infinity' || (v instanceof Dbl && v.v === Infinity);
-        if (width !== undefined && width !== NIL) { w.style.width = `${num(width)}px`; w.style.flexShrink = '0'; delete w.dataset.gw; }
-        if (height !== undefined && height !== NIL) { w.style.height = `${num(height)}px`; w.style.flexShrink = '0'; delete w.dataset.gh; }
-        if (minW !== undefined) w.style.minWidth = `${num(minW)}px`;
-        if (minH !== undefined) w.style.minHeight = `${num(minH)}px`;
-        if (maxW !== undefined) { if (isInf(maxW)) w.dataset.gw = '1'; else { w.style.maxWidth = `${num(maxW)}px`; w.dataset.gw = '1'; } }
-        if (maxH !== undefined) { if (isInf(maxH)) w.dataset.gh = '1'; else { w.style.maxHeight = `${num(maxH)}px`; w.dataset.gh = '1'; } }
+        if (width !== undefined && width !== NIL) { setStyle(w, 'width', `${num(width)}px`); setStyle(w, 'flexShrink', '0'); delete w.dataset.gw; }
+        if (height !== undefined && height !== NIL) { setStyle(w, 'height', `${num(height)}px`); setStyle(w, 'flexShrink', '0'); delete w.dataset.gh; }
+        if (minW !== undefined) setStyle(w, 'minWidth', `${num(minW)}px`);
+        if (minH !== undefined) setStyle(w, 'minHeight', `${num(minH)}px`);
+        if (maxW !== undefined) { if (isInf(maxW)) setData(w, 'gw', '1'); else { setStyle(w, 'maxWidth', `${num(maxW)}px`); setData(w, 'gw', '1'); } }
+        if (maxH !== undefined) { if (isInf(maxH)) setData(w, 'gh', '1'); else { setStyle(w, 'maxHeight', `${num(maxH)}px`); setData(w, 'gh', '1'); } }
         const al = lab('alignment');
         const map = { leading: ['center', 'flex-start'], trailing: ['center', 'flex-end'], top: ['flex-start', 'center'], bottom: ['flex-end', 'center'], topLeading: ['flex-start', 'flex-start'], topTrailing: ['flex-start', 'flex-end'], bottomLeading: ['flex-end', 'flex-start'], bottomTrailing: ['flex-end', 'flex-end'] };
         const [v, h] = map[al instanceof SImplicit ? al.name : 'center'] || ['center', 'center'];
-        w.style.alignItems = v;
-        w.style.justifyContent = h;
+        setStyle(w, 'alignItems', v);
+        setStyle(w, 'justifyContent', h);
         return w;
       }
       case 'background': {
@@ -1175,34 +1419,31 @@ export class DomRenderer {
         let target = e;
         if (target.dataset.bg) target = this.wrap(target);
         const c = this.color(a0);
-        if (c) { target.style.background = c; target.dataset.bg = '1'; return target; }
-        if (a0 instanceof SImplicit && /Material$/.test(a0.name)) { target.classList.add('material', a0.name); target.dataset.bg = '1'; return target; }
-        // a view as background (shape / any view)
+        if (c) { setStyle(target, 'background', c); setData(target, 'bg', '1'); return target; }
+        if (a0 instanceof SImplicit && /Material$/.test(a0.name)) { addClass(target, 'material', a0.name); setData(target, 'bg', '1'); return target; }
+        // a view as background (shape / any view), resolved during applyResolveMod
         const layerHost = target === e ? this.wrap(e) : target;
-        layerHost.classList.add('has-layer');
-        const res = new Resolver(this.ctl, this.ctl.interp, this.ctl.host);
-        const lr = res.resolve(a0, r.path + '#bg', r.env || {});
+        addClass(layerHost, 'has-layer');
+        const lr = m.layer;
         if (lr) {
           const layer = el('div', 'v-layer back');
           const al = lab('alignment');
           layer.appendChild(this.render(lr, 'z'));
-          if (al instanceof SImplicit) layer.dataset.align = al.name;
+          if (al instanceof SImplicit) setData(layer, 'align', al.name);
           layerHost.insertBefore(layer, layerHost.firstChild);
         }
-        layerHost.dataset.bg = '1';
+        setData(layerHost, 'bg', '1');
         return layerHost;
       }
       case 'overlay': {
         if (a0 === undefined) return e;
         const host = this.wrap(e);
-        host.classList.add('has-layer');
-        const res = new Resolver(this.ctl, this.ctl.interp, this.ctl.host);
-        const content = args.find((x) => x.label !== 'alignment');
-        const lr = res.resolve(content ? content.value : a0, r.path + '#ov', r.env || {});
+        addClass(host, 'has-layer');
+        const lr = m.layer;
         if (lr) {
           const layer = el('div', 'v-layer front');
           const al = lab('alignment');
-          layer.dataset.align = al instanceof SImplicit ? al.name : 'center';
+          setData(layer, 'align', al instanceof SImplicit ? al.name : 'center');
           layer.appendChild(this.render(lr, 'z'));
           host.appendChild(layer);
         }
@@ -1210,123 +1451,121 @@ export class DomRenderer {
       }
       case 'foregroundStyle': case 'foregroundColor': {
         const c = this.color(a0);
-        if (c) e.style.color = c;
-        if (a0 instanceof SImplicit && a0.name === 'secondary') e.style.color = 'var(--label2)';
+        if (c) setStyle(e, 'color', c);
+        if (a0 instanceof SImplicit && a0.name === 'secondary') setStyle(e, 'color', 'var(--label2)');
         return e;
       }
-      case 'tint': case 'accentColor': { const c = this.color(a0); if (c) e.style.setProperty('--tint', c); return e; }
-      case 'fill': { const c = this.color(a0); if (c) e.style.background = c; e.dataset.fill = '1'; return e; }
+      case 'tint': case 'accentColor': { const c = this.color(a0); if (c) setStyleVar(e, '--tint', c); return e; }
+      case 'fill': { const c = this.color(a0); if (c) setStyle(e, 'background', c); setData(e, 'fill', '1'); return e; }
       case 'stroke': case 'strokeBorder': {
         const c = this.color(a0) || 'var(--label)';
         const lw = num(lab('lineWidth'), 1);
-        e.style.boxShadow = `inset 0 0 0 ${lw}px ${c}`;
-        if (!e.dataset.fill) e.style.background = 'transparent';
+        setStyle(e, 'boxShadow', `inset 0 0 0 ${lw}px ${c}`);
+        if (!e.dataset.fill) setStyle(e, 'background', 'transparent');
         return e;
       }
       case 'font': {
         const f = fontCss(a0);
-        if (f) { e.style.fontSize = f.size; if (f.weight) e.style.fontWeight = f.weight; if (f.design === 'rounded') e.style.fontFamily = 'ui-rounded, var(--sf)'; if (f.design === 'monospaced') e.style.fontFamily = 'ui-monospace, Menlo, monospace'; if (f.design === 'serif') e.style.fontFamily = 'ui-serif, Georgia, serif'; }
+        if (f) { setStyle(e, 'fontSize', f.size); if (f.weight) setStyle(e, 'fontWeight', f.weight); if (f.design === 'rounded') setStyle(e, 'fontFamily', 'ui-rounded, var(--sf)'); if (f.design === 'monospaced') setStyle(e, 'fontFamily', 'ui-monospace, Menlo, monospace'); if (f.design === 'serif') setStyle(e, 'fontFamily', 'ui-serif, Georgia, serif'); }
         return e;
       }
-      case 'fontWeight': if (a0 instanceof SImplicit) e.style.fontWeight = WEIGHTS[a0.name] || 400; return e;
-      case 'bold': if (a0 !== false) e.style.fontWeight = 700; return e;
-      case 'italic': e.style.fontStyle = 'italic'; return e;
-      case 'underline': e.style.textDecoration = 'underline'; return e;
-      case 'strikethrough': e.style.textDecoration = 'line-through'; return e;
-      case 'monospaced': e.style.fontFamily = 'ui-monospace, Menlo, monospace'; return e;
-      case 'monospacedDigit': e.style.fontVariantNumeric = 'tabular-nums'; return e;
-      case 'fontDesign': if (a0 instanceof SImplicit && a0.name === 'rounded') e.style.fontFamily = 'ui-rounded, var(--sf)'; return e;
-      case 'textCase': if (a0 instanceof SImplicit) e.style.textTransform = a0.name === 'uppercase' ? 'uppercase' : a0.name === 'lowercase' ? 'lowercase' : ''; return e;
-      case 'kerning': case 'tracking': e.style.letterSpacing = `${num(a0, 0)}px`; return e;
-      case 'multilineTextAlignment': if (a0 instanceof SImplicit) e.style.textAlign = a0.name === 'center' ? 'center' : a0.name === 'trailing' ? 'right' : 'left'; return e;
-      case 'lineLimit': { const n = num(a0 instanceof Opt ? a0.v : a0, 0); if (n) { e.style.display = '-webkit-box'; e.style.webkitLineClamp = String(n); e.style.webkitBoxOrient = 'vertical'; e.style.overflow = 'hidden'; } return e; }
-      case 'lineSpacing': e.style.lineHeight = `calc(1.25em + ${num(a0, 0)}px)`; return e;
-      case 'opacity': e.style.opacity = String(num(a0, 1)); return e;
-      case 'cornerRadius': e.style.borderRadius = `${num(a0, 0)}px`; e.style.overflow = 'hidden'; return e;
+      case 'fontWeight': if (a0 instanceof SImplicit) setStyle(e, 'fontWeight', WEIGHTS[a0.name] || 400); return e;
+      case 'bold': if (a0 !== false) setStyle(e, 'fontWeight', 700); return e;
+      case 'italic': setStyle(e, 'fontStyle', 'italic'); return e;
+      case 'underline': setStyle(e, 'textDecoration', 'underline'); return e;
+      case 'strikethrough': setStyle(e, 'textDecoration', 'line-through'); return e;
+      case 'monospaced': setStyle(e, 'fontFamily', 'ui-monospace, Menlo, monospace'); return e;
+      case 'monospacedDigit': setStyle(e, 'fontVariantNumeric', 'tabular-nums'); return e;
+      case 'fontDesign': if (a0 instanceof SImplicit && a0.name === 'rounded') setStyle(e, 'fontFamily', 'ui-rounded, var(--sf)'); return e;
+      case 'textCase': if (a0 instanceof SImplicit) setStyle(e, 'textTransform', a0.name === 'uppercase' ? 'uppercase' : a0.name === 'lowercase' ? 'lowercase' : ''); return e;
+      case 'kerning': case 'tracking': setStyle(e, 'letterSpacing', `${num(a0, 0)}px`); return e;
+      case 'multilineTextAlignment': if (a0 instanceof SImplicit) setStyle(e, 'textAlign', a0.name === 'center' ? 'center' : a0.name === 'trailing' ? 'right' : 'left'); return e;
+      case 'lineLimit': { const n = num(a0 instanceof Opt ? a0.v : a0, 0); if (n) { setStyle(e, 'display', '-webkit-box'); setStyle(e, 'webkitLineClamp', String(n)); setStyle(e, 'webkitBoxOrient', 'vertical'); setStyle(e, 'overflow', 'hidden'); } return e; }
+      case 'lineSpacing': setStyle(e, 'lineHeight', `calc(1.25em + ${num(a0, 0)}px)`); return e;
+      case 'opacity': setStyle(e, 'opacity', String(num(a0, 1))); return e;
+      case 'cornerRadius': setStyle(e, 'borderRadius', `${num(a0, 0)}px`); setStyle(e, 'overflow', 'hidden'); return e;
       case 'clipShape': case 'mask': case 'contentShape': {
         if (m.name === 'contentShape') return e;
         const s = a0;
         let radius = null;
         if (s instanceof ViewNode && s.kind === 'Shape') radius = s.props.shape === 'Circle' || s.props.shape === 'Capsule' || s.props.shape === 'Ellipse' ? '9999px' : s.props.shape === 'RoundedRectangle' ? `${s.props.radius}px` : '0';
         if (s instanceof SImplicit) radius = s.name === 'circle' || s.name === 'capsule' ? '9999px' : s.name === 'rect' && s.args ? `${num(s.args[0], 0)}px` : '0';
-        if (radius !== null) { e.style.borderRadius = radius; e.style.overflow = 'hidden'; }
+        if (radius !== null) { setStyle(e, 'borderRadius', radius); setStyle(e, 'overflow', 'hidden'); }
         return e;
       }
       case 'shadow': {
         const radius = num(lab('radius'), 4), x = num(lab('x'), 0), y = num(lab('y'), 0);
         const c = this.color(lab('color')) || 'rgba(0,0,0,0.33)';
-        e.style.filter = `${e.style.filter || ''} drop-shadow(${x}px ${y}px ${radius / 2}px ${c})`;
+        setStyle(e, 'filter', `${e.style.filter || ''} drop-shadow(${x}px ${y}px ${radius / 2}px ${c})`);
         return e;
       }
-      case 'border': { const c = this.color(a0) || 'var(--label)'; e.style.outline = `${num(lab('width'), 1)}px solid ${c}`; e.style.outlineOffset = `-${num(lab('width'), 1)}px`; return e; }
+      case 'border': { const c = this.color(a0) || 'var(--label)'; setStyle(e, 'outline', `${num(lab('width'), 1)}px solid ${c}`); setStyle(e, 'outlineOffset', `-${num(lab('width'), 1)}px`); return e; }
       case 'offset': {
         const w = this.wrap(e);
         const x = num(lab('x'), 0), y = num(lab('y'), 0);
-        w.style.transform = `translate(${x}px, ${y}px)`;
+        setStyle(w, 'transform', `translate(${x}px, ${y}px)`);
         return w;
       }
       case 'scaleEffect': {
         const w = this.wrap(e);
         const s = a0 instanceof Opt ? a0.v : a0;
-        w.style.transform = `scale(${num(s, 1)})`;
+        setStyle(w, 'transform', `scale(${num(s, 1)})`);
         return w;
       }
       case 'rotationEffect': {
         const w = this.wrap(e);
         const deg = a0 instanceof SImplicit && a0.args ? (a0.name === 'radians' ? numVal(a0.args[0]) * 180 / Math.PI : numVal(a0.args[0])) : 0;
-        w.style.transform = `rotate(${deg}deg)`;
+        setStyle(w, 'transform', `rotate(${deg}deg)`);
         return w;
       }
-      case 'blur': e.style.filter = `${e.style.filter || ''} blur(${num(lab('radius'), 0)}px)`; return e;
-      case 'disabled': if (a0 === true) e.classList.add('is-disabled'); return e;
+      case 'blur': setStyle(e, 'filter', `${e.style.filter || ''} blur(${num(lab('radius'), 0)}px)`); return e;
+      case 'disabled': if (a0 === true) addClass(e, 'is-disabled'); return e;
       case 'onTapGesture': {
         const fn = args.find((x) => x.value instanceof SFunc);
-        if (fn) { e.classList.add('tappable'); on(e, 'click', (ev) => { ev.stopPropagation(); this.ctl.runAction(fn.value); }); e.tabIndex = 0; }
+        if (fn) { addClass(e, 'tappable'); on(e, 'click', (ev) => { ev.stopPropagation(); this.ctl.runAction(fn.value); }); e.tabIndex = 0; }
         return e;
       }
       case 'onLongPressGesture': {
         const fn = args.find((x) => x.value instanceof SFunc);
-        if (fn) { e.classList.add('tappable'); on(e, 'contextmenu', (ev) => { ev.preventDefault(); this.ctl.runAction(fn.value); }); }
+        if (fn) { addClass(e, 'tappable'); on(e, 'contextmenu', (ev) => { ev.preventDefault(); this.ctl.runAction(fn.value); }); }
         return e;
       }
-      case 'onSubmit': { r.onSubmit = args.find((x) => x.value instanceof SFunc)?.value; const input = e.querySelector('input'); if (input) on(input, 'keydown', (ev) => { if (ev.key === 'Enter') this.ctl.runAction(r.onSubmit); }); return e; }
-      case 'accessibilityLabel': e.setAttribute('aria-label', describe(a0 instanceof ViewNode ? a0.props.text : a0)); e.dataset.a11yLabel = describe(a0 instanceof ViewNode ? a0.props.text : a0); return e;
-      case 'accessibilityHint': e.dataset.a11yHint = describe(a0); return e;
-      case 'accessibilityValue': e.dataset.a11yValue = describe(a0); return e;
-      case 'accessibilityHidden': if (a0 === true) e.setAttribute('aria-hidden', 'true'); return e;
-      case 'accessibilityAddTraits': e.dataset.a11yTraits = a0 instanceof SImplicit ? a0.name : ''; return e;
-      case 'accessibilityElement': e.dataset.a11yCombine = '1'; return e;
-      case 'ignoresSafeArea': case 'edgesIgnoringSafeArea': e.classList.add('ignores-safe'); return e;
+      case 'onSubmit': return e; // handled through the environment: see envMod
+      case 'accessibilityLabel': { const t = this.describeText(a0 instanceof ViewNode ? a0.props.text : a0); setAttr(e, 'aria-label', t); setData(e, 'a11yLabel', t); return e; }
+      case 'accessibilityHint': setData(e, 'a11yHint', this.describeText(a0)); return e;
+      case 'accessibilityValue': setData(e, 'a11yValue', this.describeText(a0)); return e;
+      case 'accessibilityHidden': if (a0 === true) setAttr(e, 'aria-hidden', 'true'); return e;
+      case 'accessibilityAddTraits': setData(e, 'a11yTraits', a0 instanceof SImplicit ? a0.name : ''); return e;
+      case 'accessibilityElement': setData(e, 'a11yCombine', '1'); return e;
+      case 'ignoresSafeArea': case 'edgesIgnoringSafeArea': addClass(e, 'ignores-safe'); return e;
       case 'glassEffect': {
-        e.classList.add('glass');
-        if (a0 instanceof SImplicit && a0.name === 'clear') e.classList.add('glass-clear');
+        addClass(e, 'glass');
+        if (a0 instanceof SImplicit && a0.name === 'clear') addClass(e, 'glass-clear');
         const shape = lab('in');
         if (shape instanceof SImplicit) {
-          if (shape.name === 'circle' || shape.name === 'capsule') e.style.borderRadius = '9999px';
-          else if (shape.name === 'rect' && shape.args) e.style.borderRadius = `${numVal(shape.args[shape.labels ? Math.max(0, shape.labels.indexOf('cornerRadius')) : 0])}px`;
+          if (shape.name === 'circle' || shape.name === 'capsule') setStyle(e, 'borderRadius', '9999px');
+          else if (shape.name === 'rect' && shape.args) setStyle(e, 'borderRadius', `${numVal(shape.args[shape.labels ? Math.max(0, shape.labels.indexOf('cornerRadius')) : 0])}px`);
         } else if (shape instanceof ViewNode && shape.kind === 'Shape') {
-          e.style.borderRadius = shape.props.shape === 'RoundedRectangle' ? `${shape.props.radius}px` : '9999px';
-        } else e.style.borderRadius = '9999px';
-        const tint = a0 instanceof SImplicit && a0.name === 'regular' ? null : null;
-        if (tint) e.style.setProperty('--glass-tint', tint);
+          setStyle(e, 'borderRadius', shape.props.shape === 'RoundedRectangle' ? `${shape.props.radius}px` : '9999px');
+        } else setStyle(e, 'borderRadius', '9999px');
         return e;
       }
-      case 'imageScale': { const s = a0 instanceof SImplicit ? a0.name : 'medium'; e.style.fontSize = s === 'large' ? '1.3em' : s === 'small' ? '0.8em' : ''; return e; }
-      case 'resizable': e.classList.add('resizable'); return e;
-      case 'scaledToFit': case 'scaledToFill': case 'aspectRatio': e.classList.add('fit'); return e;
-      case 'symbolRenderingMode': case 'symbolVariant': case 'symbolEffect': case 'contentTransition': case 'keyboardType': case 'textInputAutocapitalization': case 'autocorrectionDisabled': case 'submitLabel': case 'focused': case 'refreshable': case 'scrollContentBackground': case 'listRowSeparator': case 'navigationBarBackButtonHidden': case 'statusBarHidden': case 'presentationDetents': case 'presentationDragIndicator': case 'interactiveDismissDisabled': case 'sensoryFeedback': case 'scrollIndicators': case 'scrollDismissesKeyboard': case 'layoutPriority': case 'fixedSize': case 'zIndex': case 'drawingGroup': case 'compositingGroup': case 'allowsHitTesting': case 'textSelection': case 'privacySensitive': case 'redacted': case 'environment': case 'help': case 'keyboardShortcut': case 'containerRelativeFrame': case 'safeAreaPadding': case 'labelsHidden': case 'tag': case 'listRowBackground': case 'listRowInsets': case 'badge': case 'buttonBorderShape': case 'onMove': case 'searchSuggestions': case 'toolbarBackground': case 'toolbarTitleDisplayMode': case 'tabViewStyle': case 'navigationSplitViewStyle': case 'contextMenu':
-        if (m.name === 'badge' && a0 !== undefined && a0 !== 0) { const b = el('span', 'v-badge'); b.textContent = describe(a0); e.appendChild(b); }
-        if (m.name === 'fixedSize') e.style.flexShrink = '0';
-        if (m.name === 'zIndex') e.style.zIndex = String(num(a0, 0));
-        if (m.name === 'labelsHidden') e.classList.add('labels-hidden');
-        if (m.name === 'listRowBackground') { const c = this.color(a0); if (c) e.dataset.rowBg = c; }
-        if (m.name === 'scrollContentBackground' && a0 instanceof SImplicit && a0.name === 'hidden') e.classList.add('no-scroll-bg');
-        if (m.name === 'allowsHitTesting' && a0 === false) e.style.pointerEvents = 'none';
+      case 'imageScale': { const s = a0 instanceof SImplicit ? a0.name : 'medium'; setStyle(e, 'fontSize', s === 'large' ? '1.3em' : s === 'small' ? '0.8em' : ''); return e; }
+      case 'resizable': addClass(e, 'resizable'); return e;
+      case 'scaledToFit': case 'scaledToFill': case 'aspectRatio': addClass(e, 'fit'); return e;
+      case 'symbolRenderingMode': case 'symbolVariant': case 'symbolEffect': case 'contentTransition': case 'keyboardType': case 'textInputAutocapitalization': case 'autocorrectionDisabled': case 'submitLabel': case 'focused': case 'refreshable': case 'scrollContentBackground': case 'listRowSeparator': case 'navigationBarBackButtonHidden': case 'statusBarHidden': case 'presentationDetents': case 'presentationDragIndicator': case 'interactiveDismissDisabled': case 'sensoryFeedback': case 'scrollIndicators': case 'scrollDismissesKeyboard': case 'layoutPriority': case 'fixedSize': case 'zIndex': case 'drawingGroup': case 'compositingGroup': case 'allowsHitTesting': case 'textSelection': case 'privacySensitive': case 'redacted': case 'environment': case 'environmentObject': case 'help': case 'keyboardShortcut': case 'containerRelativeFrame': case 'safeAreaPadding': case 'labelsHidden': case 'tag': case 'listRowBackground': case 'listRowInsets': case 'badge': case 'buttonBorderShape': case 'onMove': case 'searchSuggestions': case 'toolbarBackground': case 'toolbarTitleDisplayMode': case 'tabViewStyle': case 'navigationSplitViewStyle': case 'contextMenu':
+        if (m.name === 'badge' && a0 !== undefined && a0 !== 0) { const b = el('span', 'v-badge'); setText(b, this.describeText(a0)); e.appendChild(b); }
+        if (m.name === 'fixedSize') setStyle(e, 'flexShrink', '0');
+        if (m.name === 'zIndex') setStyle(e, 'zIndex', String(num(a0, 0)));
+        if (m.name === 'labelsHidden') addClass(e, 'labels-hidden');
+        if (m.name === 'listRowBackground') { const c = this.color(a0); if (c) setData(e, 'rowBg', c); }
+        if (m.name === 'scrollContentBackground' && a0 instanceof SImplicit && a0.name === 'hidden') addClass(e, 'no-scroll-bg');
+        if (m.name === 'allowsHitTesting' && a0 === false) setStyle(e, 'pointerEvents', 'none');
         return e;
-      case 'animation': e.classList.add('animated'); return e;
-      case 'transition': e.dataset.transition = a0 instanceof SImplicit ? a0.name : 'opacity'; return e;
+      case 'animation': addClass(e, 'animated'); return e;
+      case 'transition': setData(e, 'transition', a0 instanceof SImplicit ? a0.name : 'opacity'); return e;
       default:
-        e.dataset.unsupported = (e.dataset.unsupported ? e.dataset.unsupported + ',' : '') + m.name;
+        setData(e, 'unsupported', (e.dataset.unsupported ? e.dataset.unsupported + ',' : '') + m.name);
         return e;
     }
   }
@@ -1336,8 +1575,8 @@ const GREEDY_CONTAINERS = ['v-stack', 'v-wrap', 'v-group', 'v-label', 'v-button'
 function propagateGreed(e) {
   if (!e.classList || !GREEDY_CONTAINERS.some((c) => e.classList.contains(c))) return;
   for (const c of e.children) {
-    if (c.dataset && c.dataset.gw) e.dataset.gw = '1';
-    if (c.dataset && c.dataset.gh) e.dataset.gh = '1';
+    if (c.dataset && c.dataset.gw) setData(e, 'gw', '1');
+    if (c.dataset && c.dataset.gh) setData(e, 'gh', '1');
   }
 }
 
@@ -1345,7 +1584,7 @@ function propagateGreed(e) {
 function explicitId(v) {
   if (!(v instanceof ViewNode)) return '';
   const m = v.mods.find((x) => x.name === 'id');
-  if (m) return '#' + hashKey(m.args[0].value);
+  if (m) return '#' + shortKey(hashKey(m.args[0].value));
   if (v.kind === 'User' && v.props.view instanceof ViewNode) return explicitId(v.props.view);
   return '';
 }
@@ -1360,7 +1599,7 @@ export function fitViewThatFits(root) {
     for (let k = 0; k < opts.length; k++) {
       const o = opts[k];
       o.hidden = false;
-      o.classList.add('measuring');
+      addClass(o, 'measuring');
       const ideal = o.scrollWidth;
       o.classList.remove('measuring');
       o.hidden = true;
@@ -1371,11 +1610,24 @@ export function fitViewThatFits(root) {
 }
 
 function unwrapKind(r) {
-  while (r && (r.t === 'Wrap' || (r.t === 'Group' && r.c.length === 1))) r = r.c[0];
+  while (r && (r.t === 'Wrap' || ((r.t === 'Group' || r.t === 'Conditional') && r.c.length === 1))) r = r.c[0];
   return r ? r.t : null;
 }
 
-function textOf(r) {
+// A child plus a container's modifiers (Group { } .padding() pads each child).
+function addMods(g, mods) {
+  if (!(g instanceof ViewNode)) return mods.length ? new ViewNode('User', { view: g }, [], mods) : g;
+  if (!mods.length) return g;
+  const n = new ViewNode(g.kind, g.props, g.children, [...g.mods, ...mods]);
+  if (g.key !== undefined) n.key = g.key;
+  return n;
+}
+
+// Resolved children that take part in layout: EmptyView and an `if` that
+// produced nothing keep sibling identity but draw nothing.
+export function visible(list) { return list.filter((c) => c && c.t !== 'EmptyView' && !((c.t === 'Conditional' || c.t === 'Group') && !c.c.length)); }
+
+export function textOf(r) {
   if (!r) return '';
   if (r.t === 'Text') return r.p.text;
   if (r.t === 'Label') return r.p.title || (r.c || []).map(textOf).join(' ');

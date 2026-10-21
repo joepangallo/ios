@@ -38,16 +38,24 @@ export async function runOnRealSwift(code, { timeoutMs = 25000 } = {}) {
       const compileErr = (build.stderr || []).map((x) => x.text).join('\n');
       const stdout = (j.stdout || []).map((x) => x.text).join('\n');
       const stderr = (j.stderr || []).map((x) => x.text).join('\n');
+      // Positioned diagnostics (file:line:col: error: …) become `diagnostics`;
+      // everything else the build printed (for example "error: link command
+      // failed with exit code 1") is kept verbatim in `buildStderr` so a failed
+      // build always has an explanation to show.
       const diagnostics = [];
+      const rest = [];
       for (const ln of compileErr.split('\n')) {
-        const m = /:(\d+):(\d+): (error|warning): (.*)$/.exec(ln);
+        // no `$` after (.*): a line terminator inside the text made every attempt backtrack to the start
+        const m = /:(\d+):(\d+): (error|warning): (.*)/.exec(ln);
         if (m) diagnostics.push({ line: Number(m[1]), col: Number(m[2]), kind: m[3], msg: m[4] });
+        else rest.push(ln);
       }
       return {
         ok: build.code === 0 && j.code === 0,
         compiled: build.code === 0,
         stdout: stdout ? stdout + '\n' : '',
         stderr,
+        buildStderr: rest.join('\n').trim(),
         diagnostics,
         compiler: `Swift ${id.replace('swift', '').replace(/^(\d)(\d)(\d)?$/, (m, a, b, c) => `${a}.${b}${c ? '.' + c : ''}`)}`,
         ms: Math.round(performance.now() - started),

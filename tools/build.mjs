@@ -1,11 +1,17 @@
 // Builds the single-file course page.
 //   node tools/build.mjs            -> ios-development.html (full document, opens from disk)
 //   node tools/build.mjs --fragment -> also dist/ios-development-fragment.html (head + body content only, for embedding)
+// Two bundles: the run worker (src/app/worker-entry.js: the console engine and
+// Swift Testing runner, no page code) is built first and embedded in the page
+// bundle as the string constant __WORKER_SOURCE__, which src/app/run-worker.js
+// starts from a Blob URL. The page needs no second file and no network fetch.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
+import { inlineScript } from './inline-html.mjs';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rel = (p) => path.join(ROOT, p);
 
 // 1. registry of content modules and widgets
@@ -21,19 +27,32 @@ fs.writeFileSync(rel('src/generated/registry.js'), [
   '',
 ].join('\n'));
 
-// 2. bundle
+// 2. bundles
+const TARGET = ['es2022', 'safari16', 'chrome110', 'firefox115'];
+const workerResult = await esbuild.build({
+  entryPoints: [rel('src/app/worker-entry.js')],
+  bundle: true,
+  write: false,
+  format: 'iife',
+  minify: true,
+  target: TARGET,
+  legalComments: 'none',
+  logLevel: 'warning',
+});
+const workerJs = workerResult.outputFiles[0].text;
 const result = await esbuild.build({
   entryPoints: [rel('src/app/main.js')],
   bundle: true,
   write: false,
   format: 'iife',
   minify: true,
-  target: ['es2022', 'safari16', 'chrome110', 'firefox115'],
+  target: TARGET,
   loader: { '.wasm': 'binary' },
+  define: { __WORKER_SOURCE__: JSON.stringify(workerJs) },
   legalComments: 'none',
   logLevel: 'warning',
 });
-const js = result.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
+const js = inlineScript(result.outputFiles[0].text);
 
 // 3. css
 const css = (fs.readFileSync(rel('src/app/tokens.css'), 'utf8') + '\n' + fs.readFileSync(rel('src/app/styles.css'), 'utf8'))
@@ -62,7 +81,7 @@ ${bodyContent}
 </html>
 `;
 fs.writeFileSync(rel('ios-development.html'), full);
-console.log(`ios-development.html  ${(full.length / 1024 / 1024).toFixed(2)} MB  (${contentFiles.length} modules, ${widgetFiles.length} widget files)`);
+console.log(`ios-development.html  ${(full.length / 1024 / 1024).toFixed(2)} MB  (${contentFiles.length} modules, ${widgetFiles.length} widget files, run worker ${(workerJs.length / 1024).toFixed(0)} KB)`);
 if (process.argv.includes('--fragment')) {
   fs.mkdirSync(rel('dist'), { recursive: true });
   fs.writeFileSync(rel('dist/ios-development-fragment.html'), `${head}\n${bodyContent}\n`);

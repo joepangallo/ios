@@ -2,6 +2,8 @@
 // active, background, suspension and silent termination, see which SwiftUI
 // callbacks fire, and find out whether an unsaved draft survives.
 
+import { esc, idScope, reducedMotionCss } from './services-kit.js';
+
 const NAME = 'ecosystem-lifecycle-sim';
 let mounted = 0;
 
@@ -26,7 +28,6 @@ const EDGES = [
 
 const PHASE = { inactive: '.inactive', active: '.active', background: '.background' };
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const quote = (s) => (s ? `"${s.length > 28 ? s.slice(0, 27) + '...' : s}"` : 'empty');
 
 const CSS = `
@@ -124,15 +125,14 @@ const CSS = `
   .w-${NAME} .side { gap: 6px; }
   .w-${NAME} .log ol { font-size: 11px; }
 }
-@media (prefers-reduced-motion: reduce) { .w-${NAME} *, .w-${NAME} *::before, .w-${NAME} *::after { transition: none !important; animation: none !important; } }
+${reducedMotionCss(`.w-${NAME}`)}
 `;
 
 export default {
   name: 'ecosystem-lifecycle-sim',
   css: CSS,
   mount(el, props = {}, ctx) {
-    const sfx = mounted++ ? `-${mounted}` : '';
-    const id = (s) => `${NAME}-${s}${sfx}`;
+    const id = idScope(NAME, ++mounted);
     el.classList.add(`w-${NAME}`);
     const reduced = !!ctx?.reducedMotion;
     let suspendTimer = null;

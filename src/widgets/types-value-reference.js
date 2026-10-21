@@ -3,8 +3,10 @@
 // (heap). Class references are SVG arrows, and every heap object shows its ARC
 // reference count so students can watch objects get shared and freed.
 
+import { esc, idScope } from './services-kit.js';
+
 const NAME = 'types-value-reference';
-const ID = (s) => `${NAME}-${s}`;
+const ID = idScope(NAME);
 
 const OPS = [
   { id: 'copy', label: (s) => (s.hasB ? 'b = a' : 'var b = a'), hint: 'Copy or assign a into b', needsB: false },
@@ -127,10 +129,6 @@ const css = `
   .w-${NAME} .vr-explain { grid-column: auto; font-size: 12.5px; }
 }
 `;
-
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 // Minimal Swift coloring for the one-line programs this widget shows.
 function colorize(line) {

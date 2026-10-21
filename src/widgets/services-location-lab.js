@@ -4,11 +4,11 @@
 // compiled to WebAssembly and called through ctx.wasm. The browser's own
 // Geolocation API stands in for Core Location, and a simulated stream stands
 // in for CLLocationUpdate.liveUpdates().
-import { esc, codeHtml, codeCss, panelCss, idFor } from './services-kit.js';
+import { esc, codeHtml, codeCss, panelCss, idScope, snapshotHost } from './services-kit.js';
 
 const NAME = 'services-location-lab';
 const S = `.w-${NAME}`;
-const id = (role) => idFor(NAME, role);
+const id = idScope(NAME);
 
 const RAD = Math.PI / 180;
 const CITY_LAT0 = 40.74;
@@ -314,6 +314,7 @@ ${panelCss(S)}
 }
 `,
   mount(el, props = {}, ctx) {
+    const restoreHost = snapshotHost(el);
     el.classList.add(`w-${NAME}`);
     const state = {
       scene: props.scene === 'world' ? 'world' : 'city',
@@ -774,6 +775,7 @@ ${panelCss(S)}
         svg.removeEventListener('keydown', onKey);
         el.removeEventListener('click', onClick);
         el.innerHTML = '';
+        restoreHost();
       },
     };
   },

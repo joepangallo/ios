@@ -42,10 +42,10 @@ it('a rebuilt preview runs the new .task, not the old one', async () => {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const prints = [];
-  const ctl = mountPreview(host, 'import SwiftUI\n#Preview { Text("A").task { try? await Task.sleep(for: .milliseconds(30)); print("OLD") } }', { onPrint: (s) => prints.push(s.trim()) });
-  await new Promise((r) => setTimeout(r, 5));
+  const ctl = mountPreview(host, 'import SwiftUI\n#Preview { Text("A").task { try? await Task.sleep(for: .milliseconds(500)); print("OLD") } }', { onPrint: (s) => prints.push(s.trim()) });
+  await new Promise((r) => setTimeout(r, 25));
   ctl.update('import SwiftUI\n#Preview { Text("B").task { print("NEW") } }');
-  await new Promise((r) => setTimeout(r, 80));
+  await new Promise((r) => setTimeout(r, 900));
   expect(prints).toEqual(['NEW']);
 });
 it('.id() on ForEach rows resets their state', async () => {

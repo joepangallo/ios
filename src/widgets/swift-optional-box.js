@@ -2,6 +2,8 @@
 // watch which lines run, what prints, and what type comes out the other side.
 // Every snippet and every printed line matches real Swift 6 output.
 
+import { esc, highlightSwift } from './services-kit.js';
+
 const NAME = 'swift-optional-box';
 const M0 = '\u0001'; // start of the technique highlight inside a code line
 const M1 = '\u0002'; // end of the technique highlight
@@ -157,68 +159,8 @@ const TECHNIQUES = [
 ];
 
 // ---------------------------------------------------------------- highlighting
-const KW = new Set(['let', 'var', 'if', 'else', 'guard', 'func', 'return', 'nil', 'as']);
-const TYPES = new Set(['String', 'Int', 'Any', 'Optional']);
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-function hlString(src, i) {
-  let out = '';
-  let buf = '"';
-  let j = i + 1;
-  const flush = () => { if (buf) out += `<span class="t-str">${esc(buf)}</span>`; buf = ''; };
-  while (j < src.length && src[j] !== '"') {
-    if (src[j] === '\\' && src[j + 1] === '(') {
-      buf += '\\(';
-      flush();
-      let depth = 1;
-      let k = j + 2;
-      while (k < src.length) {
-        if (src[k] === '(') depth++;
-        else if (src[k] === ')') { depth--; if (depth === 0) break; }
-        k++;
-      }
-      out += hl(src.slice(j + 2, k));
-      buf = ')';
-      j = k + 1;
-      continue;
-    }
-    buf += src[j];
-    j++;
-  }
-  buf += '"';
-  flush();
-  return [out, j + 1];
-}
-
-function hl(src) {
-  let out = '';
-  let i = 0;
-  while (i < src.length) {
-    const c = src[i];
-    if (c === M0) { out += '<mark class="tech">'; i++; continue; }
-    if (c === M1) { out += '</mark>'; i++; continue; }
-    if (c === '"') { const [h, j] = hlString(src, i); out += h; i = j; continue; }
-    if (/[A-Za-z_]/.test(c)) {
-      let j = i;
-      while (j < src.length && /[A-Za-z0-9_]/.test(src[j])) j++;
-      const w = src.slice(i, j);
-      const cls = KW.has(w) ? 'kw' : TYPES.has(w) ? 'type' : src[j] === '(' ? 'fn' : '';
-      out += cls ? `<span class="t-${cls}">${w}</span>` : w;
-      i = j;
-      continue;
-    }
-    if (/[0-9]/.test(c)) {
-      let j = i;
-      while (j < src.length && /[0-9.]/.test(src[j])) j++;
-      out += `<span class="t-num">${src.slice(i, j)}</span>`;
-      i = j;
-      continue;
-    }
-    out += esc(c);
-    i++;
-  }
-  return out;
-}
+const hl = (src) => highlightSwift(src, { prefix: 't-', marks: [M0, M1, '<mark class="tech">', '</mark>'] });
 
 // ------------------------------------------------------------------------ CSS
 const css = `

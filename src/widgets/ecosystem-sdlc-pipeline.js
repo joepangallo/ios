@@ -3,6 +3,8 @@
 // this phase" consequence explorer, and a waterfall-vs-agile timeline that
 // shows when real user feedback first arrives.
 
+import { esc, idScope, reducedMotionCss } from './services-kit.js';
+
 const NAME = 'ecosystem-sdlc-pipeline';
 let mounted = 0;
 
@@ -84,8 +86,6 @@ function agileStatus(w) {
   return `Sprint ${sprint}: shipping 1.1 and 1.2 from real user feedback.`;
 }
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-
 const CSS = `
 .w-${NAME} { container-type: inline-size; height: 100%; color: var(--ink); font-family: var(--font-ui); }
 .w-${NAME} * { box-sizing: border-box; }
@@ -148,15 +148,14 @@ const CSS = `
   .w-${NAME} .phases button { padding: 6px 4px; font-size: 11.5px; }
   .w-${NAME} .box p, .w-${NAME} .box li { font-size: 12.5px; }
 }
-@media (prefers-reduced-motion: reduce) { .w-${NAME} *, .w-${NAME} *::before, .w-${NAME} *::after { transition: none !important; animation: none !important; } }
+${reducedMotionCss(`.w-${NAME}`)}
 `;
 
 export default {
   name: 'ecosystem-sdlc-pipeline',
   css: CSS,
   mount(el, props = {}, ctx) {
-    const sfx = mounted++ ? `-${mounted}` : '';
-    const id = (s) => `${NAME}-${s}${sfx}`;
+    const id = idScope(NAME, ++mounted);
     el.classList.add(`w-${NAME}`);
     const state = { tab: 'phases', sel: 0, skipped: null, week: 6 };
 

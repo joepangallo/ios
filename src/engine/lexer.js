@@ -29,6 +29,42 @@ function isIdentPart(c) {
   return /[A-Za-z0-9_À-￿$]/.test(c);
 }
 
+// Number literals (see Lexer.number).
+const FLOAT_KEEP = 800, RADIX_KEEP = 1024, DISPLAY_DIGITS = 40;
+const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER), INT64_MAX_BIG = 2n ** 63n - 1n, UINT64_MAX_BIG = 2n ** 64n - 1n;
+function digitValue(c) { // 0-9, then a-f / A-F as 10-15; 99 for anything else
+  const k = c.charCodeAt(0);
+  if (k >= 48 && k <= 57) return k - 48;
+  if (k >= 97 && k <= 102) return k - 87;
+  if (k >= 65 && k <= 70) return k - 55;
+  return 99;
+}
+
+// mant x 2^e as a Double, rounded once to nearest-even at the precision the result
+// has at that magnitude (53 bits, fewer for subnormals), with mant's lowest bit used
+// as a sticky bit. Converting with Number() first would round twice for subnormals.
+export function bigTimesPow2(mant, e) {
+  if (mant === 0n) return 0;
+  const bits = mant.toString(2).length;
+  const top = bits - 1 + e; // value is in [2^top, 2^(top+1))
+  if (top > 1023) return Infinity;
+  const precision = top >= -1022 ? 53 : top + 1074 + 1; // bits kept down to 2^-1074
+  if (precision < 0) return 0;
+  const shift = bits - precision;
+  let q = mant, e2 = e;
+  if (shift > 0) {
+    const sh = BigInt(shift);
+    q = mant >> sh;
+    const rem = mant & ((1n << sh) - 1n), half = 1n << (sh - 1n);
+    if (rem > half || (rem === half && (q & 1n) === 1n)) q += 1n;
+    e2 = e + shift;
+  }
+  if (q === 0n) return 0;
+  const h = Math.trunc(e2 / 2);
+  return Number(q) * 2 ** h * 2 ** (e2 - h);
+}
+
+
 export function tokenize(src) {
   return new Lexer(src).run();
 }
@@ -133,9 +169,13 @@ class Lexer {
     if (n === 'u' && this.peek(2) === '{') {
       this.advance(3);
       let hex = '';
-      while (this.peek() !== '}') { hex += this.peek(); this.advance(); }
+      while (this.i < this.src.length && /[0-9a-fA-F]/.test(this.peek())) { hex += this.peek(); this.advance(); }
+      if (this.peek() !== '}') this.error("expected '}' in \\u{...} escape sequence");
+      if (hex.length < 1 || hex.length > 8) this.error('\\u{...} escape sequence expects between 1 and 8 hex digits');
       this.advance();
-      return String.fromCodePoint(parseInt(hex, 16));
+      const code = parseInt(hex, 16);
+      if (code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) this.error('invalid unicode scalar');
+      return String.fromCodePoint(code);
     }
     this.error(`invalid escape sequence in literal`);
   }
@@ -203,39 +243,120 @@ class Lexer {
     return { t: 'string', parts: multi ? dedentMultiline(parts) : parts, line, col };
   }
 
+  // Swift's number lexer. Digits are scanned to the end of the literal, but only the
+  // significant digits that can matter are kept: no 64-bit integer has more than 20
+  // decimal (64 binary) digits, and any Double is decided by its first 767 significant
+  // decimal digits plus whether a non-zero digit follows (kept as a sticky digit). A
+  // million-digit literal therefore costs one pass and no big text or BigInt. Malformed
+  // literals get swiftc's diagnostics, and an overflow is reported with the literal's
+  // decimal value as swiftc prints it, cut after DISPLAY_DIGITS digits.
   number() {
-    const line = this.line, col = this.col;
-    const s = this.src;
-    let j = this.i;
-    let text = '';
-    const take = (re) => { while (j < s.length && (re.test(s[j]) || s[j] === '_')) { if (s[j] !== '_') text += s[j]; j++; } };
-    if (s[j] === '0' && /[xob]/.test(s[j + 1])) {
-      const base = { x: 16, o: 8, b: 2 }[s[j + 1]];
+    const line = this.line, col = this.col, s = this.src, start = this.i;
+    let j = start;
+    const at = (k) => (k < s.length ? String.fromCodePoint(s.codePointAt(k)) : '');
+    const fail = (msg, k) => { throw new SwiftError(msg, line, col + (k - start)); };
+    const isDec = (c) => c >= '0' && c <= '9';
+    const expectExpDigit = (k) => {
+      const c = at(k);
+      if (c === '_') fail("'_' is not a valid first character in floating point exponent", k);
+      if (c && isIdentPart(c)) fail(`'${c}' is not a valid digit in floating point exponent`, k);
+      fail('expected a digit in floating point exponent', k);
+    };
+    // decimal exponent digits (underscores allowed after the first), value clamped
+    const exponent = () => {
+      let sign = 1;
+      if (s[j] === '+' || s[j] === '-') { if (s[j] === '-') sign = -1; j++; }
+      if (!isDec(s[j] || '')) expectExpDigit(j);
+      let e = 0;
+      for (; j < s.length && (isDec(s[j]) || s[j] === '_'); j++) if (s[j] !== '_' && e < 1e8) e = e * 10 + (s.charCodeAt(j) - 48);
+      if (isIdentPart(at(j))) fail(`'${at(j)}' is not a valid digit in floating point exponent`, j);
+      return sign * e;
+    };
+    const finish = (tok) => {
+      this.advance(j - start);
+      tok.raw = j - start <= 256 ? s.slice(start, j) : s.slice(start, start + DISPLAY_DIGITS) + '...';
+      return Object.assign(tok, { line, col });
+    };
+    const shown = (digits) => (digits.length > DISPLAY_DIGITS ? digits.slice(0, DISPLAY_DIGITS) + '...' : digits);
+    const intToken = (big) => ({ t: 'int', v: big <= MAX_SAFE ? Number(big) : big });
+
+    if (s[j] === '0' && (s[j + 1] === 'x' || s[j + 1] === 'o' || s[j + 1] === 'b')) {
+      const base = s[j + 1] === 'x' ? 16 : s[j + 1] === 'o' ? 8 : 2;
+      const kind = base === 16 ? 'hexadecimal digit (0-9, A-F)' : base === 8 ? 'octal digit (0-7)' : 'binary digit (0 or 1)';
+      const isD = (c) => c !== '' && digitValue(c) < base;
+      const prefix = s.slice(j, j + 2);
       j += 2;
-      take(base === 16 ? /[0-9a-fA-F]/ : base === 8 ? /[0-7]/ : /[01]/);
-      this.advance(j - this.i);
-      return { t: 'int', v: parseInt(text, base), raw: s.slice(this.i - (j - this.i), j), line, col };
+      if (!isD(s[j] || '')) fail(`'${at(j)}' is not a valid ${kind} in integer literal`, j);
+      let mant = '', sig = 0, dropped = 0, sticky = false, fracKept = 0;
+      const digit = (c, frac) => {
+        if (!sig && c === '0') { if (frac) fracKept++; return; }
+        if (sig < RADIX_KEEP) { mant += c; sig++; if (frac) fracKept++; } else { sig++; if (c !== '0') sticky = true; if (!frac) dropped++; }
+      };
+      for (; j < s.length && (isD(s[j]) || s[j] === '_'); j++) if (s[j] !== '_') digit(s[j], false);
+      let isFloat = false, dot = -1;
+      if (base === 16 && s[j] === '.' && isD(s[j + 1] || '')) {
+        let k = j + 1;
+        while (k < s.length && (isD(s[k]) || s[k] === '_')) k++;
+        if (s[k] === 'p' || s[k] === 'P') {
+          dot = j;
+          for (j++; j < k; j++) if (s[j] !== '_') digit(s[j], true);
+        } else if (!isDec(s[j + 1])) {
+          // 0xff.description: an integer followed by a member access
+        } else fail('hexadecimal floating point literal must end with an exponent', k);
+      }
+      if (base === 16 && (s[j] === 'p' || s[j] === 'P')) {
+        const signed = s[j + 1] === '+' || s[j + 1] === '-';
+        if (!isDec(s[j + (signed ? 2 : 1)] || '') && dot >= 0 && !isDec(s[dot + 1]) && !signed) {
+          j = dot; // 0x1.Ap: an integer, then the member `Ap`
+        } else {
+          j++;
+          const e = exponent();
+          isFloat = true;
+          let m = mant ? BigInt('0x' + mant) : 0n;
+          if (sticky) m = (m << 4n) | 1n;
+          return finish({ t: 'float', v: bigTimesPow2(m, e + 4 * dropped - 4 * fracKept - (sticky ? 4 : 0)) });
+        }
+      }
+      if (!isFloat && j < s.length && isIdentPart(at(j)) && s[j] !== '.') fail(`'${at(j)}' is not a valid ${kind} in integer literal`, j);
+      const big = mant ? BigInt(prefix + mant) : 0n;
+      const tok = intToken(big);
+      if (big > INT64_MAX_BIG) tok.display = sig > RADIX_KEEP ? prefix + mant.slice(0, DISPLAY_DIGITS) + '...' : shown(big.toString());
+      return finish(tok);
     }
-    take(/[0-9]/);
+
+    // decimal: integer digits, optional fraction (a '.' followed by a digit), exponent
+    let mant = '', sig = 0, exp10 = 0, sticky = false;
+    const digit = (c, frac) => {
+      if (!sig && c === '0') { if (frac) exp10--; return; }
+      sig++;
+      if (sig <= FLOAT_KEEP) { mant += c; if (frac) exp10--; } else { if (c !== '0') sticky = true; if (!frac) exp10++; }
+    };
+    for (; j < s.length && (isDec(s[j]) || s[j] === '_'); j++) if (s[j] !== '_') digit(s[j], false);
     let isFloat = false;
-    if (s[j] === '.' && /[0-9]/.test(s[j + 1] || '')) {
+    if (s[j] === '.' && isDec(s[j + 1] || '')) {
       isFloat = true;
-      text += '.';
-      j++;
-      take(/[0-9]/);
+      for (j++; j < s.length && (isDec(s[j]) || s[j] === '_'); j++) if (s[j] !== '_') digit(s[j], true);
     }
-    if ((s[j] === 'e' || s[j] === 'E') && /[0-9+-]/.test(s[j + 1] || '')) {
+    if (s[j] === 'e' || s[j] === 'E') {
+      j++;
+      exp10 += exponent();
       isFloat = true;
-      text += 'e';
-      j++;
-      if (s[j] === '+' || s[j] === '-') { text += s[j]; j++; }
-      take(/[0-9]/);
+    } else if (!isFloat && isIdentPart(at(j))) {
+      fail(`'${at(j)}' is not a valid digit in integer literal`, j);
     }
-    const raw = s.slice(this.i, j);
-    this.advance(j - this.i);
-    if (isFloat) return { t: 'float', v: parseFloat(text), raw, line, col };
-    const big = BigInt(text);
-    return { t: 'int', v: big <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(text) : big, raw, line, col };
+    if (isFloat) {
+      const text = (mant || '0') + (sticky ? '1' : '') + 'e' + (exp10 - (sticky ? 1 : 0));
+      return finish({ t: 'float', v: parseFloat(text) });
+    }
+    // Oversized integers are diagnosed by the parser, which knows whether the literal
+    // is negated (-9223372036854775808 is Int.min) or stored into a UInt. Up to
+    // DISPLAY_DIGITS significant digits the value is exact; a longer literal can never
+    // fit, so it carries a value just past UInt64.max instead of a huge BigInt.
+    const tok = intToken(sig > DISPLAY_DIGITS ? UINT64_MAX_BIG + 1n : mant ? BigInt(mant) : 0n);
+    if (sig > 20 || tok.v > INT64_MAX_BIG) tok.display = shown(mant);
+    // its value as a Double, correctly rounded, for a floating-point context
+    if (sig > DISPLAY_DIGITS) tok.approx = parseFloat(mant + (sticky ? '1' : '') + 'e' + (exp10 - (sticky ? 1 : 0)));
+    return finish(tok);
   }
 
   next() {
@@ -246,11 +367,17 @@ class Lexer {
     if (c === '`') {
       this.advance();
       let name = '';
-      while (this.peek() !== '`') { name += this.peek(); this.advance(); }
+      while (this.i < this.src.length && this.peek() !== '`' && this.peek() !== '\n') { name += this.peek(); this.advance(); }
+      // swiftc reports a lone backtick as a missing pattern: let `x = 1
+      if (this.peek() !== '`' || !name.length) throw new SwiftError('expected pattern', line, col);
       this.advance();
       return { t: 'ident', v: name, line, col };
     }
-    if (c === '#' && (this.peek(1) === '"' || (this.peek(1) === '#' && this.peek(2) === '"'))) return this.rawString();
+    if (c === '#') { // a raw string: any number of '#' then '"' (#"..."#, ###"..."###)
+      let k = 0;
+      while (this.peek(k) === '#') k++;
+      if (this.peek(k) === '"') return this.rawString();
+    }
     if (c === '#') {
       this.advance();
       let name = '';

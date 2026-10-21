@@ -3,6 +3,8 @@
 // a Swift Testing skeleton being generated. The complete skeletons were
 // type-checked and run with Swift Testing against stub types.
 
+import { esc, highlightSwift } from './services-kit.js';
+
 const NAME = 'shipping-story-mapper';
 let uid = 0;
 
@@ -63,25 +65,8 @@ const STORIES = [
   },
 ];
 
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-// Minimal Swift highlighter for the generated lines.
-function hl(line) {
-  if (/^\s*\/\//.test(line)) {
-    const todo = /TODO/.test(line);
-    return `<span class="${todo ? 't-todo' : 't-cmt'}">${esc(line)}</span>`;
-  }
-  return line.split(/("(?:[^"\\]|\\.)*")/).map((p, i) => {
-    if (i % 2) return `<span class="t-str">${esc(p)}</span>`;
-    return esc(p)
-      .replace(/(#expect|@Test)/g, '<span class="t-attr">$1</span>')
-      .replace(/\b(func|var|let|await|async)\b/g, '<span class="t-kw">$1</span>')
-      .replace(/\b([A-Z][A-Za-z]+)\b/g, '<span class="t-type">$1</span>')
-      .replace(/\b(\d[\d_]*)\b/g, '<span class="t-num">$1</span>');
-  }).join('');
-}
+// Generated lines: a TODO comment keeps its own color; everything else is Swift.
+const hl = (line) => (/^\s*\/\/.*TODO/.test(line) ? `<span class="t-todo">${esc(line)}</span>` : highlightSwift(line, { prefix: 't-' }));
 
 export default {
   name: 'shipping-story-mapper',

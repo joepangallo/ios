@@ -14,7 +14,7 @@ const architecture = {
     {
       kind: 'concept',
       title: 'Give every piece one job',
-      body: `<p>An app that works today still has to survive new features, a redesign and a second developer. <strong>Architecture</strong> is how you divide code so each piece has one job and one reason to change. The principle is called <strong>separation of concerns</strong>.</p><p>SwiftUI apps commonly use <strong>MVVM</strong> (Model, View, View Model). Each layer talks only to its neighbor, so you can redesign a screen without touching networking, or replace the network without touching a screen.</p>`,
+      body: `<p>An app that works today still has to survive new features, a redesign and a second developer. <strong>Architecture</strong> is how you divide code so each piece has one job and one reason to change: <strong>separation of concerns</strong>.</p><p><strong>MVVM</strong> (Model, View, View Model) is one common way to organise a SwiftUI app: the view model is a plain <code>@Observable</code> class that holds a screen's state and logic so the view stays simple. Small screens do not need one; screens with loading, errors, or several sources of data usually do. Each layer talks only to its neighbor, so you can redesign a screen without touching networking.</p>`,
       points: [
         { term: 'View', text: 'A SwiftUI struct that draws the screen from current data and forwards taps. No rules, no networking.' },
         { term: 'View model', text: 'An @Observable class that holds screen state, applies the rules (limits, validation, formatting) and calls services.' },
@@ -203,7 +203,7 @@ const architecture = {
           'At first appearance and after each relevant change.',
           'body must be fast and free of side effects because SwiftUI may call it often.')],
         [r`        VStack(spacing: 16) {`, n(
-          'SwiftUI\'s layout system.',
+          'SwiftUI\'s layout system, arranging the text and the button.',
           'Stacks the text and the button vertically, 16 points apart.',
           'The root of this view\'s content.',
           'Rebuilt on each body call (cheaply).',
@@ -219,9 +219,9 @@ const architecture = {
           'A button whose action forwards the intent to the model.',
           'Inside the stack, below the text.',
           'Every time the user taps it, which then triggers one redraw.',
-          'The view says what happened (a tap); the model decides what it means. That split is the heart of MVVM.')],
+          'The view says what happened (a tap); the model decides what it means. That split is what a view model is for.')],
         [r`                .buttonStyle(.borderedProminent)`, n(
-          'SwiftUI\'s styling system.',
+          'SwiftUI\'s styling system, applied to this one button.',
           'Draws the button as a filled, prominent button.',
           'A modifier applied to the Button.',
           'Applied on every render; it has no effect on the model or its rules.',
@@ -377,7 +377,7 @@ const architecture = {
     {
       kind: 'concept',
       title: 'Dependency injection with protocols',
-      body: `<p>A view model that builds its own <code>URLSession</code> is welded to the network: previews need Wi-Fi, and tests become slow and flaky. <strong>Dependency injection</strong> means an object receives what it depends on from outside, usually as an initializer argument.</p><p>Describe the dependency with a <strong>protocol</strong>, then inject a live, mock or failing version. Try each one in the figure. The view and the view model never change.</p>`,
+      body: `<p>Module 08 (Networking) introduced protocol-backed services with a stub; here the same idea becomes the testing seam for a whole screen. A view model that builds its own <code>URLSession</code> is welded to the network: previews need Wi-Fi, and tests become slow and flaky. <strong>Dependency injection</strong> means an object receives what it depends on from outside, usually as an initializer argument.</p><p>Describe the dependency with a <strong>protocol</strong>, then inject a live, mock or failing version. Try each one in the figure. The view and the view model never change.</p>`,
       points: [
         { term: 'Protocol', text: 'The contract: what the service can do, not how it does it.' },
         { term: 'Mock', text: 'A stand-in that returns fixed data instantly, for previews and tests.' },
@@ -455,7 +455,7 @@ const architecture = {
           'Before the request starts.',
           'Immediate feedback tells the user something is happening; the view updates automatically.')],
         [r`        do {`, n(
-          'Swift\'s error handling.',
+          'Swift\'s error-handling syntax, inside load().',
           'Starts a block whose thrown errors jump to catch.',
           'Inside load(), wrapping the one call that can throw.',
           'Each time load() runs.',
@@ -473,7 +473,7 @@ const architecture = {
           'When the service returns.',
           'Assigning summary triggers observation, so the card redraws with no extra code.')],
         [r`        } catch {`, n(
-          'Swift\'s error handling.',
+          'Swift\'s catch clause, paired with the do block in load().',
           'Catches any error the service threw.',
           'Paired with the do block.',
           'Only when currentTemperature() throws.',
@@ -505,7 +505,7 @@ const architecture = {
           'Each conforming type implements it.',
           'Requires an async, throwing method that returns a Double.',
           'Inside the protocol; a requirement has a signature but no body.',
-          'Called by summary(from:).',
+          'Called by summary(from:) each time it runs, twice in this program.',
           'Matching the app\'s real contract means a mock that passes here would also plug into the real view model.')],
         ['}', null],
         ['', null],
@@ -536,7 +536,7 @@ const architecture = {
           'Each time it is called below.',
           'The parameter type is the protocol, so the caller chooses the implementation. That is dependency injection in one line.')],
         [r`    do {`, n(
-          'Swift\'s error handling.',
+          'Swift\'s error-handling syntax, inside summary(from:).',
           'Begins a block that can throw.',
           'Inside summary(from:), around the call that can throw.',
           'Each time summary(from:) is called, twice in this program.',
@@ -554,7 +554,7 @@ const architecture = {
           'After the service returns.',
           'Swift prints whole Doubles with .0, so 30 shows as 30.0. A test would catch that if you wanted "30".')],
         [r`    } catch {`, n(
-          'Swift\'s error handling.',
+          'Swift\'s catch clause, paired with the do block in summary(from:).',
           'Handles any thrown error.',
           'Right after the do block, pairing with it.',
           'Only if currentTemperature() throws.',
@@ -642,7 +642,7 @@ const architecture = {
           'Each time the view model\'s load() runs.',
           'Same signature as the mock, which is why the two are interchangeable.')],
         [r`        let url = URL(string: "https://api.open-meteo.com/v1/forecast"`, n(
-          'Foundation\'s URL parser.',
+          'Foundation\'s URL parser, through URL(string:).',
           'Starts building the request address from the API\'s base URL.',
           'Inside currentTemperature(), the first step of the request.',
           'On each call, before any network traffic.',
@@ -688,7 +688,7 @@ const architecture = {
           'The service, handing its answer back through the protocol.',
           'Returns just the number the protocol promised.',
           'Last line of currentTemperature().',
-          'After decoding succeeds.',
+          'After decoding succeeds, as the last step of each call.',
           'The rest of the app sees a Double and never learns what JSON looked like.')],
         ['    }', null],
         ['}', null],
@@ -738,13 +738,13 @@ struct WeatherView: View {
         [r`    @State private var weather = WeatherViewModel(`, n(
           'SwiftUI keeps this model alive for the app\'s lifetime.',
           'Creates the single production view model.',
-          'App-level state storage.',
+          'App-level state storage inside StudyBuddyApp, managed by SwiftUI.',
           'Once, at launch; SwiftUI then keeps the instance alive.',
           '@State at the app level means one shared model, not a new one every time a scene is rebuilt.')],
         [r`        service: LiveWeatherService(latitude: 25.77, longitude: -80.19)`, n(
           'The composition root, choosing the concrete type.',
           'Injects the live service configured for Miami.',
-          'The initializer argument.',
+          'The initializer argument of WeatherViewModel, inside the App struct.',
           'Once, at launch, before the first screen appears.',
           'This is the only line in the app that names LiveWeatherService. Replacing the weather provider means editing one line.')],
         [r`    )`, n(
@@ -777,7 +777,7 @@ struct WeatherView: View {
         ['}', null],
         ['', null],
         [r`#Preview("Mock data") {`, n(
-          'Xcode\'s preview canvas.',
+          'Xcode\'s preview canvas, which compiles and renders it.',
           'Declares a named preview for the same view.',
           'File scope; compiled only for development.',
           'Each time the canvas refreshes.',
@@ -816,7 +816,7 @@ struct WeatherView: View {
       questions: [
         {
           q: '<p>Which line belongs in the view model rather than the view?</p>',
-          choices: ['<code>Text(model.status)</code>', '<code>logged = min(logged + minutes, goal)</code>', '<code>.buttonStyle(.borderedProminent)</code>', '<code>VStack(spacing: 16) {</code>'],
+          choices: ['<code>Text(model.status).font(.title2)</code>', '<code>logged = min(logged + minutes, goal)</code>', '<code>.buttonStyle(.borderedProminent).padding()</code>', '<code>VStack(spacing: 16) { Text(model.status) }</code>'],
           answer: 1,
           explain: '<p>Capping the total is a business rule, so it belongs in the model where one test covers it. Displaying text, styling a button and stacking views are layout jobs that stay in the view.</p>',
         },
@@ -828,7 +828,7 @@ struct WeatherView: View {
         },
         {
           q: '<p>Why does <code>WeatherViewModel</code> take <code>any WeatherService</code> in its initializer instead of creating <code>LiveWeatherService</code> itself?</p>',
-          choices: ['Protocols make network calls faster', 'Swift forbids creating structs inside classes', 'Tests and previews can inject a mock or failing service without touching the network', 'So that the view can change the service later'],
+          choices: ['Calls through a protocol are faster than calls on a concrete type', 'Swift forbids a class from creating a struct in its own initializer', 'So tests and previews can inject a mock or failing service', 'So the view can swap the service for another one while running'],
           answer: 2,
           explain: '<p>Injection lets the caller choose the implementation: live in the app, mock in previews, failing in tests. The view never chooses services; the composition root does.</p>',
         },
@@ -994,7 +994,7 @@ const testingBasics = {
           'The Swift compiler, building the test target.',
           'Imports Swift Testing for @Suite, @Test, #expect and #require.',
           'Top of the test file.',
-          'At compile time.',
+          'At compile time, when the test target builds.',
           'Every test file imports it.')],
         ['', null],
         [r`@Suite("Splitting a bill")`, n(
@@ -1078,8 +1078,8 @@ const testingBasics = {
           'The Swift compiler, building the test target.',
           'Imports Swift Testing for @Test and #expect.',
           'Top of the test file.',
-          'At compile time.',
-          'Required for @Test and #expect.')],
+          'At compile time, before the parameterized tests are discovered.',
+          'Parameterized tests use the same @Test macro, with an arguments label added.')],
         ['', null],
         [r`@Test("Each share includes the tip", arguments: [`, n(
           'The @Test macro, given a collection of inputs.',
@@ -1152,7 +1152,7 @@ const testingBasics = {
         [r`    #expect(share(of: 50, tip: 10, people: people) == nil)`, n(
           'The #expect macro, run once for every argument.',
           'Expects nil for every invalid party size.',
-          'Body of rejectsBadPeople(people:).',
+          'The body of rejectsBadPeople(people:), its only statement.',
           'Once per case: three times in total.',
           'The same expectation over many inputs documents the whole invalid range, not one example.')],
         ['}', null],
@@ -1181,8 +1181,8 @@ const testingBasics = {
           'The Swift compiler, building the test target.',
           'Imports Swift Testing for @Test and #expect.',
           'Top of the test file.',
-          'At compile time.',
-          'Required for @Test and #expect.')],
+          'At compile time, before the suite is discovered.',
+          'The view-model tests use @Test and #expect like the pure-function tests; only the setup differs.')],
         ['', null],
         [r`struct FailingWeatherService: WeatherService {`, n(
           'You write it in the test target.',
@@ -1198,7 +1198,7 @@ const testingBasics = {
           'Any type that conforms to Error can be thrown; an empty struct is enough for a test.')],
         [r`    func currentTemperature() async throws -> Double {`, n(
           'The view model calls it through the protocol.',
-          'Implements the requirement.',
+          'Implements the protocol requirement for the failing stand-in.',
           'Inside the failing stand-in, fulfilling the protocol.',
           'When load() runs in the test.',
           'Matching the signature is what makes this type injectable.')],
@@ -1226,7 +1226,7 @@ const testingBasics = {
         [r`    @Test func showsReadingFromService() async {`, n(
           'The test runner, which awaits the async method.',
           'An async test for the success path.',
-          'Inside the suite.',
+          'Inside WeatherViewModelTests, the first test method.',
           'When the runner executes it, on the main actor.',
           'Tests can be async, so you await the real load() rather than sleeping and hoping.')],
         [r`        let model = WeatherViewModel(service: MockWeatherService())`, n(
@@ -1294,31 +1294,31 @@ const testingBasics = {
       questions: [
         {
           q: '<p>Every unit test passes, but in a hallway session three of five students cannot find how to start a study session. What kind of problem is this?</p>',
-          choices: ['A verification failure: the tests are wrong', 'A validation finding: the app does not yet meet users\' real needs', 'An integration failure between view and view model', 'A flaky test'],
+          choices: ['A verification failure: the tests check the wrong thing', 'A validation finding: the app misses a real need', 'An integration failure between the view and the view model', 'A flaky test that passes only on some machines'],
           answer: 1,
           explain: '<p>Tests verified that the code matches its specification. Watching real users is validation, and it found that the specification itself misses a need. Neither the tests nor the integration are broken.</p>',
         },
         {
           q: '<p>A test runs <code>let each = try #require(share(of: 90, tip: 0, people: 0))</code> followed by two <code>#expect</code> lines. How many issues are recorded?</p>',
-          choices: ['Three, one per line', 'Two, from the #expect lines', 'Zero, because #require only warns', 'One: #require fails on nil and ends the test'],
+          choices: ['Three: #require and both #expect lines fail', 'Two: #require passes and both #expect lines fail', 'Zero: #require only warns, and the #expect lines pass', 'One: #require fails and ends the test'],
           answer: 3,
           explain: '<p><code>share</code> returns nil for zero people. <code>#require</code> records one issue and throws, so the expectations below never run. That is its job: stop before later lines work on bad data.</p>',
         },
         {
           q: '<p>In the bug lab, bug D (negative bills allowed) left all four tests green. What does a green suite prove?</p>',
-          choices: ['The function has no bugs', 'The tests are poorly written', 'The function behaves correctly for the cases the tests check, and nothing more', 'Bug D cannot affect real users'],
+          choices: ['The function has no bugs, because every test exercised it', 'The tests are poorly written and should be replaced', 'The function is correct for the cases the tests check, and nothing more', 'Bug D cannot affect real users, because the tests cover the real inputs'],
           answer: 2,
           explain: '<p>Tests only check what they ask about. No test tried a negative bill, so the bug was invisible. Adding the missing edge case turns it red.</p>',
         },
         {
           q: '<p><code>@Test(arguments: [0, -1, -12])</code> marks a test that receives one <code>Int</code>. How does Xcode report it?</p>',
-          choices: ['As three separate test cases, each showing its argument', 'As one test that stops at the first failing value', 'As three copies of the test function you must write', 'It does not compile without a tuple'],
+          choices: ['As three separate test cases, each showing its argument', 'As one test that stops at the first failing value', 'As three copies of the test function you must write', 'It does not compile, because arguments must be tuples'],
           answer: 0,
           explain: '<p>Each argument becomes its own test case with its value in the report, and the cases can run in parallel. A failing value never hides the others.</p>',
         },
         {
           q: '<p>A view-model test calls the live weather API and fails some mornings when the network is slow. What is the best fix?</p>',
-          choices: ['Retry the test three times', 'Inject a mock or failing service so the test never touches the network', 'Add a sleep before the expectation', 'Move the test to the UI-test target'],
+          choices: ['Retry the test up to three times before reporting a failure', 'Inject a mock service so the test never touches the network', 'Add a two-second sleep before the expectation', 'Move the test to the UI-test target, which allows slow tests'],
           answer: 1,
           explain: '<p>A unit test must be fast and repeatable. Injecting a stand-in removes the network, so the result depends only on your code. Retries and sleeps hide the flakiness without curing it.</p>',
         },
@@ -1384,7 +1384,7 @@ const uiTesting = {
           'The Swift compiler, building the app target.',
           'Imports SwiftUI for Form, TextField, Button and modifiers.',
           'Top of the view\'s file.',
-          'At compile time.',
+          'At compile time, before NewSessionView can be built.',
           'Identifiers are ordinary SwiftUI modifiers; no test framework is imported into the app.')],
         ['', null],
         [r`struct NewSessionView: View {`, n(
@@ -1443,7 +1443,7 @@ const uiTesting = {
           'Its action runs when the user (or a UI test) taps it.',
           'A clear verb as the label helps VoiceOver users; the identifier below helps tests.')],
         [r`                store.add(title)`, n(
-          'The shared SessionStore.',
+          'The shared SessionStore, through its add(_:) method.',
           'Adds the new title to the top of the list.',
           'Inside the button\'s action.',
           'On tap, before the sheet closes.',
@@ -1482,13 +1482,13 @@ const uiTesting = {
           'The Swift compiler, building the store\'s file.',
           'Imports Foundation for ProcessInfo.',
           'Top of the store\'s file.',
-          'At compile time.',
+          'At compile time, before the store\'s file can use ProcessInfo.',
           'Launch arguments are read through Foundation.')],
         [r`import Observation`, n(
           'The Swift compiler, building the store\'s file.',
           'Imports the @Observable macro.',
           'Top of the store\'s file, after Foundation.',
-          'At compile time.',
+          'At compile time, before the @Observable macro can expand.',
           'The store is observable so the list redraws when a session is added.')],
         ['', null],
         [r`@Observable final class SessionStore {`, n(
@@ -1535,13 +1535,13 @@ const uiTesting = {
           'iOS, which passes the launch arguments to the process.',
           'Reads the array of strings the app was launched with.',
           'First line of the factory.',
-          'At launch, once.',
+          'Once, at launch, when forCurrentLaunch() runs.',
           'XCUIApplication.launchArguments ends up here, so the test controls the app\'s starting state.')],
         [r`        if arguments.contains("-ui-testing") {`, n(
           'The app, deciding which data to start with.',
           'Checks whether a UI test launched it.',
           'Inside the factory, after reading the arguments.',
-          'At launch, once.',
+          'Once, at launch, right after the arguments are read.',
           'Users never pass this flag, so normal launches are unaffected.')],
         [r`            return SessionStore(titles: ["Algebra review",`, n(
           'The factory, building the test store.',
@@ -1673,14 +1673,14 @@ const uiTesting = {
     {
       kind: 'code',
       title: 'Audit accessibility and launch time',
-      intro: `<p>UI tests can check quality as well as behavior. An <strong>accessibility audit</strong> scans the current screen for problems such as low contrast, missing labels, small tap targets and text clipped at large sizes. A <strong>performance test</strong> measures launch time and flags regressions against a recorded baseline.</p>`,
+      intro: `<p>UI tests can check quality as well as behavior. An <strong>accessibility audit</strong> scans the current screen for problems such as low contrast, missing labels, small tap targets and text clipped at large sizes; Module 05 (Design) has the full audit checklist, and this test automates it. A <strong>performance test</strong> measures launch time and flags regressions against a recorded baseline.</p>`,
       run: 'static',
       lines: [
         [r`import XCTest`, n(
           'The Swift compiler, building the UI-test target.',
           'Imports XCTest for UI tests and metrics.',
           'Top of a file in the UI-test target.',
-          'At compile time.',
+          'At compile time, when the UI-test target builds.',
           'Audits and launch metrics are XCTest features.')],
         ['', null],
         [r`final class QualityUITests: XCTestCase {`, n(
@@ -1732,7 +1732,7 @@ const uiTesting = {
           'Puts the performance test on the main actor.',
           'On the performance test method below.',
           'Checked at compile time.',
-          'Required for XCUIApplication.')],
+          'XCUIApplication is main-actor isolated, so this test needs the same isolation as the audit test above.')],
         [r`    func testLaunchPerformance() throws {`, n(
           'XCTest, which runs methods that start with test.',
           'A performance test for cold launch.',
@@ -1740,7 +1740,7 @@ const uiTesting = {
           'When run, usually on a real device for meaningful numbers.',
           'Launch time is the first impression; regressions sneak in one framework at a time.')],
         [r`        measure(metrics: [XCTApplicationLaunchMetric()]) {`, n(
-          'XCTest\'s measurement system.',
+          'XCTest\'s measurement system, inherited from XCTestCase.',
           'Runs the block several times and records launch duration.',
           'The only statement of the performance test.',
           'Runs the block five times by default, then compares with the baseline.',
@@ -1767,7 +1767,7 @@ const uiTesting = {
           'The Swift compiler, building the app target in a debug build.',
           'Imports SwiftUI for #Preview and environment values.',
           'Top of the previews file.',
-          'At compile time.',
+          'At compile time, in debug builds where previews are compiled.',
           'Previews are a SwiftUI and Xcode feature.')],
         ['', null],
         [r`extension SessionStore {`, n(
@@ -1783,7 +1783,7 @@ const uiTesting = {
           'Each time a preview reads it.',
           'A fresh instance per preview means one preview cannot change another\'s data.')],
         [r`        SessionStore(titles: ["Algebra review", "Biology flashcards"])`, n(
-          'The store\'s initializer.',
+          'The store\'s initializer, called by the sample property.',
           'Creates a store with two known rows.',
           'Body of the computed property.',
           'On each read, so every preview gets its own copy.',
@@ -1792,7 +1792,7 @@ const uiTesting = {
         ['}', null],
         ['', null],
         [r`#Preview("Sample data") {`, n(
-          'Xcode\'s preview canvas.',
+          'Xcode\'s preview canvas, showing the first of three tabs.',
           'A named preview of the normal state.',
           'At file scope, one of several previews.',
           'Whenever the canvas refreshes.',
@@ -1800,13 +1800,13 @@ const uiTesting = {
         [r`    SessionListView(store: .sample)`, n(
           'SwiftUI, rendering inside the canvas.',
           'Renders the list with sample rows.',
-          'The preview\'s body.',
+          'The body of the "Sample data" preview.',
           'Each time the preview refreshes.',
           'The view takes its store as input, which is what makes previews this easy.')],
         ['}', null],
         ['', null],
         [r`#Preview("Empty state") {`, n(
-          'Xcode\'s preview canvas.',
+          'Xcode\'s preview canvas, showing the second tab.',
           'A preview of the first-launch state.',
           'At file scope, the second preview.',
           'Each time the canvas refreshes.',
@@ -1814,13 +1814,13 @@ const uiTesting = {
         [r`    SessionListView(store: SessionStore(titles: []))`, n(
           'SwiftUI, rendering inside the canvas.',
           'Renders the list with no rows.',
-          'The preview\'s body.',
+          'The body of the "Empty state" preview.',
           'Each time the preview refreshes.',
           'Seeing a blank screen here tells you the view needs a ContentUnavailableView.')],
         ['}', null],
         ['', null],
         [r`#Preview("Largest text") {`, n(
-          'Xcode\'s preview canvas.',
+          'Xcode\'s preview canvas, showing the third tab.',
           'A preview at an accessibility text size.',
           'At file scope, the third preview.',
           'Each time the canvas refreshes.',
@@ -1828,7 +1828,7 @@ const uiTesting = {
         [r`    SessionListView(store: .sample)`, n(
           'SwiftUI, rendering inside the canvas.',
           'The same list, about to be enlarged.',
-          'The preview\'s body.',
+          'The body of the "Largest text" preview, before its modifier.',
           'Each time the preview refreshes.',
           'Same data, different environment: one variable at a time.')],
         [r`        .environment(\.dynamicTypeSize, .accessibility3)`, n(
@@ -1849,27 +1849,27 @@ const uiTesting = {
       questions: [
         {
           q: '<p>A UI test uses <code>app.buttons["Save"]</code>. It passes in English and fails after the app is translated into Spanish. What is the best fix?</p>',
-          choices: ['Run UI tests only in English', 'Query by identifier: <code>app.buttons["saveSessionButton"]</code>', 'Add a sleep before the tap', 'Use <code>app.buttons.element(boundBy: 2)</code>'],
+          choices: ['Launch the app in English for UI tests, whatever the simulator language', 'Query by identifier: <code>app.buttons["saveSessionButton"]</code>', 'Add a sleep before the tap so the label can load', 'Use <code>app.buttons.element(boundBy: 2)</code> instead'],
           answer: 1,
-          explain: '<p>A subscript string matches an identifier or a label. Labels change with language; identifiers do not. Index-based queries break as soon as the layout changes.</p>',
+          explain: '<p>A subscript string matches an identifier or a label. Labels change with language; identifiers do not. Forcing English hides the bug from every other user, a sleep changes nothing about the label, and index-based queries break as soon as the layout changes.</p>',
         },
         {
           q: '<p>Why does the test set <code>app.launchArguments = ["-ui-testing"]</code> before <code>app.launch()</code>?</p>',
-          choices: ['It makes the app launch faster', 'It is required by XCTest for every test', 'It tells the app to start from known in-memory data so the test is repeatable', 'It turns on VoiceOver'],
+          choices: ['So the app launches faster in the simulator during tests', 'Because XCTest requires at least one launch argument', 'So the app starts from known in-memory data', 'So the app turns on VoiceOver for the accessibility checks'],
           answer: 2,
           explain: '<p>The app checks for the flag and seeds a known store. Without it the test depends on whatever data the simulator holds, which differs between machines and runs.</p>',
         },
         {
           q: '<p>Which check belongs in a unit test rather than a UI test?</p>',
-          choices: ['<code>share(of:tip:people:)</code> returns nil for zero people', 'Tapping Save shows the new row in the list', 'The first screen passes an accessibility audit', 'Cold launch stays under its baseline'],
+          choices: ['<code>share(of:tip:people:)</code> returns nil for zero people', 'Tapping Save on the sheet shows the new row in the list', 'The first screen passes an accessibility audit', 'Cold launch stays under its recorded baseline'],
           answer: 0,
           explain: '<p>The split rule is pure logic: a unit test checks it in milliseconds and points straight at the failure. The other three need the running app.</p>',
         },
         {
           q: '<p>A UI test sometimes fails because the new row appears after the sheet\'s closing animation. What should it do?</p>',
-          choices: ['Retry the whole test', 'Sleep for five seconds', 'Delete the animation', 'Wait for the element with <code>waitForExistence(timeout:)</code>'],
+          choices: ['Retry the whole test up to three times', 'Sleep for five seconds before querying for the row', 'Turn off the animation with <code>UIView.setAnimationsEnabled(false)</code>', 'Wait with <code>waitForExistence(timeout:)</code>'],
           answer: 3,
-          explain: '<p>Waiting for a condition returns as soon as the row appears and fails only after the timeout. A fixed sleep is either too short (flaky) or too long (slow).</p>',
+          explain: '<p>Waiting for a condition returns as soon as the row appears and fails only after the timeout. A fixed sleep is either too short (flaky) or too long (slow), retries hide the problem, and the test runner cannot reach into the app to switch off its animations.</p>',
         },
       ],
     },
@@ -1879,26 +1879,33 @@ const uiTesting = {
 // ---------------------------------------------------------------------------
 // Lesson 4: debugging and Instruments
 // ---------------------------------------------------------------------------
-// Shared notes for the two sides of the retain-cycle comparison.
-const timerLines = (capture, captureNote) => [
+// Shared code for the two sides of the retain-cycle comparison. The code is the
+// same apart from the capture line; the notes are written per side (`leaks` is
+// true for the strong-capture version) so each explains what happens on that side.
+const timerLines = (leaks, capture, captureNote) => {
+  const v = (before, after) => (leaks ? before : after);
+  return [
   [r`final class StudyTimer {`, n(
     'You declare it; ARC (Automatic Reference Counting) manages its memory.',
     'A class standing in for a repeating timer that calls back on every tick.',
     'At file scope; each instance lives on the heap.',
     'An instance is created when a SessionModel is created.',
-    'Classes are reference types, so ARC counts how many strong references point at each instance.')],
+    v('Classes are reference types, so ARC counts how many strong references point at each instance; on this side that count never reaches zero.',
+      'Classes are reference types, so ARC counts strong references; on this side the count does reach zero, and the deinit below proves it.'))],
   [r`    var onTick: (() -> Void)?`, n(
     'The timer stores the closure it will call.',
     'An optional closure property, called on each tick.',
     'A stored property of the timer; the closure itself is also a heap object.',
     'Assigned once in SessionModel\'s init.',
-    'Storing a closure keeps it, and everything it captured, alive for as long as the timer lives.')],
+    v('Storing a closure keeps it, and everything it captured, alive for as long as the timer lives; here that includes the model.',
+      'Storing a closure keeps it alive for as long as the timer lives, but with a weak capture the closure no longer keeps the model alive.'))],
   [r`    deinit { print("StudyTimer freed") }`, n(
     'ARC calls deinit automatically.',
     'Prints a message at the moment the timer is destroyed.',
     'Inside StudyTimer; a class can have at most one deinit.',
     'Exactly when the last strong reference to the timer goes away.',
-    'A print in deinit is the simplest leak detector: if the line never appears, the object never died.')],
+    v('A print in deinit is the simplest leak detector; on this side the line never appears, because the timer never dies.',
+      'A print in deinit is the simplest leak detector; on this side it prints second, right after the model is freed.'))],
   ['}', null],
   ['', null],
   [r`final class SessionModel {`, n(
@@ -1906,25 +1913,29 @@ const timerLines = (capture, captureNote) => [
     'The view model for a running study session.',
     'At file scope; instances live on the heap.',
     'Created when the screen opens.',
-    'It owns the timer, which is normal; the question is whether the timer owns it back.')],
+    v('It owns the timer, which is normal; the problem is that the timer\'s closure owns it back.',
+      'It owns the timer, which is normal; with [weak self] the timer no longer owns it back.'))],
   [r`    var seconds = 0`, n(
     'The model owns this counter.',
     'Seconds studied so far.',
     'A stored property of the model.',
     'Incremented by the timer\'s closure on each tick.',
-    'The closure needs to reach this property, which is why it refers to self at all.')],
+    v('The closure needs to reach this property, which is why it refers to self at all; a strong reference is the default when it does.',
+      'The closure still needs to reach this property, so it refers to self, but through a weak reference it does not own.'))],
   [r`    let timer = StudyTimer()`, n(
     'The model holds a strong reference to its timer.',
     'Creates the timer together with the model.',
     'A stored property: model to timer is a strong arrow.',
     'Created together with each model, before init\'s body runs.',
-    'An owner holding what it uses strongly is correct. Cycles appear only when the arrow also points back.')],
+    v('An owner holding what it uses strongly is correct; the cycle appears because the arrow also points back.',
+      'An owner holding what it uses strongly is correct; this arrow stays strong, and only the arrow pointing back is weakened.'))],
   [r`    init() {`, n(
     'Swift calls it when SessionModel() runs.',
     'The initializer that wires the timer to the model.',
     'Inside SessionModel, its only initializer.',
     'Once per model, after all stored properties have values.',
-    'self is fully usable here because every stored property already has a default value.')],
+    v('self is fully usable here because every stored property already has a default value, which is also what lets the closure capture it.',
+      'self is fully usable here because every stored property already has a value, so the capture list can refer to it.'))],
   [capture, captureNote],
   ['    }', null],
   [r`    deinit { print("SessionModel freed") }`, n(
@@ -1932,7 +1943,8 @@ const timerLines = (capture, captureNote) => [
     'Prints when the model is destroyed.',
     'Inside SessionModel, after init.',
     'When the model\'s strong reference count reaches zero.',
-    'The model\'s deinit runs before ARC releases the timer it owns, so this line prints first.')],
+    v('The model\'s deinit should run before the timer\'s; on this side neither runs, which is the symptom to look for.',
+      'The model\'s deinit runs before ARC releases the timer it owns, so this line prints first.'))],
   ['}', null],
   ['', null],
   [r`var model: SessionModel? = SessionModel()`, n(
@@ -1940,20 +1952,26 @@ const timerLines = (capture, captureNote) => [
     'Creates a model and holds it in an optional variable.',
     'A global variable in this program.',
     'When the program starts.',
-    'An optional lets the program drop its reference by assigning nil, like a screen closing.')],
+    v('An optional lets the program drop its reference by assigning nil, like a screen closing; the test is whether that frees anything.',
+      'An optional lets the program drop its reference by assigning nil, like a screen closing; here that is enough to free both objects.'))],
   [r`model = nil`, n(
     'Top-level code, releasing its reference.',
     'Drops the only reference the "screen" held.',
     'The global variable that played the screen\'s reference.',
-    'Immediately after creation.',
-    'If nothing else holds the model strongly, ARC frees it on this line and both deinit messages print.')],
+    v('Immediately after creation, before any tick could happen.',
+      'Immediately after creation, at the same moment as on the left.'),
+    v('Nothing else should hold the model strongly, but the closure does, so ARC frees nothing on this line.',
+      'The closure holds the model only weakly, so this release drops the count to zero and ARC frees it here.'))],
   [r`print("screen closed")`, n(
-    'Swift\'s print function.',
+    v('Swift\'s print function, writing the only line this side produces.',
+      'Swift\'s print function, writing the last of three lines.'),
     'Marks the point after the screen let go.',
     'Standard output, the console below the code.',
     'After the release, as the last line of the program.',
-    'Any deinit message that appears before this line proves memory was freed in time.')],
-];
+    v('Any deinit message that appears before this line proves memory was freed in time; on this side none does.',
+      'Both deinit messages appear before this line, proving memory was freed in time.'))],
+  ];
+};
 
 const debugging = {
   id: 'shipping-debugging',
@@ -2038,7 +2056,7 @@ const debugging = {
             'Only for a non-empty array.',
             'This line was never the problem, so it stays.')],
           [r`    return Double(total) / Double(sessions.count)`, n(
-            'Floating-point division.',
+            'Floating-point division on two converted Doubles.',
             'Converts both numbers first, so 95 / 3 keeps its fraction.',
             'Last line of the function.',
             'On each call with data.',
@@ -2084,7 +2102,7 @@ const debugging = {
           'The Swift compiler, building the service\'s file.',
           'Imports Apple\'s unified logging API, which provides Logger.',
           'Top of the service\'s file.',
-          'At compile time.',
+          'At compile time, before Logger can be referenced.',
           'Logger is part of the operating system, so it adds no dependency and very little overhead.')],
         ['', null],
         [r`extension Logger {`, n(
@@ -2132,7 +2150,7 @@ const debugging = {
           'At the start of each sync.',
           'Private values appear while you debug in Xcode but are redacted in logs collected from a device, which protects users. Debug-level messages are not stored by default.')],
         [r`        do {`, n(
-          'Swift\'s error handling.',
+          'Swift\'s error-handling syntax, inside upload.',
           'Begins the block that can fail.',
           'Inside upload, around the call that can throw.',
           'On each sync attempt.',
@@ -2150,7 +2168,7 @@ const debugging = {
           'When the upload completes.',
           'notice is the default level and is kept on disk, so it is visible after the fact.')],
         [r`        } catch {`, n(
-          'Swift\'s error handling.',
+          'Swift\'s catch clause, paired with the do block in upload.',
           'Catches any error from the block.',
           'Directly after the do block.',
           'Only when something throws.',
@@ -2186,7 +2204,7 @@ const debugging = {
         label: 'Before: strong capture leaks',
         run: 'swift',
         expect: 'screen closed',
-        lines: timerLines(
+        lines: timerLines(true,
           r`        timer.onTick = { self.seconds += 1 }`,
           n(
             'The closure, which captures self strongly by default.',
@@ -2199,7 +2217,7 @@ const debugging = {
         label: 'After: [weak self] breaks the cycle',
         run: 'swift',
         expect: 'SessionModel freed\nStudyTimer freed\nscreen closed',
-        lines: timerLines(
+        lines: timerLines(false,
           r`        timer.onTick = { [weak self] in self?.seconds += 1 }`,
           n(
             'The closure, with a capture list.',
@@ -2223,19 +2241,19 @@ const debugging = {
       questions: [
         {
           q: '<p>The app stops with "Fatal error: Unexpectedly found nil while unwrapping an Optional value". What is the most likely cause?</p>',
-          choices: ['A retain cycle', 'A force unwrap (<code>!</code>) on a value that was nil', 'An array index past the end', 'The main thread was blocked'],
+          choices: ['A retain cycle kept an object alive too long', 'A force unwrap (<code>!</code>) met nil', 'An array was indexed past its last element', 'The main thread was blocked for too long'],
           answer: 1,
           explain: '<p>That message comes from <code>!</code> meeting nil. An index past the end reports "Index out of range", and retain cycles never crash; they quietly leak memory.</p>',
         },
         {
           q: '<p>In the left program, <code>model = nil</code> runs but neither deinit message prints. Why?</p>',
-          choices: ['deinit only runs when the app quits', 'Top-level variables are never freed', 'The closure captures the model strongly, so a cycle keeps its count above zero', 'print does not work inside deinit'],
+          choices: ['deinit only runs when the app quits, not when a variable becomes nil', 'Top-level variables keep their objects alive until the program ends', 'The closure captures the model strongly, so the cycle keeps it alive', 'print does not work inside deinit, so the messages were lost'],
           answer: 2,
           explain: '<p>The model owns the timer, the timer owns the closure, and the closure owns the model. Releasing the outside reference leaves each object with one strong reference from the loop. <code>[weak self]</code> removes one arrow and the whole chain is freed.</p>',
         },
         {
           q: '<p>You want to pause only when <code>log(_:)</code> receives a negative number, without editing code. What do you use?</p>',
-          choices: ['A conditional breakpoint with the condition <code>minutes &lt; 0</code>', 'A <code>print</code> inside the guard', 'The memory graph debugger', 'Instruments Allocations'],
+          choices: ['A conditional breakpoint with the condition <code>minutes &lt; 0</code>', 'A <code>print</code> inside the guard, removed before committing', 'The memory graph debugger, filtered to FocusModel', 'Instruments Allocations, recording while you tap'],
           answer: 0,
           explain: '<p>A condition makes the breakpoint stop only when the expression is true. A print requires editing source, and the memory tools answer different questions.</p>',
         },
@@ -2319,7 +2337,7 @@ struct StudySpot: Identifiable {
           'On each call, just before resizing.',
           'Decoding at display size uses a fraction of the memory of a full photo, which also helps scrolling.')],
         [r`    return await image.byPreparingThumbnail(ofSize: size)`, n(
-          'UIKit\'s image pipeline.',
+          'UIKit\'s image pipeline, through byPreparingThumbnail(ofSize:).',
           'Decodes and downsizes the image, then returns it ready to draw.',
           'Last line of the function.',
           'Suspends until the thumbnail is ready, typically a few milliseconds.',
@@ -2352,7 +2370,7 @@ struct StudySpot: Identifiable {
           'On appearance and when thumbnail changes.',
           'Nothing slow happens here, so this body fits easily inside a frame.')],
         [r`        HStack {`, n(
-          'SwiftUI\'s layout system.',
+          'SwiftUI\'s layout system, placing two children side by side.',
           'Places the image and the name side by side.',
           'Root of the row\'s content.',
           'On each redraw of the row.',
@@ -2390,7 +2408,7 @@ struct StudySpot: Identifiable {
     {
       kind: 'concept',
       title: 'An accessibility pass before every release',
-      body: `<p>The World Health Organization estimates that one in six people lives with a significant disability, and everyone has moments of bright sunlight, tired eyes or one free hand. iOS supplies the tools; your job is to not break them. Check each screen against this list, use Accessibility Inspector (Xcode > Open Developer Tool) to audit it, and automate the audit with <code>performAccessibilityAudit()</code>.</p>`,
+      body: `<p>The World Health Organization estimates that one in six people lives with a significant disability, and everyone has moments of bright sunlight, tired eyes or one free hand. iOS supplies the tools; your job is to not break them. Check each screen against this short list, use Accessibility Inspector (Xcode > Open Developer Tool) to audit it, and automate the audit with <code>performAccessibilityAudit()</code>. Module 05 (Design) walks through the full audit checklist.</p>`,
       points: [
         { term: 'VoiceOver', text: 'Every control has a spoken label; icon-only buttons need accessibilityLabel. Decorative images are hidden.' },
         { term: 'Dynamic Type', text: 'Use text styles such as .body and test at the largest accessibility sizes. Nothing is clipped.' },
@@ -2431,19 +2449,19 @@ struct StudySpot: Identifiable {
           'On appearance and after each tap.',
           'Because labels live in body, they update automatically with the state.')],
         [r`        HStack(spacing: 16) {`, n(
-          'SwiftUI\'s layout system.',
+          'SwiftUI\'s layout system, arranging the ring, name and button.',
           'Places the ring, the name and the button in a row.',
           'Root of the row\'s content.',
           'On each redraw, after every tap.',
           'VoiceOver visits the children in reading order: left to right.')],
         [r`            Circle().stroke(Color.green, lineWidth: 6)`, n(
-          'SwiftUI\'s shape drawing.',
+          'SwiftUI\'s shape drawing, through Circle and stroke.',
           'Draws a green ring as decoration.',
           'First child of the row, at the leading edge.',
           'On each redraw; its look never changes.',
           'Color alone carries no meaning here, so nothing is lost for people who cannot see it.')],
         [r`                .frame(width: 44, height: 44)`, n(
-          'SwiftUI\'s layout system.',
+          'SwiftUI\'s layout system, sizing the circle.',
           'Sizes the ring to 44 by 44 points.',
           'Modifier on the decorative circle.',
           'On each layout pass.',
@@ -2458,10 +2476,10 @@ struct StudySpot: Identifiable {
           'SwiftUI, rendering text that VoiceOver can read.',
           'Shows the subject name, which VoiceOver reads as is.',
           'Middle of the row, after the ring.',
-          'On each redraw.',
+          'On each redraw of GoalRow, before and after taps.',
           'Text is accessible by default and scales with Dynamic Type.')],
         [r`            Spacer()`, n(
-          'SwiftUI\'s layout system.',
+          'SwiftUI\'s layout system, filling the leftover width.',
           'Pushes the button to the trailing edge.',
           'Between the name and the button.',
           'On each layout pass, taking whatever width is left.',
@@ -2479,7 +2497,7 @@ struct StudySpot: Identifiable {
           'On each activation by a tap or a VoiceOver double-tap.',
           'The change updates the spoken value below, too.')],
         [r`            } label: {`, n(
-          'SwiftUI\'s multiple-trailing-closure syntax.',
+          'Swift\'s multiple-trailing-closure syntax, read by the compiler.',
           'Switches from the action to the button\'s visible label.',
           'Between the two closures.',
           'At compile time; it only separates the two closures.',
@@ -2488,7 +2506,7 @@ struct StudySpot: Identifiable {
           'SwiftUI, drawing an SF Symbol.',
           'Shows a large plus icon as the only visible label.',
           'Inside the label closure.',
-          'On each redraw.',
+          'On each redraw of the button\'s label.',
           'Without help, VoiceOver would read the symbol\'s name, which means nothing to a student.')],
         ['            }', null],
         [r`            .accessibilityLabel("Add 15 minutes")`, n(
@@ -2511,10 +2529,10 @@ struct StudySpot: Identifiable {
           'Hints help newcomers without slowing down experienced users.')],
         ['        }', null],
         [r`        .padding()`, n(
-          'SwiftUI\'s layout.',
+          'SwiftUI\'s layout system, adding default insets.',
           'Adds standard spacing around the row.',
           'Modifier on the HStack.',
-          'Each layout pass.',
+          'Each layout pass of GoalRow.',
           'Comfortable spacing also makes targets easier to hit.')],
         ['    }', null],
         ['}', null],
@@ -2576,10 +2594,10 @@ struct StudySpot: Identifiable {
           'On appearance and when inputs change.',
           'Each Text below is looked up in the String Catalog at run time.')],
         [r`        VStack(alignment: .leading) {`, n(
-          'SwiftUI\'s layout system.',
+          'SwiftUI\'s layout system, stacking the four lines.',
           'Stacks the lines, aligned to the leading edge.',
           'Root of the card\'s content.',
-          'On each redraw.',
+          'On each redraw of WeekSummaryView.',
           'leading, not left: in right-to-left languages such as Arabic it flips automatically.')],
         [r`            Text("This week")`, n(
           'SwiftUI and the String Catalog.',
@@ -2588,10 +2606,10 @@ struct StudySpot: Identifiable {
           'Looked up when the view renders, in the user\'s language.',
           'Text with a literal is localizable by default; Text(verbatim:) opts out for things like codes.')],
         [r`                .font(.headline)`, n(
-          'SwiftUI\'s typography system.',
+          'SwiftUI\'s typography system, through the font modifier.',
           'Uses the headline text style.',
           'Modifier on the title text.',
-          'On each redraw.',
+          'On each redraw, with the user\'s current text size.',
           'Text styles also scale with Dynamic Type, which matters more in languages with longer words.')],
         [r`            Text("\(sessionCount) sessions")`, n(
           'SwiftUI and the String Catalog.',
@@ -2628,7 +2646,7 @@ struct StudySpot: Identifiable {
           'Each time a banner is built.',
           'Plain String values are not localized automatically; String(localized:) marks them.')],
         [r`    String(localized: "Weekly goal reached",`, n(
-          'Foundation\'s localization lookup.',
+          'Foundation\'s localization lookup, through String(localized:comment:).',
           'Looks up the key in the String Catalog for the user\'s language.',
           'The function\'s only expression.',
           'At run time, each time the function is called.',
@@ -2648,25 +2666,25 @@ struct StudySpot: Identifiable {
       questions: [
         {
           q: '<p>A list stutters while scrolling on a 120 Hz iPhone. Time Profiler shows <code>UIImage(data:)</code> inside a row\'s <code>body</code>. What is the best fix?</p>',
-          choices: ['Lower the display to 60 Hz', 'Decode a thumbnail off the main actor in <code>.task</code> and store it in state', 'Wrap the row in a <code>VStack</code>', 'Call <code>UIImage(data:)</code> twice so it is cached'],
+          choices: ['Lower the display to 60 Hz so each frame gets 16.7 ms', 'Decode a thumbnail off the main actor and store it in state', 'Wrap the row in a <code>VStack</code> so rows are built up front', 'Call <code>UIImage(data:)</code> twice so the second call hits a cache'],
           answer: 1,
           explain: '<p>Decoding on the main thread blows the 8.3 ms frame budget. Doing it once, in the background, at display size removes the work from every frame. You cannot control the refresh rate, and a VStack makes things worse by building every row.</p>',
         },
         {
           q: '<p>Which element should get <code>.accessibilityHidden(true)</code>?</p>',
-          choices: ['A purely decorative progress ring next to a text that already states the progress', 'An icon-only delete button', 'The only text showing an error message', 'A toggle with no visible label'],
+          choices: ['A decorative ring beside text that states the progress', 'An icon-only delete button at the trailing end of each row', 'The only text on the screen that explains why saving failed', 'A toggle with no visible label at the end of a settings row'],
           answer: 0,
           explain: '<p>Hide decoration that repeats information found elsewhere. The icon-only button and the unlabeled toggle need labels, not hiding, and hiding an error message would silence it for VoiceOver users.</p>',
         },
         {
           q: '<p><code>Text("\\(count) sessions")</code> reads "1 sessions" when count is 1. Where do you fix it?</p>',
-          choices: ['Add an if statement in body for count == 1', 'Use <code>Text(verbatim:)</code>', 'In the String Catalog, set the key to Vary by Plural and fill in the forms', 'Store "session" and add "s" in code'],
+          choices: ['Add an if statement in body for count == 1', 'Use <code>Text(verbatim:)</code> so the count is inserted as is', 'In the String Catalog, set the key to Vary by Plural', 'Store "session" and append "s" in code'],
           answer: 2,
           explain: '<p>Plural rules differ by language: some have three or more forms. The catalog handles them per language. An if statement or adding "s" only works for English.</p>',
         },
         {
           q: '<p>What does a hang mean in Xcode\'s diagnostics?</p>',
-          choices: ['The app used more than 1 GB of memory', 'One frame took longer than 16.7 ms', 'A network request timed out', 'The main thread was blocked for about 250 ms or more, so the app could not respond'],
+          choices: ['The app used more than 1 GB of memory at once', 'One frame took longer than its 16.7 ms budget', 'A network request waited more than 60 s', 'The main thread was blocked for 250 ms or more'],
           answer: 3,
           explain: '<p>A late frame is a hitch; a long block of the main thread is a hang, where taps and scrolling freeze. Memory and network problems have their own reports.</p>',
         },
@@ -2759,7 +2777,7 @@ const release = {
           'Decided while building; the other branch is not compiled at all.',
           'Release builds cannot accidentally point at staging, because that code is not in them.')],
         [r`        URL(string: "https://staging.example.com")!`, n(
-          'Foundation\'s URL initializer.',
+          'Foundation\'s URL initializer, parsing the staging literal.',
           'The staging server for development builds.',
           'Inside the DEBUG branch.',
           'Returned in Debug builds only.',
@@ -2771,7 +2789,7 @@ const release = {
           'Decided at build time, not at run time.',
           'Archive builds use the Release configuration, so they always take this branch.')],
         [r`        URL(string: "https://api.example.com")!`, n(
-          'Foundation\'s URL initializer.',
+          'Foundation\'s URL initializer, parsing the production literal.',
           'The production server address.',
           'Inside the release branch.',
           'Returned in Release builds, including TestFlight and App Store builds.',
@@ -2895,7 +2913,7 @@ const release = {
           'Study Buddy saves settings with UserDefaults and @AppStorage, which counts.')],
         [r`            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>`, n(
           'App Store Connect\'s upload checks.',
-          'The UserDefaults category.',
+          'Names the UserDefaults category, which also covers @AppStorage.',
           'The value for the API type key.',
           'Read when the archive is uploaded.',
           'Exact spelling matters; Xcode\'s property-list editor offers the valid names.')],
@@ -2986,25 +3004,25 @@ const release = {
       questions: [
         {
           q: '<p>Version 1.2 (build 41) is live. You fix a crash. Which version and build should the upload use?</p>',
-          choices: ['1.2 (41)', '1.1 (42)', '1.2.1 (42)', '1.2 (40)'],
+          choices: ['1.2.0 (42)', '1.1 (42)', '1.2.1 (42)', '1.2 (41)'],
           answer: 2,
-          explain: '<p>A new release needs a version higher than the live one, and every upload needs a build number not used before for that version. Reusing 1.2 (41) is rejected at upload, and 1.1 is lower than the live version.</p>',
+          explain: '<p>A new release needs a version higher than the live one, and every upload needs a build number not used before for that version. Reusing 1.2 (41) is rejected at upload, 1.1 is lower than the live version, and 1.2.0 (42) is a fresh build of the version that is already live, not a new release.</p>',
         },
         {
           q: '<p>Why does an archived TestFlight build talk to <code>api.example.com</code> even though you were using staging all week?</p>',
-          choices: ['TestFlight rewrites URLs', 'Archive uses the Release configuration, so the <code>#if DEBUG</code> branch is not compiled in', 'Staging servers are blocked by Apple', 'The privacy manifest forbids staging'],
+          choices: ['TestFlight rewrites every URL in the build to its production form', 'Archive builds Release, which leaves out the DEBUG branch', 'Apple blocks staging servers from TestFlight builds at upload time', 'The privacy manifest lists only the production domain, so staging fails'],
           answer: 1,
           explain: '<p>Archive builds the Release configuration, where DEBUG is not set. The Debug branch is removed at compile time, so the build contains only the production address.</p>',
         },
         {
           q: '<p>An upload succeeds, but App Store Connect emails ITMS-91053: Missing API declaration. What is missing?</p>',
-          choices: ['A required-reason entry, such as UserDefaults with reason CA92.1, in PrivacyInfo.xcprivacy', 'A purpose string for location', 'A demo account for App Review', 'A provisioning profile'],
+          choices: ['A required-reason entry in PrivacyInfo.xcprivacy', 'A purpose string for location in Info.plist', 'A demo account entered under App Review Information', 'A provisioning profile that includes the push capability'],
           answer: 0,
-          explain: '<p>ITMS-91053 is about required-reason APIs declared in the privacy manifest. Missing purpose strings produce ITMS-90683, and demo accounts matter only during review.</p>',
+          explain: '<p>ITMS-91053 is about required-reason APIs declared in the privacy manifest, such as UserDefaults with reason CA92.1. Missing purpose strings produce ITMS-90683, demo accounts matter only during review, and a profile problem stops the upload itself.</p>',
         },
         {
           q: '<p>Day 3 of a phased release shows a spike in crashes on the new version. What is the best first move?</p>',
-          choices: ['Delete the app from the App Store', 'Wait for day 7 so everyone gets it', 'Ask users to reinstall', 'Pause the phased release, fix the crash and ship a maintenance release'],
+          choices: ['Remove the app from sale until the crash is fixed', 'Let the rollout reach day 7 so the fixed build can replace it sooner', 'Ask affected users to delete and reinstall the app', 'Pause the rollout, fix the crash and ship a maintenance release'],
           answer: 3,
           explain: '<p>Pausing stops automatic updates to more users while you fix and test the bug, then ship 1.2.2. The rollout exists exactly to limit the damage of a bad build.</p>',
         },
@@ -3069,7 +3087,7 @@ const capstone = {
       body: `<p>A <strong>wireframe</strong> is a quick, low-detail sketch of each screen: boxes, labels and arrows between screens, no colors. Sketch Today, Spots, Resources and Settings, then walk every story through the sketches before writing code. Changing a sketch costs seconds; changing shipped code costs a release.</p><p>The <strong>architecture diagram</strong> gives every requirement a home, using the MVVM layers and feature folders from the first lesson.</p>`,
       points: [
         { term: 'Views', text: 'A TabView with Today, Spots and Resources tabs, one feature folder each.' },
-        { term: 'View models', text: 'One @Observable view model per screen, holding its state and rules.' },
+        { term: 'View models', text: 'One @Observable view model for each screen that loads data or applies rules; a static screen stays a plain view.' },
         { term: 'Services', text: 'Location (CLLocationUpdate), spot search (MapKit) and resources (URLSession), each behind a protocol.' },
         { term: 'Storage', text: 'SwiftData models in an App Group container, so the widget extension reads the same store.' },
         { term: 'Widget', text: 'A WidgetKit extension whose timeline provider reads the next session.' },
@@ -3210,7 +3228,7 @@ const capstone = {
           'The @Test macro, registering the main criterion\'s test.',
           'Registers the test with a display name taken from the criterion.',
           'Inside the suite, attached to the method below.',
-          'Read at discovery.',
+          'Read at discovery, when Xcode builds the list of tests.',
           'The report reads like the specification, so anyone can see which promise broke.')],
         [r`    func loggingUpdatesWeeklyTotal() {`, n(
           'The test runner, which calls it on a fresh suite instance.',
@@ -3258,7 +3276,7 @@ const capstone = {
           'The #expect macro, checking the total.',
           'Checks the total is 90 plus 30.',
           'The assertion section, under the Then comment.',
-          'After the action.',
+          'After the action, as the first check of the Then section.',
           'An exact number makes the criterion measurable.')],
         [r`        // And the newest session is listed first`, n(
           'Readers; the compiler ignores comments.',
@@ -3278,7 +3296,7 @@ const capstone = {
           'The @Test macro, registering the edge-case test.',
           'Registers a second criterion: invalid sessions are ignored.',
           'Inside the suite, below the first test.',
-          'Read at discovery.',
+          'Read at discovery, alongside the first test.',
           'Edge cases are acceptance criteria too; write them down with the story.')],
         [r`    func zeroMinutesIgnored() {`, n(
           'The test runner, which calls it on a fresh suite instance.',
@@ -3327,9 +3345,9 @@ const capstone = {
       questions: [
         {
           q: '<p>Which acceptance criterion is testable as written?</p>',
-          choices: ['The spots list is user-friendly', 'Spots within 2 km are listed nearest first', 'The widget is always up to date', 'Logging feels quick'],
+          choices: ['The spots list is pleasant to use', 'Spots within 2 km are listed nearest first', 'The widget always shows current data', 'Logging a session feels quick'],
           answer: 1,
-          explain: '<p>A distance and an order can be checked by code. "User-friendly", "always" and "feels quick" need rewriting into something measurable, such as "at most two taps".</p>',
+          explain: '<p>A distance and an order can be checked by code. "Pleasant", "always" and "feels quick" need rewriting into something measurable, such as "at most two taps".</p>',
         },
         {
           q: '<p>In "Given 90 minutes logged, When the student logs 30 more, Then the total is 120", which part becomes the <code>#expect</code> line?</p>',
@@ -3339,15 +3357,15 @@ const capstone = {
         },
         {
           q: '<p>All acceptance tests pass, but in a TestFlight session students ignore the weekly total entirely. What has happened?</p>',
-          choices: ['The tests are wrong and must be rewritten', 'The app failed verification', 'The app passed verification but has not yet passed validation', 'The phased release should be paused'],
+          choices: ['The tests are wrong and must be rewritten before release', 'The app failed verification, so the tests were incomplete', 'The app passed verification but not validation', 'The phased release should be paused'],
           answer: 2,
           explain: '<p>The tests prove the feature works as specified (verification). Real use shows whether it meets a real need (validation). That feedback goes into the next iteration\'s requirements.</p>',
         },
         {
           q: '<p>Why does the widget extension read SwiftData from an App Group container?</p>',
-          choices: ['Widgets cannot use SwiftData at all', 'App Groups make the store faster', 'App Review requires it', 'The app and its extension are separate processes, and an App Group gives them a shared container'],
+          choices: ['Widgets cannot use SwiftData directly, so the App Group holds a JSON copy', 'An App Group container is faster to read than the app\'s own sandbox', 'App Review rejects widgets whose data is not in an App Group container', 'The extension is a separate process, so it needs a shared container'],
           answer: 3,
-          explain: '<p>Each process has its own sandbox. An App Group capability creates a container both can open, so the widget sees the sessions the app saved.</p>',
+          explain: '<p>Each process has its own sandbox. An App Group capability creates a container both can open, so the widget sees the sessions the app saved. Widgets can use SwiftData directly, and the group is about access, not speed or review rules.</p>',
         },
       ],
     },

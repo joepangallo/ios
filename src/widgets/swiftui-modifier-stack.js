@@ -3,6 +3,8 @@
 // order, so students can see that each modifier wraps the view produced by the
 // lines above it. The "Wrapping order" panel shows the same chain inside-out.
 
+import { esc, listenerBag, highlightSwift } from './services-kit.js';
+
 const NAME = 'swiftui-modifier-stack';
 
 const DEFS = {
@@ -32,27 +34,8 @@ const GOALS = [
 ];
 
 const short = (id) => DEFS[id].code.slice(1);
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const KW = new Set(['struct', 'var', 'let', 'some', 'import', 'func', 'private', 'return', 'if', 'else', 'true', 'false', 'in', 'enum', 'case', 'self', 'class', 'final']);
-function highlight(line) {
-  const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*")|(@\w+)|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_]\w*\b)|(\.[a-z]\w*)/g;
-  let out = '', last = 0, m;
-  while ((m = re.exec(line))) {
-    out += esc(line.slice(last, m.index));
-    const t = m[0];
-    let cls = '';
-    if (m[1]) cls = 'cmt';
-    else if (m[2]) cls = 'str';
-    else if (m[3]) cls = 'attr';
-    else if (m[4]) cls = 'num';
-    else if (m[5]) cls = KW.has(t) ? 'kw' : /^[A-Z]/.test(t) ? 'type' : '';
-    else if (m[6]) cls = 'fn';
-    out += cls ? `<span class="t-${cls}">${esc(t)}</span>` : esc(t);
-    last = m.index + t.length;
-  }
-  return out + esc(line.slice(last));
-}
+const highlight = (line) => highlightSwift(line, { prefix: 't-' });
 
 export default {
   name: 'swiftui-modifier-stack',
@@ -183,8 +166,7 @@ export default {
     let goal = 0;
     let tab = 'code';
     let lastAction = '';
-    const listeners = [];
-    const on = (node, ev, fn, opt) => { node.addEventListener(ev, fn, opt); listeners.push(() => node.removeEventListener(ev, fn, opt)); };
+    const bag = listenerBag();
 
     el.innerHTML = `
 <div class="ms-root">
@@ -441,7 +423,7 @@ export default {
       renderStatus();
     }
 
-    on(list, 'click', (e) => {
+    bag.on(list, 'click', (e) => {
       const btn = e.target.closest('button[data-act]');
       if (!btn) return;
       const id = btn.closest('.ms-chip').dataset.id;
@@ -453,7 +435,7 @@ export default {
       lastAction = `Moved <code>${esc(DEFS[id].code)}</code> ${btn.dataset.act}.`;
       renderAll();
     });
-    on(list, 'change', (e) => {
+    bag.on(list, 'change', (e) => {
       const input = e.target.closest('input[data-act="toggle"]');
       if (!input) return;
       const id = input.closest('.ms-chip').dataset.id;
@@ -462,31 +444,31 @@ export default {
       lastAction = `Switched <code>${esc(DEFS[id].code)}</code> ${input.checked ? 'on' : 'off'}.`;
       renderAll();
     });
-    on(list, 'mouseover', (e) => {
+    bag.on(list, 'mouseover', (e) => {
       const chip = e.target.closest('.ms-chip');
       if (chip && chip.dataset.id !== hot) { lastAction = ''; setHot(chip.dataset.id); }
     });
-    on(list, 'mouseleave', () => { if (!list.contains(el.ownerDocument.activeElement)) setHot(null); });
-    on(list, 'focusin', (e) => {
+    bag.on(list, 'mouseleave', () => { if (!list.contains(el.ownerDocument.activeElement)) setHot(null); });
+    bag.on(list, 'focusin', (e) => {
       const chip = e.target.closest('.ms-chip');
       if (chip && chip.dataset.id !== hot) { lastAction = ''; setHot(chip.dataset.id); }
     });
-    on(list, 'focusout', (e) => { if (!list.contains(e.relatedTarget) && !list.matches(':hover')) setHot(null); });
-    on($('layers'), 'change', (e) => { showLayers = e.target.checked; drawOverlay(); });
-    on($('reset'), 'click', () => {
+    bag.on(list, 'focusout', (e) => { if (!list.contains(e.relatedTarget) && !list.matches(':hover')) setHot(null); });
+    bag.on($('layers'), 'change', (e) => { showLayers = e.target.checked; drawOverlay(); });
+    bag.on($('reset'), 'click', () => {
       order = INITIAL.map(([id, v]) => ({ id, on: v }));
       hot = null; lastAction = ''; goal = 0;
       renderAll();
       statusEl.innerHTML = 'Reset to the starting stack: <code>.font</code>, <code>.padding()</code>, <code>.background(.orange)</code>, <code>.clipShape</code>.';
     });
     const tabbar = el.querySelector('.ms-tabbar');
-    on(tabbar, 'click', (e) => {
+    bag.on(tabbar, 'click', (e) => {
       const b = e.target.closest('[role="tab"]');
       if (!b) return;
       tab = b.id.replace(`${NAME}-tab-`, '');
       renderTabs();
     });
-    on(tabbar, 'keydown', (e) => {
+    bag.on(tabbar, 'keydown', (e) => {
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
       const tabs = ['code', 'tree', 'goals'];
       tab = tabs[(tabs.indexOf(tab) + (e.key === 'ArrowRight' ? 1 : 2)) % 3];
@@ -508,7 +490,7 @@ export default {
 
     return {
       destroy() {
-        listeners.forEach((off) => off());
+        bag.off();
         if (ro) ro.disconnect();
         cancelAnimationFrame(raf);
         el.innerHTML = '';

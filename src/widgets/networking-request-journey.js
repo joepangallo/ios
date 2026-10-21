@@ -2,6 +2,8 @@
 // (DNS, TCP, TLS or QUIC, HTTP) on a sequence diagram, counting round
 // trips and elapsed time for a chosen round-trip time.
 
+import { el, svgEl, on, idScope } from './services-kit.js';
+
 const NAME = 'networking-request-journey';
 const SERVER_MS = 30;
 
@@ -72,24 +74,6 @@ function stackFor(step, proto) {
       : ['HTTP/2 request or response', 'TLS record, encrypted', 'TCP segment', 'IP packet'];
     default: return null;
   }
-}
-
-function el(tag, attrs = {}, ...kids) {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === false || v == null) continue;
-    if (k === 'class') node.className = v;
-    else if (k === 'text') node.textContent = v;
-    else node.setAttribute(k, v === true ? '' : v);
-  }
-  for (const kid of kids) if (kid != null) node.append(kid);
-  return node;
-}
-
-function svgEl(tag, attrs = {}) {
-  const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
-  return node;
 }
 
 function totals(key, rtt) {
@@ -177,7 +161,7 @@ export default {
   mount(root, props = {}, ctx) {
     root.classList.add(`w-${NAME}`);
     if (ctx?.reducedMotion) root.classList.add('reduced');
-    const id = (s) => `${NAME}-${s}`;
+    const id = idScope(NAME);
     const state = { proto: 'h2', reuse: false, rtt: 60, index: 0, playing: false };
     let timer = null;
 
@@ -378,7 +362,6 @@ export default {
       render();
     }
 
-    const on = (node, ev, fn) => { node.addEventListener(ev, fn); return () => node.removeEventListener(ev, fn); };
     const offs = [
       on(segH2, 'click', () => setScenario('h2', state.reuse)),
       on(segH3, 'click', () => setScenario('h3', state.reuse)),

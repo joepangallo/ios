@@ -18,6 +18,7 @@ export const PREVIEW_CSS = `
 .pv-dtlabel { min-width: 52px; font-variant-numeric: tabular-nums; }
 .pv-stage { flex: 1; min-height: 0; position: relative; overflow: hidden; }
 .pv-scale { transform-origin: top left; position: absolute; left: 0; top: 0; }
+.pv-status { white-space: pre-line; font-size: 12px; color: var(--pv-warn, #8e44ad); }
 .pv-status:empty { display: none; }
 
 /* ---------------- device */
@@ -70,6 +71,7 @@ export const PREVIEW_CSS = `
 .v-spacer { flex: 1 1 0; min-width: var(--min, 0px); min-height: var(--min, 0px); }
 .v-h > .v-spacer { min-width: var(--min, 8px); }
 .v-v > .v-spacer { min-height: var(--min, 8px); }
+.v-empty { display: none; }
 .v-divider { background: var(--sep); flex-shrink: 0; }
 .v-v > .v-divider, .v-wrap > .v-divider, .content > .v-divider { height: .5px; align-self: stretch; }
 .v-h > .v-divider { width: .5px; align-self: stretch; }
@@ -174,6 +176,8 @@ export const PREVIEW_CSS = `
 .v-progress-wrap { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; }
 .v-spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--fill); border-top-color: var(--label2); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.v-progress-labeled { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 0; }
+.v-progress-labeled > .v-text { font-size: calc(15px * var(--dt)); }
 .v-progressbar { height: 4px; border-radius: 2px; background: var(--fill); overflow: hidden; min-width: 60px; }
 .v-progressbar .fill { height: 100%; background: var(--tint); border-radius: 2px; transition: width .3s; }
 .v-unavailable { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px; text-align: center; color: var(--label); align-self: stretch; flex: 1; }
@@ -300,13 +304,18 @@ export const PREVIEW_CSS = `
 .alert-btn:focus-visible { outline: 2px solid var(--tint); }
 
 /* ---------------- animation */
-.animating * { transition: all .35s cubic-bezier(.2,.8,.2,1); }
-.animated, .animated * { transition: all .35s cubic-bezier(.2,.8,.2,1); }
+/* Only what withAnimation can change: transitioning "all" on every node of a long List is expensive. */
+.animating *, .animated, .animated * { transition-property: opacity, transform, background-color, color, width, height, min-width, min-height, max-width, max-height, padding, margin, gap, border-radius, font-size, letter-spacing, filter, box-shadow, flex-basis; transition-duration: .35s; transition-timing-function: cubic-bezier(.2,.8,.2,1); }
 .enter.enter-opacity { opacity: 0; }
 .enter.enter-scale { opacity: 0; transform: scale(.5); }
 .enter.enter-slide, .enter.enter-move { transform: translateX(-30px); opacity: 0; }
 .enter { transition: opacity .35s, transform .35s; }
-@media (prefers-reduced-motion: reduce) { .animating *, .animated, .animated *, .enter { transition: none !important; animation: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  .animating *, .animated, .animated *, .enter { transition: none !important; animation: none !important; }
+  /* pushIn / popIn, sheetUp / fadeIn / pop, spin */
+  .anim-push .v-navbody, .anim-pop .v-navbody, .sheet-overlay .dim, .sheet-overlay .sheet, .alert-overlay, .alert, .v-spinner { animation: none !important; }
+  .v-switch, .v-switch .knob, .v-progressbar .fill, .v-row-swipe { transition: none !important; }
+}
 
 /* ---------------- errors & inspector */
 .error-pane { position: absolute; left: 12px; right: 12px; bottom: 40px; z-index: 40; background: #1c1c1e; color: #fff; border-radius: 22px; padding: 14px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.4); font: 14px/1.4 -apple-system, system-ui, sans-serif; border: 1px solid #ff453a; }

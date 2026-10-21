@@ -2,6 +2,8 @@
 // The student changes weight, scale, text style and rendering mode and sees
 // a layered symbol follow the text, next to a fixed-size image that cannot.
 
+import { idScope } from './services-kit.js';
+
 const NAME = 'design-symbol-tuner';
 let instances = 0;
 
@@ -155,7 +157,7 @@ export default {
 `,
   mount(el, props = {}, ctx) {
     const n = ++instances;
-    const id = (field) => (n === 1 ? `${NAME}-${field}` : `${NAME}-${field}-${n}`);
+    const id = idScope(NAME, n);
     el.classList.add('w-design-symbol-tuner');
 
     const state = {

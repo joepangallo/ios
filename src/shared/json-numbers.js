@@ -4,7 +4,36 @@ export class JSONNumber {
   constructor(raw) { this.raw = raw; }
 }
 
+// Foundation's JSONDecoder refuses JSON nested more than 512 arrays or objects deep.
+// Checked first, in one linear pass, so nothing recursive ever sees deeper input. The
+// position follows swift-foundation's JSONScanner (checked against Swift 6.2): at the
+// 513th container an object reports its '{', an array the character two past its '['
+// (its line and column clamped to the last character, the index as is).
+export const MAX_JSON_DEPTH = 512;
+export class JSONDepthError extends Error {
+  constructor(text, index) {
+    // the line and column are clamped to the last character; the index is not
+    const at = Math.min(index, text.length - 1), before = text.slice(0, at);
+    const line = before.split('\n').length, column = at - before.lastIndexOf('\n');
+    super(`Too many nested arrays or dictionaries around line ${line}, column ${column}.`);
+    this.index = index;
+  }
+}
+function checkDepth(text) {
+  let depth = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c === 34) { // a string: skip it, escapes included
+      for (i++; i < text.length && text.charCodeAt(i) !== 34; i++) if (text.charCodeAt(i) === 92) i++;
+    } else if (c === 91 || c === 123) {
+      if (depth >= MAX_JSON_DEPTH) throw new JSONDepthError(text, c === 123 ? i : i + 2);
+      depth++;
+    } else if (c === 93 || c === 125) depth--;
+  }
+}
+
 export function parseJSONNumbers(text) {
+  checkDepth(text);
   // Let the browser validate the complete grammar and report syntax errors.
   JSON.parse(text);
   const tokens = text.match(/"(?:[^"\\]|\\.)*"|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null|[{}\[\]:,]/g);

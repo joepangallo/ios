@@ -3,6 +3,8 @@
 // Each rung shows what was removed since the previous rung and why the
 // shorter form is still legal Swift; the printed output never changes.
 
+import { esc, highlightSwift } from './services-kit.js';
+
 const NAME = 'swift-closure-ladder';
 
 // Segment kinds: '' unchanged, '-' removed since the previous rung, '+' added.
@@ -121,38 +123,14 @@ const ROLES = [
   ['b', 'body'],
 ];
 
-const KW = new Set(['let', 'var', 'in', 'return', 'func', 'true', 'false']);
-const TYPES = new Set(['String', 'Int', 'Bool', 'Double']);
-
 const decode = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 // The plain text of a rung (unchanged + added parts) and of its predecessor.
 const textOf = (segs, skip) => segs.filter(([k]) => k !== skip).map(([, t]) => decode(t)).join('');
 
-// Minimal Swift highlighter. `state.prev` carries the last non-space character
-// across segment boundaries so `.count` after a split still reads as a member.
-function highlight(raw, state) {
-  let out = '';
-  const re = /"[^"]*"|\$\d+|\d+(?:\.\d+)?|[A-Za-z_][A-Za-z0-9_]*|\s+|./g;
-  let m;
-  while ((m = re.exec(raw))) {
-    const t = m[0];
-    let cls = '';
-    if (t[0] === '"') cls = 'str';
-    else if (t[0] === '$') cls = 'arg';
-    else if (/^\d/.test(t)) cls = 'num';
-    else if (/^[A-Za-z_]/.test(t)) {
-      if (KW.has(t)) cls = 'kw';
-      else if (TYPES.has(t)) cls = 'type';
-      else if (state.prev === '.' || t === 'print') cls = 'fn';
-      else cls = 'id';
-    }
-    out += cls ? `<span class="cl-t-${cls}">${esc(t)}</span>` : esc(t);
-    if (!/^\s+$/.test(t)) state.prev = t[t.length - 1];
-  }
-  return out;
-}
+// `state.prev` carries the last token across segment boundaries so `.count`
+// after a split still reads as a member.
+const highlight = (raw, state) => highlightSwift(raw, { prefix: 'cl-t-', state });
 
 export default {
   name: 'swift-closure-ladder',

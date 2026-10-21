@@ -481,7 +481,7 @@ let c = a + b</code></pre>`,
             'It compiles but crashes when it runs',
           ],
           answer: 0,
-          explain: `<p>Swift never converts between number types on its own, so adding an <code>Int</code> and a <code>Double</code> is a compile-time error. Many languages would quietly produce 9.5, which makes that the tempting answer, but Swift asks you to write <code>Double(a)</code> so the conversion is visible. It is not a crash either: the compiler stops the program before it can run.</p>`,
+          explain: `<p>Swift never converts between number types on its own, so adding an <code>Int</code> and a <code>Double</code> is a compile-time error. Many languages would quietly produce 9.5, which makes that the natural guess, but Swift asks you to write <code>Double(a)</code> so the conversion is visible. It is not a crash either: the compiler stops the program before it can run.</p>`,
         },
         {
           q: `<p>You need a constant that records whether the user has turned on notifications. Which name follows Swift conventions best?</p>`,
@@ -493,7 +493,7 @@ let c = a + b</code></pre>`,
           q: `<p>What does <code>print(Int(9.99))</code> print?</p>`,
           choices: ['10', '9', '9.99', '9.0'],
           answer: 1,
-          explain: `<p>Converting a <code>Double</code> to an <code>Int</code> drops the fractional part; it does not round, so the result is <code>9</code>. The tempting answer, 10, needs rounding first: <code>Int(9.99.rounded())</code>. The result is an <code>Int</code>, so it can never print as 9.0 or 9.99.</p>`,
+          explain: `<p>Converting a <code>Double</code> to an <code>Int</code> drops the fractional part; it does not round, so the result is <code>9</code>. The answer 10 would need rounding first: <code>Int(9.99.rounded())</code>. The result is an <code>Int</code>, so it can never print as 9.0 or 9.99.</p>`,
         },
       ],
     },
@@ -1164,7 +1164,7 @@ const lessonStringsNumbers = {
           q: '<p>A fitness app stores <code>let totalKm = 10</code> and <code>let runs = 4</code>. Which expression gives the average distance per run as 2.5?</p>',
           choices: ['totalKm / runs', 'Double(totalKm / runs)', 'totalKm / runs * 1.0', 'Double(totalKm) / Double(runs)'],
           answer: 3,
-          explain: '<p>Converting both values before dividing keeps the fraction: 10.0 / 4.0 is 2.5. <code>Double(totalKm / runs)</code> is the tempting trap: the integer division runs first and produces 2, so converting afterward gives 2.0. Multiplying by 1.0 does not even compile, because Swift never mixes <code>Int</code> and <code>Double</code> silently.</p>',
+          explain: '<p>Converting both values before dividing keeps the fraction: 10.0 / 4.0 is 2.5. <code>Double(totalKm / runs)</code> is the classic trap: the integer division runs first and produces 2, so converting afterward gives 2.0. Multiplying by 1.0 does not even compile, because Swift never mixes <code>Int</code> and <code>Double</code> silently.</p>',
         },
         {
           q: '<p>Given <code>let temperature = 72</code> and <code>let isRaining = false</code>, which expression is <code>true</code>?</p>',
@@ -1180,7 +1180,7 @@ const lessonStringsNumbers = {
         },
         {
           q: '<p>A teammate who usually writes JavaScript adds <code>let name = "Mia"</code> and then <code>print(name.length)</code>. What happens?</p>',
-          choices: ['It prints 3', 'The program does not compile, because String has no member named length', 'It prints 0', 'It compiles, then crashes when that line runs'],
+          choices: ['It prints 3', 'It does not compile: String has no length', 'It prints 0', 'It compiles, then crashes when that line runs'],
           answer: 1,
           explain: '<p>Swift checks every member name at compile time. The String property is <code>count</code>, not <code>length</code>, so the build fails with <em>value of type \'String\' has no member \'length\'</em> and nothing runs. It cannot crash at run time, because a program with a compile error never starts.</p>',
         },
@@ -1778,7 +1778,7 @@ let count = Int(input) ?? 0
 print(count + 1)</code></pre>`,
           choices: ['13', 'Optional(13)', '1', 'Nothing; it does not compile'],
           answer: 0,
-          explain: `<p><code>Int("12")</code> succeeds, and <code>??</code> unwraps it, so <code>count</code> is a plain <code>Int</code> holding 12, and 12 + 1 is 13. <code>Optional(13)</code> is tempting, but <code>??</code> always produces a non-optional value. You would only see 1 if the conversion had failed and the default 0 had been used.</p>`,
+          explain: `<p><code>Int("12")</code> succeeds, and <code>??</code> unwraps it, so <code>count</code> is a plain <code>Int</code> holding 12, and 12 + 1 is 13. <code>Optional(13)</code> looks plausible, but <code>??</code> always produces a non-optional value. You would only see 1 if the conversion had failed and the default 0 had been used.</p>`,
         },
         {
           q: `<p>Which line stops this program from compiling?</p><pre><code>let scores = [8, 5, 9]
@@ -2505,13 +2505,13 @@ const lessonCollections = {
         },
         {
           q: '<p>What happens when this runs?</p><pre><code>let scores = [12, 40, 7]\nprint(scores[3])</code></pre>',
-          choices: ['It prints 7', 'It prints nil', 'It does not compile, because scores is a let', 'It compiles, then stops at run time with Index out of range'],
+          choices: ['It prints 7', 'It prints nil', 'It does not compile, because scores is a let', 'It stops at run time: Index out of range'],
           answer: 3,
           explain: '<p>The valid indexes are 0, 1 and 2, so index 3 is one past the end. An array subscript does not return an optional, so you never get <code>nil</code>; the program stops with <em>Index out of range</em>. Reading a <code>let</code> array is perfectly legal; only changing it is not.</p>',
         },
         {
           q: '<p>After these lines run, what is <code>count</code>?</p><pre><code>let stock = ["latte": 12]\nlet count = stock["mocha"]</code></pre>',
-          choices: ['nil, because the lookup returns an optional Int with no value', '0', 'The program stops with a key-not-found error', 'An empty string'],
+          choices: ['nil', '0', 'The program stops with a key-not-found error', 'An empty string'],
           answer: 0,
           explain: '<p>A dictionary lookup returns <code>Int?</code>, and a missing key gives <code>nil</code>. You only get 0 if you ask for it with <code>?? 0</code> or <code>stock["mocha", default: 0]</code>. Unlike an array index, a missing key never crashes.</p>',
         },
@@ -3276,18 +3276,13 @@ const lessonControlFlow = {
         {
           q: `<p>What does this print?</p><pre><code>let speed = 15
 switch speed {
-case 0...10:
-    print("Slow")
-case 10...20:
-    print("Moderate")
-case 15:
-    print("Exactly fifteen")
-default:
-    print("Fast")
+case 10...20: print("Moderate")
+case 15: print("Exactly fifteen")
+default: print("Fast")
 }</code></pre>`,
-          choices: ['Slow', 'Moderate', 'Moderate, then Exactly fifteen', 'Exactly fifteen'],
+          choices: ['Fast', 'Moderate', 'Moderate, then Exactly fifteen', 'Exactly fifteen'],
           answer: 1,
-          explain: '<p>Swift tests the cases from top to bottom and runs only the <strong>first</strong> match. 15 lies in <code>10...20</code>, so Moderate prints and the switch ends. Swift cases never fall through, so Moderate followed by Exactly fifteen cannot happen; <code>case 15</code> is simply never reached. Put specific cases before broad ranges.</p>',
+          explain: '<p>Swift tests the cases from top to bottom and runs only the <strong>first</strong> match. 15 lies in <code>10...20</code>, so Moderate prints and the switch ends. Cases never fall through, so <code>case 15</code> is never reached. Put specific cases before broad ranges.</p>',
         },
         {
           q: `<p>This program does not compile. Why?</p><pre><code>let level = 3
@@ -3314,7 +3309,7 @@ case 2, 3:
 }</code></pre>`,
           choices: ['1 3 4', '1 3 4 6', '1 2 3 4', '3 4 5 6'],
           answer: 0,
-          explain: '<p><code>continue</code> skips the rest of the pass where <code>n</code> is 2, so 2 never prints. <code>break</code> ends the whole loop when <code>n</code> reaches 5, so neither 5 nor 6 prints. The tempting <code>1 3 4 6</code> treats <code>break</code> like <code>continue</code>, but <code>break</code> leaves the loop completely.</p>',
+          explain: '<p><code>continue</code> skips the rest of the pass where <code>n</code> is 2, so 2 never prints. <code>break</code> ends the whole loop when <code>n</code> reaches 5, so neither 5 nor 6 prints. The near miss <code>1 3 4 6</code> treats <code>break</code> like <code>continue</code>, but <code>break</code> leaves the loop completely.</p>',
         },
         {
           q: `<p>Both loops start with the value 5. How many times does each body run?</p><pre><code>var a = 5
@@ -4010,7 +4005,7 @@ const lessonFunctions = {
           q: '<p>What does this print?</p><pre><code>func double(_ value: inout Int) {\n    value *= 2\n}\nvar points = 5\ndouble(&amp;points)\ndouble(&amp;points)\nprint(points)</code></pre>',
           choices: ['5', '10', 'Nothing: parameters are constants, so it does not compile', '20'],
           answer: 3,
-          explain: '<p>An <code>inout</code> parameter copies its new value back to the caller when each call ends: 5 becomes 10, then 20. The tempting answer 5 describes an ordinary parameter, but then <code>value *= 2</code> would not compile at all, because ordinary parameters are constants.</p>',
+          explain: '<p>An <code>inout</code> parameter copies its new value back to the caller when each call ends: 5 becomes 10, then 20. The answer 5 describes an ordinary parameter, but then <code>value *= 2</code> would not compile at all, because ordinary parameters are constants.</p>',
         },
         {
           q: '<p>You are adding a method to a list type that deletes the item at a position. Which declaration best follows the Swift API Design Guidelines?</p>',
@@ -4020,7 +4015,7 @@ const lessonFunctions = {
         },
         {
           q: '<p>A recursive function has no base case. What happens when a program calls it?</p>',
-          choices: ['The compiler always refuses to build it', 'It quietly returns 0', 'It keeps calling itself until the program runs out of stack memory and crashes', 'Swift inserts a stopping condition automatically'],
+          choices: ['The compiler always refuses to build it', 'It quietly returns 0', 'It crashes when the call stack overflows', 'Swift inserts a stopping condition automatically'],
           answer: 2,
           explain: '<p>Each call adds a frame to the call stack, and with no base case the frames pile up until the stack overflows and the program crashes. The compiler can warn about the most obvious infinite recursion, but in general it cannot prove whether recursion ends, so it does not refuse to build. Swift never adds a base case for you.</p>',
         },
@@ -4472,6 +4467,109 @@ const lessonClosures = {
       ],
     },
     {
+      kind: 'concept',
+      title: 'Closures that outlive the call: @escaping',
+      body: '<p>Every closure you have passed so far, to <code>sorted(by:)</code>, <code>map</code> or <code>filter</code>, was used up before the function returned. Such a parameter is <strong>non-escaping</strong>, the default in Swift: the function may call it during the call and nowhere else, and may not store it.</p><p>Some functions need to keep a closure for later: append it to an array, store it in a property, or hand it to a network request that replies seconds from now. Then the closure <em>escapes</em> the call, and Swift makes you say so by writing <code>@escaping</code> before its type. Forget it and the compiler refuses, naming the non-escaping parameter.</p><p>The mark matters because of capture. A non-escaping closure cannot outlive the call, so Swift never has to keep its captured variables alive afterward. An escaping closure may run at any later moment, so everything it captures stays alive, on the heap, as long as the closure does.</p>',
+      points: [
+        { term: 'Non-escaping', text: 'The default. Called only during the call, never stored.' },
+        { term: '@escaping', text: 'Needed when a closure is stored or called after the function returns.' },
+        { term: 'Explicit self', text: 'In a class, an escaping closure that uses a property must write self., admitting that it now keeps the object alive.' },
+        { term: 'Retain cycle', text: 'If that object also stores the closure, each keeps the other alive forever. The Architecture, Testing and Shipping module breaks such loops with [weak self].' },
+      ],
+    },
+    {
+      kind: 'code',
+      title: 'Storing closures and calling them later',
+      intro: '<p><code>onTap</code> does not call the closure it receives. It stores it in an array, so the parameter must be <code>@escaping</code>. <code>simulateTap()</code> runs every stored handler later, twice, and both handlers share the captured variable <code>taps</code>. Completion handlers such as <code>completion: @escaping (Entry) -&gt; Void</code> in the Device APIs module work the same way: the closure outlives the call that received it.</p>',
+      run: 'swift',
+      lines: [
+        ['var handlers: [() -> Void] = []', {
+          who: 'Your program, declaring a global variable; the compiler reads the annotation as an array whose elements are closures.',
+          what: 'Creates an empty array that can hold closures taking no parameters and returning nothing.',
+          where: 'Top-level code, so handlers is a global that both onTap and simulateTap below can reach.',
+          when: 'Once, as the first statement runs, before any handler exists.',
+          why: 'This array is the place the closures escape to. Without the annotation Swift could not infer an element type from an empty literal.' }],
+        ['', null],
+        ['func onTap(_ handler: @escaping () -> Void) {', {
+          who: 'The compiler, which reads @escaping as permission for this parameter to outlive the call.',
+          what: 'Declares onTap, which takes one closure with no argument label; @escaping says the closure may be kept after onTap returns.',
+          where: 'A top-level function; handler is its only parameter and exists only inside the body.',
+          when: 'Declared at compile time; the body runs each time a handler is registered below.',
+          why: 'Without @escaping the next line fails to compile, because a non-escaping closure may not be placed in an array.' }],
+        ['    handlers.append(handler)', {
+          who: 'The global handlers array, growing by one element.',
+          what: 'Stores the closure in the array instead of calling it.',
+          where: 'Inside onTap, the only statement in its body.',
+          when: 'Immediately, on each call to onTap.',
+          why: 'This is the escape: the closure now lives on after onTap returns, so Swift keeps its captured variables alive as well.' }],
+        ['}', null],
+        ['', null],
+        ['func simulateTap() {', {
+          who: 'Your program, declaring the function that stands in for a real tap on the screen.',
+          what: 'Declares a function with no parameters that will run every stored handler.',
+          where: 'A second top-level function, beside onTap, with access to the same global array.',
+          when: 'Declared at compile time; it runs when the last two lines of the program call it.',
+          why: 'In a real app iOS calls this kind of function when the user touches a button; calling it yourself keeps the output predictable.' }],
+        ['    for handler in handlers {', {
+          who: 'The for-in loop, reading the global array of stored closures.',
+          what: 'Walks the handlers array, binding each stored closure in turn to the name handler.',
+          where: 'Inside simulateTap; the loop variable handler is a closure, not a number or a string.',
+          when: 'Each time simulateTap runs, visiting the handlers in registration order.',
+          why: 'The handlers were stored in order, so the loop runs them in that same order: counting first, printing second.' }],
+        ['        handler()', {
+          who: 'The stored closure, called long after onTap returned.',
+          what: 'Runs one stored closure. The empty parentheses pass no arguments, matching the () -> Void type.',
+          where: 'Inside the loop body, once per element of handlers.',
+          when: 'Twice per tap, because two handlers are registered; four times over the whole program.',
+          why: 'Calling a closure out of storage is exactly what @escaping promised the compiler would happen.' }],
+        ['    }', null],
+        ['}', null],
+        ['', null],
+        ['var taps = 0', {
+          who: 'Your program, creating the variable that both closures below will capture.',
+          what: 'Declares a global Int that starts at zero.',
+          where: 'Top-level code, declared after the functions but before either handler is written.',
+          when: 'Once, before any handler is registered.',
+          why: 'The closures capture the variable itself, not a copy, so one closure can change it and the other sees the change.' }],
+        ['onTap { taps += 1 }', {
+          who: 'onTap, receiving a trailing closure as its handler argument.',
+          what: 'Registers a closure that adds one to taps each time it runs.',
+          where: 'Top-level code; the closure is written here but stored as the first element of handlers.',
+          when: 'Stored now; its body runs only when simulateTap calls it.',
+          why: 'A closure that does its work later is the normal shape of a button action in SwiftUI.' }],
+        ['onTap { print("Tap count: \\(taps)") }', {
+          who: 'onTap again, storing a second closure in the same array.',
+          what: 'Registers a closure that prints the current value of taps.',
+          where: 'Top-level code; this closure becomes the second element of handlers.',
+          when: 'Stored now; it runs after the counting closure on every simulated tap.',
+          why: 'It reads taps when it runs, not when it was registered, so it reports 1 and then 2: the capture is shared and live.' }],
+        ['print("Registered \\(handlers.count) handlers")', {
+          who: 'The print function, reading the count of the global array.',
+          what: 'Prints Registered 2 handlers.',
+          where: 'Top-level code; this is the first line of output.',
+          when: 'After both registrations and before any handler has run.',
+          why: 'Confirms that onTap stored the closures without running them: taps is still 0 at this point.' }],
+        ['simulateTap()', {
+          who: 'Your code, standing in for the first tap by the user.',
+          what: 'Runs both stored handlers in order: taps becomes 1, then Tap count: 1 prints.',
+          where: 'Top-level code, after the registrations.',
+          when: 'The second line of output appears during this call.',
+          why: 'The closures run here, long after onTap returned, which is what @escaping made possible.' }],
+        ['simulateTap()', {
+          who: 'Your code again, standing in for a second tap.',
+          what: 'Runs both handlers once more: taps becomes 2 and Tap count: 2 prints.',
+          where: 'Top-level code, the last statement of the program.',
+          when: 'Third line of output, immediately after the first simulated tap finishes.',
+          why: 'Stored closures can run any number of times, and each run sees the latest value of the captured variable.' }],
+      ],
+      expect: 'Registered 2 handlers\nTap count: 1\nTap count: 2',
+      try: [
+        'Register a third handler that prints "Third" and predict the output before you run it.',
+        'Delete @escaping from onTap and read the compiler error.',
+        'Swap the two onTap calls so the printing closure is registered first. What prints now?',
+      ],
+    },
+    {
       kind: 'quiz',
       title: 'Check your understanding',
       questions: [
@@ -4501,7 +4599,7 @@ const lessonClosures = {
         },
         {
           q: '<p>A teammate expects this to print <code>[9, 5, 3]</code>. What actually prints?</p><pre><code>var scores = [3, 9, 5]\nlet ordered = scores.sorted { $0 &gt; $1 }\nprint(scores)</code></pre>',
-          choices: ['[9, 5, 3], because sorted reorders the array', '[3, 9, 5], because sorted returns a new array and scores is unchanged', '[3, 5, 9], because sorting is always ascending', 'Nothing: sorted cannot be called on a var'],
+          choices: ['[9, 5, 3], because sorted reorders the array', '[3, 9, 5], because sorted returns a new array', '[3, 5, 9], because sorting is always ascending', 'Nothing: sorted cannot be called on a var'],
           answer: 1,
           explain: '<p><code>sorted</code> returns a <em>new</em> array, stored here in <code>ordered</code>, and leaves <code>scores</code> exactly as it was. The fix is to print <code>ordered</code>, or to call <code>scores.sort { $0 &gt; $1 }</code>, which reorders the var in place. The closure decides the order, so the result is not always ascending.</p>',
         },

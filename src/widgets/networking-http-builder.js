@@ -2,6 +2,8 @@
 // and shows the raw request, the response (status, readable headers, timing,
 // body) and the equivalent Swift URLRequest code.
 
+import { esc, el, on, idScope, highlightSwift } from './services-kit.js';
+
 const NAME = 'networking-http-builder';
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH']);
@@ -58,39 +60,6 @@ function offlineSample(endpoint, method, headers) {
   }
 }
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const KW = new Set(['let', 'var', 'func', 'if', 'else', 'guard', 'try', 'await', 'return', 'import', 'struct', 'class', 'enum', 'case', 'switch', 'as', 'throw', 'throws', 'async', 'in', 'do', 'catch', 'for', 'while', 'self', 'nil', 'true', 'false']);
-// Minimal Swift highlighter for generated snippets (strings, comments, keywords, types, numbers).
-function highlightSwift(code) {
-  let inBlock = false;
-  return code.split('\n').map((line) => {
-    if (inBlock) {
-      if (/^\s*"""#?/.test(line)) { inBlock = false; return line.replace(/^(\s*)("""#?)(.*)$/, (_, a, b, c) => `${a}<span class="t-str">${esc(b)}</span>${highlightLine(c)}`); }
-      return `<span class="t-str">${esc(line)}</span>`;
-    }
-    const open = line.indexOf('"""');
-    if (open >= 0 && line.indexOf('"""', open + 3) < 0) {
-      inBlock = true;
-      const start = line[open - 1] === '#' ? open - 1 : open;
-      return highlightLine(line.slice(0, start)) + `<span class="t-str">${esc(line.slice(start))}</span>`;
-    }
-    return highlightLine(line);
-  }).join('\n');
-}
-function highlightLine(line) {
-  let out = '';
-  const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*")|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_][A-Za-z0-9_]*\b)|([\s\S])/g;
-  let m;
-  while ((m = re.exec(line))) {
-    if (m[1]) out += `<span class="t-cmt">${esc(m[1])}</span>`;
-    else if (m[2]) out += `<span class="t-str">${esc(m[2])}</span>`;
-    else if (m[3]) out += `<span class="t-num">${m[3]}</span>`;
-    else if (m[4]) out += KW.has(m[4]) ? `<span class="t-kw">${m[4]}</span>` : /^[A-Z]/.test(m[4]) ? `<span class="t-type">${m[4]}</span>` : m[4];
-    else out += esc(m[5]);
-  }
-  return out;
-}
-
 function swiftString(s) { return JSON.stringify(s); }
 
 function swiftCode(method, url, headers, body) {
@@ -117,18 +86,6 @@ function swiftCode(method, url, headers, body) {
   lines.push('}');
   lines.push('print(String(decoding: data, as: UTF8.self))');
   return lines.join('\n');
-}
-
-function el(tag, attrs = {}, ...kids) {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === false || v == null) continue;
-    if (k === 'class') node.className = v;
-    else if (k === 'text') node.textContent = v;
-    else node.setAttribute(k, v === true ? '' : v);
-  }
-  for (const kid of kids) if (kid != null) node.append(kid);
-  return node;
 }
 
 export default {
@@ -184,7 +141,7 @@ export default {
 `,
   mount(root, props = {}, ctx) {
     root.classList.add(`w-${NAME}`);
-    const id = (s) => `${NAME}-${s}`;
+    const id = idScope(NAME);
     const state = {
       endpoint: ENDPOINTS[0], method: 'GET', body: ENDPOINTS[0].body,
       headers: [{ name: 'Accept', value: 'application/json' }], tab: 'request', busy: false, last: null,
@@ -301,7 +258,7 @@ export default {
         return c > 0 && !l.startsWith('{') && !l.startsWith(' ') && !l.startsWith('}') && !l.startsWith('[') ? `<span class="t-head">${esc(l.slice(0, c))}</span>: ${esc(l.slice(c + 2))}` : esc(l);
       }).join('\n');
       const headersForSwift = state.headers.filter((h) => h.name.trim());
-      swiftPre.innerHTML = highlightSwift(swiftCode(state.method, state.endpoint.url, headersForSwift, bs.used && bs.ok ? state.body : ''));
+      swiftPre.innerHTML = highlightSwift(swiftCode(state.method, state.endpoint.url, headersForSwift, bs.used && bs.ok ? state.body : ''), { prefix: 't-' });
       tabs.forEach((t) => {
         const key = t.id.replace(id('tab-'), '');
         t.setAttribute('aria-selected', String(key === state.tab));
@@ -359,7 +316,6 @@ export default {
       if (focus) tabs.find((t) => t.id === id(`tab-${key}`)).focus();
     }
 
-    const on = (node, ev, fn) => { node.addEventListener(ev, fn); return () => node.removeEventListener(ev, fn); };
     const offs = [
       on(endpointSel, 'change', () => {
         state.endpoint = ENDPOINTS.find((e) => e.key === endpointSel.value);

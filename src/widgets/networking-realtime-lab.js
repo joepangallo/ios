@@ -3,6 +3,8 @@
 // requests, radio-awake time and server work, with an optional stretch in
 // the background where iOS suspends the app.
 
+import { el, svgEl, on, idScope } from './services-kit.js';
+
 const NAME = 'networking-realtime-lab';
 const MATCH = 600;
 const TAIL = 8;
@@ -86,22 +88,6 @@ function run(approach, match, { interval, background }) {
   return { transfers, deliveries, empty, requests, awake, avg, worst: Math.max(0, ...delays), serverText };
 }
 
-function el(tag, attrs = {}, ...kids) {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === false || v == null) continue;
-    if (k === 'class') node.className = v;
-    else if (k === 'text') node.textContent = v;
-    else node.setAttribute(k, v === true ? '' : v);
-  }
-  for (const kid of kids) if (kid != null) node.append(kid);
-  return node;
-}
-const svgEl = (tag, attrs = {}) => {
-  const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
-  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
-  return n;
-};
 const secs = (s) => (s < 10 ? `${s.toFixed(1)} s` : `${Math.round(s)} s`);
 
 export default {
@@ -152,7 +138,7 @@ export default {
 `,
   mount(root, props = {}, ctx) {
     root.classList.add(`w-${NAME}`);
-    const id = (s) => `${NAME}-${s}`;
+    const id = idScope(NAME);
     const state = { approach: 'poll', interval: 15, background: false, seed: 4 };
     let match = makeMatch(state.seed);
 
@@ -268,7 +254,6 @@ export default {
       drawChart(r);
     }
 
-    const on = (node, ev, fn) => { node.addEventListener(ev, fn); return () => node.removeEventListener(ev, fn); };
     const offs = [
       ...segBtns.map((b, i) => on(b, 'click', () => { state.approach = APPROACHES[i].key; render(); })),
       on(seg, 'keydown', (e) => {

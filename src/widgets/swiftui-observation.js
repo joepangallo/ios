@@ -2,32 +2,12 @@
 // ObservableObject. One coffee-order model, three small views that read
 // different properties. Change a property and see which bodies re-run.
 // Both modes are counted in parallel so the scoreboard comparison is fair.
+
+import { esc, idScope, highlightSwift } from './services-kit.js';
+
 const NAME = 'swiftui-observation-tracker';
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-const KW = new Set(['import', 'struct', 'class', 'final', 'var', 'let', 'private', 'some', 'func', 'return',
-  'if', 'else', 'true', 'false', 'in', 'self', 'enum', 'case', 'static', 'init']);
-
-function highlight(line) {
-  const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*")|(@\w+)|(\b\d+(?:\.\d+)?\b)|(\.[A-Za-z_]\w*)|(\$?[A-Za-z_]\w*)|(\s+)|([\s\S])/g;
-  let out = '';
-  let m;
-  while ((m = re.exec(line))) {
-    const [tok, cmt, str, attr, num, member, ident] = m;
-    if (cmt) out += `<span class="t-cmt">${esc(cmt)}</span>`;
-    else if (str) out += `<span class="t-str">${esc(str)}</span>`;
-    else if (attr) out += `<span class="t-attr">${esc(attr)}</span>`;
-    else if (num) out += `<span class="t-num">${esc(num)}</span>`;
-    else if (member) out += `<span class="t-fn">${esc(member)}</span>`;
-    else if (ident) {
-      if (KW.has(ident)) out += `<span class="t-kw">${esc(ident)}</span>`;
-      else if (/^[A-Z]/.test(ident)) out += `<span class="t-type">${esc(ident)}</span>`;
-      else out += esc(ident);
-    } else out += esc(tok);
-  }
-  return out;
-}
+const highlight = (line) => highlightSwift(line, { prefix: 't-' });
 
 // Highlights a line, wrapping each occurrence of a "read" token in <mark>.
 function highlightReads(line, reads, on) {
@@ -216,7 +196,7 @@ export default {
     const rm = !!ctx.reducedMotion;
     el.classList.add(`w-${NAME}`);
     if (rm) el.classList.add('rm');
-    const id = (s) => `${NAME}-${s}`;
+    const id = idScope(NAME);
     const INIT = { drink: 'Latte', size: 'medium', shots: 2, note: '' };
     const order = { ...INIT };
     let mode = 'observable';

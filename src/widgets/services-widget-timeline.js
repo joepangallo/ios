@@ -4,11 +4,11 @@
 // passed. The student logs glasses in the app, changes the provider's entry
 // spacing, entry count and reload policy, scrubs the clock, and watches when
 // the widget is stale and when a new timeline arrives.
-import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idFor } from './services-kit.js';
+import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idScope } from './services-kit.js';
 
 const NAME = 'services-widget-timeline';
 const S = `.w-${NAME}`;
-const id = (role) => idFor(NAME, role);
+const id = idScope(NAME);
 
 const DAY_START = 7 * 60;   // 07:00
 const DAY_LEN = 16 * 60;    // until 23:00

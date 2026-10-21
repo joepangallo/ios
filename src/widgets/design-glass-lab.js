@@ -4,6 +4,8 @@
 // apply the glass layers (dimming, frost, tint), and compute the contrast of
 // the icons against the result with the Swift contrastRatio function.
 
+import { listenerBag, contrastRatioLabel, idScope, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'design-glass-lab';
 let seq = 0;
 
@@ -101,24 +103,21 @@ const percentile = (sorted, p) => sorted[Math.min(sorted.length - 1, Math.max(0,
 export default {
   name: 'design-glass-lab',
   css: `
+${iosThemeCss('.w-design-glass-lab')}
 .w-design-glass-lab {
-  --ios-bg: #FFFFFF; --ios-label: #000000; --ios-label-2: rgba(60,60,67,.6);
   width: 100%; height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr);
   gap: 16px; padding: 12px 16px 12px 12px; box-sizing: border-box; font: 13px/1.4 var(--font-ui); color: var(--ink);
   overflow: hidden;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .w-design-glass-lab { --ios-bg: #000000; --ios-label: #FFFFFF; --ios-label-2: rgba(235,235,245,.6); }
-}
-:root[data-theme="dark"] .w-design-glass-lab { --ios-bg: #000000; --ios-label: #FFFFFF; --ios-label-2: rgba(235,235,245,.6); }
 .w-design-glass-lab * { box-sizing: border-box; }
-.w-design-glass-lab .gl-phone { position: relative; border-radius: 34px; background: #1d1d1f; padding: 7px; box-shadow: var(--shadow); align-self: center; }
+${phoneFrameCss('.w-design-glass-lab', { frame: '.gl-phone', island: '.gl-island', radius: '34px', islandWidth: '30%', islandHeight: '4.6%' })}
+.w-design-glass-lab .gl-phone { align-self: center; }
 .w-design-glass-lab .gl-screen { position: relative; width: 100%; height: 100%; border-radius: 28px; overflow: hidden; background: var(--ios-bg); }
 .w-design-glass-lab .gl-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
 .w-design-glass-lab .gl-scroll::-webkit-scrollbar { display: none; }
 .w-design-glass-lab .gl-scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: -3px; }
 .w-design-glass-lab canvas { display: block; }
-.w-design-glass-lab .gl-island { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); width: 30%; height: 4.6%; max-height: 22px; border-radius: 999px; background: #000; pointer-events: none; z-index: 4; }
+.w-design-glass-lab .gl-island { max-height: 22px; }
 .w-design-glass-lab .gl-home { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 36%; height: 4px; border-radius: 4px; background: rgba(255,255,255,.75); mix-blend-mode: difference; pointer-events: none; z-index: 4; }
 .w-design-glass-lab .gl-glass {
   position: absolute; border-radius: 999px; z-index: 3;
@@ -191,8 +190,7 @@ export default {
 `,
   mount(el, props, ctx) {
     seq += 1;
-    const uid = seq === 1 ? '' : `-${seq}`;
-    const id = (f) => `${NAME}-${f}${uid}`;
+    const id = idScope(NAME, seq);
     el.classList.add('w-design-glass-lab');
     const reduced = !!ctx.reducedMotion;
 
@@ -519,11 +517,9 @@ export default {
       bar.style.color = res ? hex(res.icon) : '#ffffff';
     }
 
-    const fmt = (r) => `${r >= 10 ? r.toFixed(1) : r.toFixed(2)}:1`;
-
     function explain(res) {
       const where = res.region.desc;
-      const w = fmt(res.worst);
+      const w = contrastRatioLabel(res.worst, { compact: true, suffix: ':1' });
       const tint = TINTS[state.tint].rgb;
       const tintName = TINTS[state.tint].label.toLowerCase();
       if (state.nested) {
@@ -544,7 +540,7 @@ export default {
         return `<strong>Heavy ${tintName} tint.</strong> The toolbar now reads as a solid ${tintName} button (${w}). Tint is a signal: use it to mark one primary action, not a whole toolbar, or nothing stands out.`;
       }
       if (res.worst < res.typical * 0.72 && state.blur < 6) {
-        return `<strong>Sharp detail shows through.</strong> With only ${state.blur} pt of blur, the busiest spot behind the icons (${w}) is far below the typical spot (${fmt(res.typical)}). More blur evens out the background; keeping busy content out from under controls is the better fix.`;
+        return `<strong>Sharp detail shows through.</strong> With only ${state.blur} pt of blur, the busiest spot behind the icons (${w}) is far below the typical spot (${contrastRatioLabel(res.typical, { compact: true, suffix: ':1' })}). More blur evens out the background; keeping busy content out from under controls is the better fix.`;
       }
       if (res.worst >= 4.5) {
         return `<strong>Regular glass adapts.</strong> It sampled ${where} (${res.light ? 'light' : 'dark'} content) and switched to ${res.light ? 'dark' : 'white'} icons on ${res.light ? 'light' : 'dark'} frost, keeping ${w} at the worst spot. This adaptation is why Regular is the default.`;
@@ -559,8 +555,8 @@ export default {
       applyGlass(res);
       if (!res) return;
       lastResult = res;
-      $('#' + id('ratio')).textContent = fmt(res.worst);
-      $('#' + id('typical')).textContent = `worst spot (typical ${fmt(res.typical)})`;
+      $('#' + id('ratio')).textContent = contrastRatioLabel(res.worst, { compact: true, suffix: ':1' });
+      $('#' + id('typical')).textContent = `worst spot (typical ${contrastRatioLabel(res.typical, { compact: true, suffix: ':1' })})`;
       $('#' + id('needle')).style.left = `${pos(res.worst)}%`;
       const sw = $('#' + id('sw'));
       sw.style.background = hex(res.compAvg); sw.style.color = hex(res.icon);
@@ -624,30 +620,29 @@ export default {
       if (reduced) schedule();
     }
 
-    const listeners = [];
-    const on = (t, ev, fn, opt) => { t.addEventListener(ev, fn, opt); listeners.push([t, ev, fn, opt]); };
-    on(bar, 'pointerdown', onDown);
-    on(bar, 'pointermove', onMove);
-    on(bar, 'pointerup', onUp);
-    on(bar, 'pointercancel', onUp);
-    on(bar, 'keydown', onKey);
-    on(scroller, 'scroll', schedule, { passive: true });
-    el.querySelectorAll(`input[name="${id('variant')}"]`).forEach((r) => on(r, 'change', () => { state.variant = r.value; schedule(); }));
-    on(blurIn, 'input', () => { state.blur = +blurIn.value; $('#' + id('blur-out')).textContent = `${state.blur} pt`; schedule(); });
-    on(tintSel, 'change', () => { state.tint = tintSel.value; tintAmt.disabled = state.tint === 'none'; schedule(); });
-    on(tintAmt, 'input', () => { state.tintAmount = +tintAmt.value; $('#' + id('tint-out')).textContent = `${state.tintAmount}%`; schedule(); });
-    on(dimIn, 'change', () => { state.dim = dimIn.checked; schedule(); });
-    on(nestedIn, 'change', () => { state.nested = nestedIn.checked; schedule(); });
-    el.querySelectorAll('.gl-jump button').forEach((b) => on(b, 'click', () => jumpTo(b.dataset.region)));
+    const bag = listenerBag();
+    bag.on(bar, 'pointerdown', onDown);
+    bag.on(bar, 'pointermove', onMove);
+    bag.on(bar, 'pointerup', onUp);
+    bag.on(bar, 'pointercancel', onUp);
+    bag.on(bar, 'keydown', onKey);
+    bag.on(scroller, 'scroll', schedule, { passive: true });
+    el.querySelectorAll(`input[name="${id('variant')}"]`).forEach((r) => bag.on(r, 'change', () => { state.variant = r.value; schedule(); }));
+    bag.on(blurIn, 'input', () => { state.blur = +blurIn.value; $('#' + id('blur-out')).textContent = `${state.blur} pt`; schedule(); });
+    bag.on(tintSel, 'change', () => { state.tint = tintSel.value; tintAmt.disabled = state.tint === 'none'; schedule(); });
+    bag.on(tintAmt, 'input', () => { state.tintAmount = +tintAmt.value; $('#' + id('tint-out')).textContent = `${state.tintAmount}%`; schedule(); });
+    bag.on(dimIn, 'change', () => { state.dim = dimIn.checked; schedule(); });
+    bag.on(nestedIn, 'change', () => { state.nested = nestedIn.checked; schedule(); });
+    el.querySelectorAll('.gl-jump button').forEach((b) => bag.on(b, 'click', () => jumpTo(b.dataset.region)));
 
     // Repaint the content when the page theme changes (the article text follows light/dark mode).
     const retheme = () => { const t = readTheme(); if (!state.theme || t.bg !== state.theme.bg) { state.theme = t; paint(); schedule(); } };
     const mq = typeof matchMedia !== 'undefined' ? matchMedia('(prefers-color-scheme: dark)') : null;
-    if (mq && mq.addEventListener) on(mq, 'change', retheme);
+    if (mq && mq.addEventListener) bag.on(mq, 'change', retheme);
     const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(retheme) : null;
     if (mo) mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => layout()) : null;
-    if (ro) ro.observe(el); else on(window, 'resize', layout);
+    if (ro) ro.observe(el); else bag.on(window, 'resize', layout);
 
     state.theme = readTheme();
     layout();
@@ -673,7 +668,7 @@ export default {
       destroy() {
         alive = false;
         if (raf) cancelAnimationFrame(raf);
-        listeners.forEach(([t, ev, fn, opt]) => t.removeEventListener(ev, fn, opt));
+        bag.off();
         if (mo) mo.disconnect();
         if (ro) ro.disconnect();
         el.innerHTML = '';

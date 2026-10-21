@@ -2,33 +2,12 @@
 // to a six-stage pipeline: event -> state -> body -> new view tree -> diff ->
 // screen. Bug mode stores the count twice so students watch a copy go stale.
 // props.compact renders a small four-node loop for a concept figure.
+
+import { esc, idScope, highlightSwift, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'swiftui-data-flow';
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-const KW = new Set(['import', 'struct', 'class', 'final', 'var', 'let', 'private', 'some', 'func', 'return',
-  'if', 'else', 'true', 'false', 'in', 'self', 'enum', 'case', 'static', 'init']);
-
-// Tiny Swift highlighter: enough for the short snippets this widget shows.
-function highlight(line) {
-  const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*")|(@\w+)|(\b\d+(?:\.\d+)?\b)|(\.[A-Za-z_]\w*)|(\$?[A-Za-z_]\w*)|(\s+)|([\s\S])/g;
-  let out = '';
-  let m;
-  while ((m = re.exec(line))) {
-    const [tok, cmt, str, attr, num, member, ident] = m;
-    if (cmt) out += `<span class="t-cmt">${esc(cmt)}</span>`;
-    else if (str) out += `<span class="t-str">${esc(str)}</span>`;
-    else if (attr) out += `<span class="t-attr">${esc(attr)}</span>`;
-    else if (num) out += `<span class="t-num">${esc(num)}</span>`;
-    else if (member) out += `<span class="t-fn">${esc(member)}</span>`;
-    else if (ident) {
-      if (KW.has(ident)) out += `<span class="t-kw">${esc(ident)}</span>`;
-      else if (/^[A-Z]/.test(ident)) out += `<span class="t-type">${esc(ident)}</span>`;
-      else out += esc(ident);
-    } else out += esc(tok);
-  }
-  return out;
-}
+const highlight = (line) => highlightSwift(line, { prefix: 't-' });
 
 const STAGES = [
   { key: 'event', title: 'Event' },
@@ -45,22 +24,8 @@ const CSS = `
   height: 100%;
   font: 14px/1.45 var(--font-ui);
   color: var(--ink);
-  --ios-bg: #FFFFFF; --ios-grouped: #F2F2F7; --ios-cell: #FFFFFF; --ios-label: #000000;
-  --ios-label-2: rgba(60,60,67,.6); --ios-sep: rgba(60,60,67,.29); --ios-blue: #007AFF;
-  --ios-green: #34C759; --ios-red: #FF3B30; --ios-fill: rgba(120,120,128,.16);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .w-${NAME} {
-    --ios-bg: #000000; --ios-grouped: #000000; --ios-cell: #1C1C1E; --ios-label: #FFFFFF;
-    --ios-label-2: rgba(235,235,245,.6); --ios-sep: rgba(84,84,88,.6); --ios-blue: #0A84FF;
-    --ios-green: #30D158; --ios-red: #FF453A; --ios-fill: rgba(120,120,128,.32);
-  }
-}
-:root[data-theme="dark"] .w-${NAME} {
-  --ios-bg: #000000; --ios-grouped: #000000; --ios-cell: #1C1C1E; --ios-label: #FFFFFF;
-  --ios-label-2: rgba(235,235,245,.6); --ios-sep: rgba(84,84,88,.6); --ios-blue: #0A84FF;
-  --ios-green: #30D158; --ios-red: #FF453A; --ios-fill: rgba(120,120,128,.32);
-}
+${iosThemeCss(`.w-${NAME}`)}
 .w-${NAME} *, .w-${NAME} *::before, .w-${NAME} *::after { box-sizing: border-box; }
 .w-${NAME} :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .w-${NAME} button, .w-${NAME} input { font: inherit; color: inherit; }
@@ -90,13 +55,13 @@ const CSS = `
 
 /* phone */
 .w-${NAME} .phone-wrap { background: var(--panel-2); border-radius: var(--r-md); padding: 10px; display: grid; place-items: center; min-height: 0; }
+${phoneFrameCss(`.w-${NAME}`, { frame: '.phone', island: '.phone::before', bezel: 'border', radius: '32px', islandWidth: '58px', islandHeight: '17px', islandRadius: '10px' })}
 .w-${NAME} .phone {
-  width: 188px; height: 296px; border: 7px solid #1c1c1e; border-radius: 32px; background: var(--ios-grouped);
-  box-shadow: 0 0 0 1px var(--line), var(--shadow); position: relative; overflow: hidden;
-  font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; color: var(--ios-label);
+  width: 188px; height: 296px; background: var(--ios-grouped); color: var(--ios-label);
+  font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
   display: flex; flex-direction: column; padding: 28px 12px 12px; gap: 4px;
 }
-.w-${NAME} .phone::before { content: ""; position: absolute; top: 7px; left: 50%; width: 58px; height: 17px; transform: translateX(-50%); background: #000; border-radius: 10px; }
+.w-${NAME} .phone::before { content: ""; }
 .w-${NAME} .ph-title { font-weight: 700; font-size: 19px; line-height: 1.25; letter-spacing: -.01em; }
 .w-${NAME} .ph-header { font-size: 13px; color: var(--ios-label-2); border-radius: 6px; padding: 1px 3px; margin-left: -3px; align-self: flex-start; }
 .w-${NAME} .ph-card { background: var(--ios-cell); border-radius: 12px; padding: 8px 10px 10px; display: grid; justify-items: center; gap: 2px; margin-top: 4px; }
@@ -317,7 +282,7 @@ function mountCompact(el, ctx) {
 
 function mountFull(el, ctx) {
   const rm = !!ctx.reducedMotion;
-  const id = (s) => `${NAME}-${s}`;
+  const id = idScope(NAME);
   const INIT = { cups: 2, decaf: false, copy: 2 };
   const st = { ...INIT, bug: false, runs: 1, step: false };
   let shown = { ...INIT, bug: false };
@@ -424,15 +389,33 @@ function mountFull(el, ctx) {
     { k: 'end2', c: '}' },
   ];
 
+  const TABS = ['code', 'tree'];
   const setTab = (t) => {
     tab = t;
-    for (const name of ['code', 'tree']) {
+    for (const name of TABS) {
       $('tab-' + name).setAttribute('aria-selected', String(name === t));
+      $('tab-' + name).tabIndex = name === t ? 0 : -1;
       $('pane-' + name).classList.toggle('on', name === t);
     }
   };
   $('tab-code').addEventListener('click', () => setTab('code'));
   $('tab-tree').addEventListener('click', () => setTab('tree'));
+  // Arrow keys move both focus and selection along the tab list, Home and End
+  // jump to the ends; Enter and Space still work through the buttons' click.
+  const onTabKey = (e) => {
+    const i = TABS.indexOf(tab);
+    let next = -1;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % TABS.length;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i + TABS.length - 1) % TABS.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = TABS.length - 1;
+    if (next < 0) return;
+    e.preventDefault();
+    setTab(TABS[next]);
+    $('tab-' + TABS[next]).focus();
+  };
+  el.querySelector('.tabs').addEventListener('keydown', onTabKey);
+  setTab(tab);
 
   function renderCode(stage) {
     const bug = loop ? loop.bug : st.bug;

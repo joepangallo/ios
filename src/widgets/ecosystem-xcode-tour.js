@@ -3,6 +3,8 @@
 // file in the navigator, edit attributes in the inspector (which rewrites the
 // code and the canvas), choose a run destination, and press Run.
 
+import { esc, idScope, reducedMotionCss } from './services-kit.js';
+
 const NAME = 'ecosystem-xcode-tour';
 let mounted = 0;
 
@@ -88,7 +90,6 @@ const DESTS = [
 const FONTS = { body: { label: 'Body', mod: null, px: 9 }, title: { label: 'Title', mod: '.title', px: 12 }, large: { label: 'Large Title', mod: '.largeTitle', px: 15 } };
 const COLORS = { none: { label: 'Default', mod: null, css: null }, orange: { label: 'Orange', mod: '.orange', css: '#f05138' }, blue: { label: 'Blue', mod: '.blue', css: '#007aff' } };
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const t = (cls, s) => `<span class="${cls}">${esc(s)}</span>`;
 
 function contentLines(font, color) {
@@ -226,7 +227,7 @@ const CSS = `
   .w-${NAME} .xt { padding: 10px; }
   .w-${NAME} .xt-body { grid-template-rows: minmax(0, 40%) minmax(0, 1fr); gap: 8px; }
 }
-@media (prefers-reduced-motion: reduce) { .w-${NAME} *, .w-${NAME} *::before, .w-${NAME} *::after { transition: none !important; animation: none !important; } }
+${reducedMotionCss(`.w-${NAME}`)}
 `;
 
 const PLAY = '<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z" fill="currentColor"/></svg>';
@@ -240,8 +241,7 @@ export default {
   name: 'ecosystem-xcode-tour',
   css: CSS,
   mount(el, props = {}, ctx) {
-    const sfx = mounted++ ? `-${mounted}` : '';
-    const id = (s) => `${NAME}-${s}${sfx}`;
+    const id = idScope(NAME, ++mounted);
     el.classList.add(`w-${NAME}`);
     const reduced = !!ctx?.reducedMotion;
     const timers = new Set();

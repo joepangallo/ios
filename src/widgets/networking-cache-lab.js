@@ -2,6 +2,8 @@
 // student (clock, server updates, cache policy, network), plus a real
 // conditional request against a public server that answers 304.
 
+import { el, on, idScope } from './services-kit.js';
+
 const NAME = 'networking-cache-lab';
 const BODY_KB = 18;
 const HEADERS_KB = 0.4;
@@ -13,18 +15,6 @@ const POLICIES = [
   { key: 'elseLoad', label: '.returnCacheDataElseLoad' },
   { key: 'dontLoad', label: '.returnCacheDataDontLoad' },
 ];
-
-function el(tag, attrs = {}, ...kids) {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === false || v == null) continue;
-    if (k === 'class') node.className = v;
-    else if (k === 'text') node.textContent = v;
-    else node.setAttribute(k, v === true ? '' : v);
-  }
-  for (const kid of kids) if (kid != null) node.append(kid);
-  return node;
-}
 
 // One request through URLCache, following each policy's documented rules.
 function perform(s) {
@@ -125,7 +115,7 @@ export default {
 `,
   mount(root, props = {}, ctx) {
     root.classList.add(`w-${NAME}`);
-    const id = (s) => `${NAME}-${s}`;
+    const id = idScope(NAME);
     const s = { clock: 0, server: { version: 1, maxAge: 60 }, cache: null, policy: 'protocol', online: true, log: [], last: null };
 
     const reqBtn = el('button', { type: 'button', class: 'ncl-btn primary', id: id('request'), text: 'Request /schedule' });
@@ -218,7 +208,6 @@ export default {
       } finally { realBtn.disabled = false; }
     }
 
-    const on = (node, ev, fn) => { node.addEventListener(ev, fn); return () => node.removeEventListener(ev, fn); };
     const offs = [
       on(reqBtn, 'click', () => { const r = perform(s); s.last = r; s.log.push({ ...r, clock: s.clock }); render(); }),
       on(waitBtn, 'click', () => { s.clock += 30; s.last = null; render(); }),

@@ -2,6 +2,8 @@
 // Each tap lands at the aim point plus Gaussian finger scatter, and is scored
 // against the hit areas "as built" or "fixed" to at least 44 x 44 pt.
 
+import { svgEl, idScope, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'design-touch-targets';
 let mountCount = 0;
 
@@ -48,13 +50,11 @@ const box = (x, y, w, h) => `left:${P(x)};top:${P(y)};width:${P(w)};height:${P(h
 export default {
   name: 'design-touch-targets',
   css: `
-.w-design-touch-targets { --ios-bg:#FFFFFF; --ios-label:#000000; --ios-label-2:rgba(60,60,67,.6); --ios-sep:rgba(60,60,67,.29); --ios-fill:rgba(120,120,128,.12); --ios-blue:#007AFF; --ios-gray:#8E8E93;
-  display: flex; gap: 16px; height: 100%; min-height: 0; box-sizing: border-box; padding: 12px 16px; color: var(--ink); font: 14px/1.4 var(--font-ui); overflow: hidden; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .w-design-touch-targets { --ios-bg:#000000; --ios-label:#FFFFFF; --ios-label-2:rgba(235,235,245,.6); --ios-sep:rgba(84,84,88,.6); --ios-fill:rgba(118,118,128,.24); --ios-blue:#0A84FF; --ios-gray:#8E8E93; } }
-:root[data-theme="dark"] .w-design-touch-targets { --ios-bg:#000000; --ios-label:#FFFFFF; --ios-label-2:rgba(235,235,245,.6); --ios-sep:rgba(84,84,88,.6); --ios-fill:rgba(118,118,128,.24); --ios-blue:#0A84FF; --ios-gray:#8E8E93; }
+${iosThemeCss('.w-design-touch-targets', { light: { 'ios-fill': 'rgba(120,120,128,.12)', 'ios-gray': '#8E8E93' }, dark: { 'ios-fill': 'rgba(118,118,128,.24)', 'ios-gray': '#8E8E93' } })}
+.w-design-touch-targets { display: flex; gap: 16px; height: 100%; min-height: 0; box-sizing: border-box; padding: 12px 16px; color: var(--ink); font: 14px/1.4 var(--font-ui); overflow: hidden; }
 .w-design-touch-targets *, .w-design-touch-targets *::before, .w-design-touch-targets *::after { box-sizing: border-box; }
 .w-design-touch-targets .tt-phonecol { flex: none; display: flex; align-items: center; justify-content: center; min-height: 0; }
-.w-design-touch-targets .tt-phone { background: #1d1d1f; border-radius: calc(var(--s) * 58px); padding: 7px; box-shadow: 0 0 0 1px var(--line), var(--shadow); }
+${phoneFrameCss('.w-design-touch-targets', { frame: '.tt-phone', radius: 'calc(var(--s) * 58px)', shadow: '0 0 0 1px var(--line), var(--shadow)' })}
 .w-design-touch-targets .tt-screen { position: relative; width: calc(var(--s) * 393px); height: calc(var(--s) * 852px); background: var(--ios-bg); color: var(--ios-label); border-radius: calc(var(--s) * 50px); overflow: hidden; font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; cursor: none; touch-action: none; user-select: none; -webkit-user-select: none; }
 .w-design-touch-targets .tt-screen:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
 .w-design-touch-targets .tt-abs { position: absolute; display: flex; align-items: center; }
@@ -133,7 +133,7 @@ export default {
   mount(el, props, ctx) {
     el.classList.add('w-' + NAME);
     const n = ++mountCount;
-    const id = (f) => (n === 1 ? `${NAME}-${f}` : `${NAME}-${f}-${n}`);
+    const id = idScope(NAME, n);
     const icon = (name, size = 16, label = '') => (ctx && ctx.icon ? ctx.icon(name, size, label) : '');
     if (ctx && ctx.reducedMotion) el.classList.add('is-still');
 
@@ -210,12 +210,6 @@ export default {
     const screen = $('screen');
     const layer = (k) => el.querySelector(`[data-layer="${k}"]`);
     const feed = $('feed');
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svgEl = (tag, attrs) => {
-      const e = document.createElementNS(svgNS, tag);
-      for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
-      return e;
-    };
 
     function rateCell(s) {
       if (!s.taps) return '<span class="tt-n">no taps yet</span><span class="tt-dash" aria-label="no taps yet">–</span>';

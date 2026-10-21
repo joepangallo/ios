@@ -2,6 +2,8 @@
 // student builds a simulated app binary, runs a strings scan over its bytes
 // and watches the app's traffic through a proxy, for three approaches.
 
+import { el, on, idScope, frameThrottle } from './services-kit.js';
+
 const NAME = 'networking-secret-leak';
 const XOR = 0x5a;
 const APPROACHES = [
@@ -10,43 +12,76 @@ const APPROACHES = [
   { key: 'server', label: 'Key on your server' },
 ];
 const USER_TOKEN = 'eyJhbGciOi...user-42.expires-1h';
+// The scan and the hex dump use at most this many key characters; real API
+// keys are far shorter, and a pasted wall of text would otherwise build tens
+// of thousands of rows on every keystroke.
+const MAX_KEY = 4000;
 
-function el(tag, attrs = {}, ...kids) {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === false || v == null) continue;
-    if (k === 'class') node.className = v;
-    else if (k === 'text') node.textContent = v;
-    else node.setAttribute(k, v === true ? '' : v);
-  }
-  for (const kid of kids) if (kid != null) node.append(kid);
-  return node;
-}
+const utf8 = (s) => new TextEncoder().encode(s);
+const ascii = new TextDecoder();
 
-const utf8 = (s) => [...new TextEncoder().encode(s)];
-
-// The constant-strings section of a pretend compiled app, as raw bytes.
+// The constant-strings section of a pretend compiled app, as raw bytes
+// (each string NUL-terminated, zero-padded to whole 8-byte rows), and the
+// offset of the key's bytes, or -1 when the key is not stored as itself.
 function binaryFor(approach, key) {
   const parts = [utf8('Could not load the weather.')];
   if (approach === 'server') parts.push(utf8('https://api.myweather.example/v1/now'));
   else parts.push(utf8('https://api.weather.example/v1/now'));
-  if (approach === 'plain') parts.push(utf8(key));
+  const keyPart = approach === 'plain' ? utf8(key) : null;
+  if (keyPart) parts.push(keyPart);
   if (approach === 'hidden') parts.push(utf8(key).map((b) => b ^ XOR));
   parts.push(utf8('Bearer '), utf8('Authorization'));
-  const bytes = [];
-  parts.forEach((p) => { bytes.push(...p, 0); });
-  while (bytes.length % 8) bytes.push(0);
-  return bytes;
+  let size = 0;
+  for (const p of parts) size += p.length + 1;
+  const bytes = new Uint8Array(Math.ceil(size / 8) * 8);
+  let at = 0;
+  let keyAt = -1;
+  for (const p of parts) {
+    if (p === keyPart) keyAt = at;
+    bytes.set(p, at);
+    at += p.length + 1;
+  }
+  return { bytes, keyAt };
 }
 
 // What the `strings` tool does: report runs of 6+ printable ASCII bytes.
 function findStrings(bytes) {
   const found = [];
-  let run = [];
-  const flush = () => { if (run.length >= 6) found.push(String.fromCharCode(...run)); run = []; };
-  for (const b of bytes) { if (b >= 0x20 && b <= 0x7e) run.push(b); else flush(); }
-  flush();
+  let start = 0;
+  const flush = (end) => { if (end - start >= 6) found.push(ascii.decode(bytes.subarray(start, end))); };
+  for (let i = 0; i < bytes.length; i++) {
+    if (bytes[i] < 0x20 || bytes[i] > 0x7e) { flush(i); start = i + 1; }
+  }
+  flush(bytes.length);
   return found;
+}
+
+const hexByte = (b) => b.toString(16).padStart(2, '0');
+const asciiByte = (b) => (b >= 0x20 && b <= 0x7e ? String.fromCharCode(b) : '.');
+
+// One hex dump row of up to 8 bytes. Bytes inside [hitFrom, hitTo) are the
+// key; each column gets one highlight span per run of key bytes instead of
+// one element per byte.
+function dumpRow(bytes, off, hitFrom, hitTo) {
+  const hex = el('span');
+  const text = el('span');
+  const end = Math.min(off + 8, bytes.length);
+  for (let j = off; j < end;) {
+    const inKey = j >= hitFrom && j < hitTo;
+    let k = j;
+    let h = '';
+    let t = '';
+    while (k < end && (k >= hitFrom && k < hitTo) === inKey) {
+      h += (k > j ? ' ' : '') + hexByte(bytes[k]);
+      t += asciiByte(bytes[k]);
+      k += 1;
+    }
+    if (j > off) hex.append(' ');
+    hex.append(inKey ? el('span', { class: 'nsl-hit', text: h }) : h);
+    text.append(inKey ? el('span', { class: 'nsl-hit', text: t }) : t);
+    j = k;
+  }
+  return el('div', { class: 'nsl-row' }, el('span', { class: 'off', text: (0x4f20 + off).toString(16).padStart(6, '0') }), hex, text);
 }
 
 const SWIFT = {
@@ -67,6 +102,7 @@ export default {
 .w-${NAME} .nsl-key { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
 .w-${NAME} .nsl-key input { flex: 1; min-width: 0; font: 12px var(--font-code); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 5px 7px; }
 .w-${NAME} .nsl-key input:disabled { color: var(--ink-3); background: var(--panel-2); }
+.w-${NAME} .nsl-note { margin: -4px 0 0; font-size: 11.5px; line-height: 1.35; color: var(--ink-3); }
 .w-${NAME} pre { margin: 0; font: 11.5px/1.5 var(--font-code); background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 6px 8px; white-space: pre; overflow-x: auto; color: var(--ink); }
 .w-${NAME} .nsl-actions { display: flex; gap: 6px; }
 .w-${NAME} .nsl-btn { flex: 1; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: 600 12.5px var(--font-ui); padding: 7px 6px; border-radius: var(--r-sm); cursor: pointer; }
@@ -90,54 +126,46 @@ export default {
 `,
   mount(root, props = {}, ctx) {
     root.classList.add(`w-${NAME}`);
-    const id = (s) => `${NAME}-${s}`;
-    const state = { approach: 'plain', key: 'sk_live_51Hx9WeatherPro2026', view: 'strings' };
+    const id = idScope(NAME);
+    const state = { approach: 'plain', key: 'sk_live_51Hx9WeatherPro2026', clipped: false, view: 'strings' };
+    let scrollFrame = 0;
 
     const segBtns = APPROACHES.map((a) => el('button', { type: 'button', role: 'radio', id: id(`approach-${a.key}`), 'aria-checked': 'false', text: a.label }));
     const seg = el('div', { class: 'nsl-seg', role: 'radiogroup', 'aria-label': 'Where the API key lives' }, ...segBtns);
     const keyInput = el('input', { type: 'text', id: id('key'), value: state.key, spellcheck: 'false', autocomplete: 'off' });
     const keyRow = el('label', { class: 'nsl-key', for: id('key') }, 'Weather API key', keyInput);
+    const note = el('p', { class: 'nsl-note', id: id('note'), hidden: true,
+      text: `Only the first ${MAX_KEY.toLocaleString('en-US')} characters are used. Real API keys are much shorter.` });
     const code = el('pre', { id: id('code'), 'aria-label': 'Swift code for this approach' });
     const stringsBtn = el('button', { type: 'button', class: 'nsl-btn', id: id('strings'), 'aria-pressed': 'true', text: 'Scan the app binary' });
     const proxyBtn = el('button', { type: 'button', class: 'nsl-btn', id: id('proxy'), 'aria-pressed': 'false', text: 'Watch its traffic' });
     const out = el('div', { class: 'nsl-out', id: id('out'), 'aria-live': 'polite' });
     const verdict = el('p', { class: 'nsl-verdict', id: id('verdict') });
-    root.append(el('div', { class: 'nsl' }, seg, keyRow, code, el('div', { class: 'nsl-actions' }, stringsBtn, proxyBtn), out, verdict));
+    root.append(el('div', { class: 'nsl' }, seg, keyRow, note, code, el('div', { class: 'nsl-actions' }, stringsBtn, proxyBtn), out, verdict));
 
     function renderStrings() {
-      const bytes = binaryFor(state.approach, state.key);
-      const keyBytes = utf8(state.key);
-      // Locate the plain key so its bytes can be highlighted in the dump.
-      let start = -1;
-      if (state.approach === 'plain') {
-        for (let i = 0; i + keyBytes.length <= bytes.length; i++) if (keyBytes.every((b, j) => bytes[i + j] === b)) { start = i; break; }
-      }
-      const inKey = (i) => start >= 0 && i >= start && i < start + keyBytes.length;
-      const rows = [];
-      for (let off = 0; off < bytes.length; off += 8) {
-        const slice = bytes.slice(off, off + 8);
-        const hex = el('span');
-        const ascii = el('span');
-        slice.forEach((b, j) => {
-          const hit = inKey(off + j);
-          hex.append(el('span', { class: hit ? 'nsl-hit' : '', text: b.toString(16).padStart(2, '0') }), j < 7 ? ' ' : '');
-          ascii.append(el('span', { class: hit ? 'nsl-hit' : '', text: b >= 0x20 && b <= 0x7e ? String.fromCharCode(b) : '.' }));
-        });
-        rows.push(el('div', { class: 'nsl-row' }, el('span', { class: 'off', text: (0x4f20 + off).toString(16).padStart(6, '0') }), hex, ascii));
-      }
+      const { bytes, keyAt } = binaryFor(state.approach, state.key);
+      // The plain key's bytes are highlighted in the dump.
+      const keyLength = utf8(state.key).length;
+      const start = keyAt >= 0 && keyLength ? keyAt : -1;
+      const dump = el('div', { class: 'nsl-dump', id: id('dump'), tabindex: '0', role: 'region', 'aria-label': 'Hex dump' });
+      for (let off = 0; off < bytes.length; off += 8) dump.append(dumpRow(bytes, off, start, start < 0 ? -1 : start + keyLength));
       const found = findStrings(bytes);
-      const leaked = found.some((f) => f.includes(state.key) && state.key.length >= 6);
+      const isKey = (f) => f.includes(state.key) && state.key.length >= 6;
+      const leaked = found.some(isKey);
+      const list = el('ul', { class: 'nsl-list', id: id('found') });
+      for (const f of found) list.append(el('li', { class: isKey(f) ? 'secret' : '', text: f }));
       out.replaceChildren(
         el('p', { class: 'nsl-cap', text: 'Constant strings section of the compiled app (simulated bytes)' }),
-        el('div', { class: 'nsl-dump', id: id('dump'), tabindex: '0', role: 'region', 'aria-label': 'Hex dump' }, ...rows),
+        dump,
         el('p', { class: 'nsl-cap', text: `The strings tool found ${found.length} readable runs` }),
-        el('ul', { class: 'nsl-list', id: id('found') }, ...found.map((f) => el('li', { class: f.includes(state.key) && state.key.length >= 6 ? 'secret' : '', text: f }))));
+        list);
+      if (scrollFrame) cancelAnimationFrame(scrollFrame);
       if (start >= 0) {
-        const dump = out.querySelector('.nsl-dump');
         const row = dump.children[Math.floor(start / 8)];
         const scroll = () => { if (row && dump.isConnected) dump.scrollTop = Math.max(0, row.offsetTop - 4); };
         scroll();
-        requestAnimationFrame(scroll);
+        scrollFrame = requestAnimationFrame(scroll);
       }
       if (state.approach === 'plain') setVerdict('bad', leaked ? 'The key is sitting in the binary as plain bytes. Anyone who downloads the app can run strings and copy it.' : 'Keys shorter than six characters slip past this scan, but they are trivially guessed anyway.');
       else if (state.approach === 'hidden') setVerdict('bad', 'The scan no longer finds the key, which feels safe. But the app must unscramble it to use it. Now watch the traffic.');
@@ -168,13 +196,17 @@ export default {
     function render() {
       segBtns.forEach((b, i) => b.setAttribute('aria-checked', String(APPROACHES[i].key === state.approach)));
       keyInput.disabled = state.approach === 'server';
+      note.hidden = !state.clipped;
+      if (state.clipped) keyInput.setAttribute('aria-describedby', id('note'));
+      else keyInput.removeAttribute('aria-describedby');
       code.textContent = SWIFT[state.approach](state.key).join('\n');
       stringsBtn.setAttribute('aria-pressed', String(state.view === 'strings'));
       proxyBtn.setAttribute('aria-pressed', String(state.view === 'proxy'));
       if (state.view === 'strings') renderStrings(); else renderProxy();
     }
 
-    const on = (node, ev, fn) => { node.addEventListener(ev, fn); return () => node.removeEventListener(ev, fn); };
+    // Typing re-renders at most once per animation frame.
+    const paint = frameThrottle(render);
     const offs = [
       ...segBtns.map((b, i) => on(b, 'click', () => { state.approach = APPROACHES[i].key; render(); })),
       on(seg, 'keydown', (e) => {
@@ -186,11 +218,24 @@ export default {
         render();
         segBtns[n].focus();
       }),
-      on(keyInput, 'input', () => { state.key = keyInput.value.replace(/[^\x20-\x7e]/g, ''); render(); }),
+      on(keyInput, 'input', () => {
+        const key = keyInput.value.replace(/[^\x20-\x7e]/g, '');
+        state.key = key.slice(0, MAX_KEY);
+        state.clipped = key.length > MAX_KEY;
+        paint.request();
+      }),
       on(stringsBtn, 'click', () => { state.view = 'strings'; render(); }),
       on(proxyBtn, 'click', () => { state.view = 'proxy'; render(); }),
     ];
     render();
-    return { destroy() { offs.forEach((off) => off()); root.replaceChildren(); root.classList.remove(`w-${NAME}`); } };
+    return {
+      destroy() {
+        paint.cancel();
+        if (scrollFrame) cancelAnimationFrame(scrollFrame);
+        offs.forEach((off) => off());
+        root.replaceChildren();
+        root.classList.remove(`w-${NAME}`);
+      },
+    };
   },
 };

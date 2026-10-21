@@ -104,9 +104,98 @@ export const GLOSSARY = {
 };
 
 const WORD = /@?#?[A-Za-z_][A-Za-z0-9_]*/g;
+// The inspector looks at most this much of one line; a longer student line is
+// explained from its start.
+export const MAX_INSPECTED_CHARS = 2000;
+
+// Line terminators, which `.` in a regular expression does not match.
+const isLineTerminator = (c) => c === '\n' || c === '\r' || c === '\u2028' || c === '\u2029';
+const isSpace = (c) => c !== undefined && /\s/.test(c);
+const isIdStart = (c) => c !== undefined && /[A-Za-z_$]/.test(c);
+const isIdChar = (c) => c !== undefined && /[\w$]/.test(c);
+const isWordChar = (c) => c !== undefined && /\w/.test(c);
+
+// Every double-quoted literal ("…" with backslash escapes) replaced by
+// `replacement`, in one left-to-right pass. Same result as
+// s.replace(/"(?:[^"\\]|\\.)*"/g, replacement), whose backtracking is
+// quadratic on an unterminated literal full of escaped quotes: an attempt that
+// fails stops at the same place for every quote it passed, so the scan resumes
+// after that place instead of at the next character.
+export function stripStrings(s, replacement = '""') {
+  let out = '';
+  let last = 0;
+  let i = 0;
+  const n = s.length;
+  while (i < n) {
+    if (s[i] !== '"') { i++; continue; }
+    let j = i + 1;
+    let closed = -1;
+    while (j < n) {
+      const c = s[j];
+      if (c === '"') { closed = j; break; }
+      if (c === '\\') {
+        if (j + 1 < n && !isLineTerminator(s[j + 1])) { j += 2; continue; }
+        break; // a backslash at the end or before a line terminator: no literal from here
+      }
+      j++;
+    }
+    if (closed >= 0) { out += s.slice(last, i) + replacement; last = i = closed + 1; }
+    else i = j + 1;
+  }
+  return out + s.slice(last);
+}
+
+// The text before a // comment. Same result as s.replace(/\/\/.*$/, ''): the
+// first // with no line terminator after it (found without backtracking).
+export function stripLineComment(s) {
+  let lastTerm = -1;
+  for (let i = s.length - 1; i >= 0; i--) if (isLineTerminator(s[i])) { lastTerm = i; break; }
+  const k = s.indexOf('//', lastTerm + 1);
+  return k >= 0 ? s.slice(0, k) : s;
+}
+
+// True when a { on this line opens a closure: `{ (`, `{ $0`, or a parameter
+// list ending in `in`, as in `{ a, b in`. One pass over the line: the text
+// each brace inspects (spaces, names and commas) never contains the next
+// brace, so no character is looked at twice. Matches the old pattern
+// /\{\s*(\(|[a-z_$][\w$]*\s*(,\s*[a-z_$][\w$]*)*\s+in\b)/i or /\{\s*\$0/, which
+// backtracked quadratically on long runs of spaces.
+export function opensClosure(code) {
+  const n = code.length;
+  for (let b = code.indexOf('{'); b !== -1; b = code.indexOf('{', b + 1)) {
+    let j = b + 1;
+    while (j < n && isSpace(code[j])) j++;
+    if (code[j] === '(') return true;
+    if (code[j] === '$' && code[j + 1] === '0') return true;
+    if (!isIdStart(code[j])) continue;
+    j++;
+    while (isIdChar(code[j])) j++;
+    let k = j;
+    while (isSpace(code[k])) k++;
+    if (code[k] === ',') {
+      // `, name` repeated, each comma right after the previous name
+      j = k;
+      let ok = true;
+      while (code[j] === ',') {
+        let m = j + 1;
+        while (isSpace(code[m])) m++;
+        if (!isIdStart(code[m])) { ok = false; break; }
+        m++;
+        while (isIdChar(code[m])) m++;
+        j = m;
+      }
+      if (!ok) continue;
+      k = j;
+      while (isSpace(code[k])) k++;
+    }
+    if (k === j) continue; // `in` must follow at least one space
+    if ((code[k] === 'i' || code[k] === 'I') && (code[k + 1] === 'n' || code[k + 1] === 'N') && !isWordChar(code[k + 2])) return true;
+  }
+  return false;
+}
 
 export function termsInLine(line) {
-  const code = line.replace(/\/\/.*$/, '').replace(/"(?:[^"\\]|\\.)*"/g, '""');
+  const code = stripStrings(stripLineComment(String(line).slice(0, MAX_INSPECTED_CHARS)));
   const found = [];
   for (const m of code.matchAll(WORD)) {
     const w = m[0];
@@ -115,13 +204,13 @@ export function termsInLine(line) {
     const bare = w.replace(/^[@#]/, '');
     if (w !== bare && has(bare) && !found.includes(bare) && !has(w)) found.push(bare);
   }
-  if (/\{\s*(\(|[a-z_$][\w$]*\s*(,\s*[a-z_$][\w$]*)*\s+in\b)/i.test(code) || /\{\s*\$0/.test(code)) found.push('closure');
+  if (opensClosure(code)) found.push('closure');
   return found;
 }
 
 // A best-effort five-part explanation for a line that differs from the original.
 export function autoExplain(line) {
-  const t = line.trim();
+  const t = String(line).slice(0, MAX_INSPECTED_CHARS).trim();
   const terms = termsInLine(t);
   const what = terms.length
     ? terms.slice(0, 3).map((w) => `${w}: ${GLOSSARY[w]}`).join(' ')

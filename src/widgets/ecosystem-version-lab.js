@@ -2,6 +2,8 @@
 // and major releases, and try a duplicate upload to see why the build number
 // must always increase.
 
+import { esc, idScope, reducedMotionCss } from './services-kit.js';
+
 const NAME = 'ecosystem-version-lab';
 let mounted = 0;
 
@@ -18,8 +20,6 @@ const ACTIONS = [
   { id: 'major', label: 'Release a redesign', kind: 'major' },
   { id: 'dup', label: 'Upload again, same build', kind: 'dup' },
 ];
-
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 const CSS = `
 .w-${NAME} { container-type: inline-size; height: 100%; color: var(--ink); font-family: var(--font-ui); }
@@ -58,15 +58,14 @@ const CSS = `
   .w-${NAME} .hist li { grid-template-columns: 80px 78px; }
   .w-${NAME} .hist .note { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .w-${NAME} *, .w-${NAME} *::before, .w-${NAME} *::after { transition: none !important; animation: none !important; } }
+${reducedMotionCss(`.w-${NAME}`)}
 `;
 
 export default {
   name: 'ecosystem-version-lab',
   css: CSS,
   mount(el, props = {}, ctx) {
-    const sfx = mounted++ ? `-${mounted}` : '';
-    const id = (s) => `${NAME}-${s}${sfx}`;
+    const id = idScope(NAME, ++mounted);
     el.classList.add(`w-${NAME}`);
     let state = structuredClone(START);
     let fresh = -1;

@@ -2,8 +2,11 @@
 // beside the `path` array it is driven by. Pushes append a value, back pops the
 // last one, a deep link assigns the whole array, and a sheet covers the screen
 // without touching the path. Optional "Predict first" mode quizzes each move.
+
+import { esc, plural, idScope, highlightSwift, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'swiftui-nav-stack';
-const ID = (s) => `${NAME}-${s}`;
+const ID = idScope(NAME);
 
 const RECIPES = {
   pancakes: {
@@ -44,28 +47,7 @@ const ACTIVE = {
   sheetOpen: ['sheetvar', 'sheet'], sheetClose: ['sheetvar', 'sheet'],
 };
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const KW = /^(enum|case|struct|var|let|private|some|import|func|return|if|else|true|false|in|self)$/;
-
-// Tiny Swift highlighter: enough for the snippets this widget shows.
-function hl(line) {
-  const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*")|(@\w+)|(\$\w+)|(\b\d+(?:\.\d+)?\b)|(\.[a-zA-Z_]\w*)|([A-Za-z_]\w*)/g;
-  let out = '', last = 0, m;
-  while ((m = re.exec(line))) {
-    out += esc(line.slice(last, m.index));
-    const t = m[0];
-    let cls = null;
-    if (m[1]) cls = 'cmt';
-    else if (m[2]) cls = 'str';
-    else if (m[3] || m[4]) cls = 'attr';
-    else if (m[5]) cls = 'num';
-    else if (m[6]) cls = 'fn';
-    else if (m[7]) cls = KW.test(t) ? 'kw' : /^[A-Z]/.test(t) ? 'type' : null;
-    out += cls ? `<span class="t-${cls}">${esc(t)}</span>` : esc(t);
-    last = m.index + t.length;
-  }
-  return out + esc(line.slice(last));
-}
+const hl = (line) => highlightSwift(line, { prefix: 't-' });
 
 function fmtValue(v) {
   if (v.t === 'recipe') return `.recipe(.${v.r})`;
@@ -76,32 +58,14 @@ const fmtPath = (p) => `[${p.map(fmtValue).join(', ')}]`;
 // Same text, highlighted, with break opportunities after each comma.
 const fmtPathHTML = (p) => (p.length ? `[${p.map((v) => `<span class="nw">${hl(fmtValue(v))}</span>`).join(', ')}]` : '[]');
 const titleOf = (v) => (v.t === 'recipe' ? RECIPES[v.r].title : v.t === 'step' ? `Step ${v.n}` : 'New Recipe');
-const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 export default {
   name: 'swiftui-nav-stack',
   css: `
+${iosThemeCss(`.w-${NAME}`, { light: { 'ios-glass': 'rgba(255,255,255,.82)', 'ios-backdrop': 'rgba(0,0,0,.25)' }, dark: { 'ios-glass': 'rgba(58,58,60,.82)', 'ios-backdrop': 'rgba(0,0,0,.5)' } })}
 .w-${NAME} {
-  --ios-bg:#FFFFFF; --ios-grouped:#F2F2F7; --ios-cell:#FFFFFF; --ios-label:#000000; --ios-label-2:rgba(60,60,67,.6);
-  --ios-label-3:rgba(60,60,67,.3); --ios-sep:rgba(60,60,67,.29); --ios-blue:#007AFF; --ios-orange:#FF9500;
-  --ios-yellow:#FFCC00; --ios-red:#FF3B30; --ios-green:#34C759; --ios-fill:rgba(120,120,128,.16);
-  --ios-glass:rgba(255,255,255,.82); --ios-backdrop:rgba(0,0,0,.25);
   box-sizing:border-box; height:100%; position:relative; overflow:hidden;
   font:14px/1.45 var(--font-ui); color:var(--ink);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .w-${NAME} {
-    --ios-bg:#000000; --ios-grouped:#000000; --ios-cell:#1C1C1E; --ios-label:#FFFFFF; --ios-label-2:rgba(235,235,245,.6);
-    --ios-label-3:rgba(235,235,245,.3); --ios-sep:rgba(84,84,88,.6); --ios-blue:#0A84FF; --ios-orange:#FF9F0A;
-    --ios-yellow:#FFD60A; --ios-red:#FF453A; --ios-green:#30D158; --ios-fill:rgba(120,120,128,.32);
-    --ios-glass:rgba(58,58,60,.82); --ios-backdrop:rgba(0,0,0,.5);
-  }
-}
-:root[data-theme="dark"] .w-${NAME} {
-  --ios-bg:#000000; --ios-grouped:#000000; --ios-cell:#1C1C1E; --ios-label:#FFFFFF; --ios-label-2:rgba(235,235,245,.6);
-  --ios-label-3:rgba(235,235,245,.3); --ios-sep:rgba(84,84,88,.6); --ios-blue:#0A84FF; --ios-orange:#FF9F0A;
-  --ios-yellow:#FFD60A; --ios-red:#FF453A; --ios-green:#30D158; --ios-fill:rgba(120,120,128,.32);
-  --ios-glass:rgba(58,58,60,.82); --ios-backdrop:rgba(0,0,0,.5);
 }
 .w-${NAME} *, .w-${NAME} *::before, .w-${NAME} *::after { box-sizing:border-box; }
 .w-${NAME} :focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
@@ -126,10 +90,8 @@ export default {
 
 /* ---------- simulated iPhone ---------- */
 .w-${NAME} .ns-phonecol { grid-area:phone; display:flex; justify-content:center; align-items:flex-start; min-height:0; }
-.w-${NAME} .ns-phone {
-  position:relative; width:var(--ns-phone-w, 240px); height:var(--ns-phone-h, 480px); flex:none;
-  background:#1c1c1e; border-radius:calc(var(--ns-phone-w, 240px) * .14); padding:6px; box-shadow:var(--shadow);
-}
+${phoneFrameCss(`.w-${NAME}`, { frame: '.ns-phone', island: '.ns-island', radius: 'calc(var(--ns-phone-w, 240px) * .14)', pad: '6px', islandTop: '.6em', islandHeight: '1.55em', islandRadius: '1em' })}
+.w-${NAME} .ns-phone { width:var(--ns-phone-w, 240px); height:var(--ns-phone-h, 480px); flex:none; }
 .w-${NAME} .ns-screen {
   position:relative; height:100%; overflow:hidden; isolation:isolate;
   border-radius:calc(var(--ns-phone-w, 240px) * .14 - 5px);
@@ -141,7 +103,6 @@ export default {
   display:flex; align-items:center; justify-content:space-between; padding:0 1.7em 0 2em;
   font-weight:600; font-size:.92em;
 }
-.w-${NAME} .ns-island { position:absolute; left:50%; top:.6em; transform:translateX(-50%); width:31%; height:1.55em; border-radius:1em; background:#000; }
 .w-${NAME} .ns-sb svg { width:1.15em; height:1.15em; }
 .w-${NAME} .ns-layers { position:absolute; inset:0; overflow:hidden; }
 .w-${NAME} .ns-scr {
@@ -770,6 +731,7 @@ export default {
         el.innerHTML = '';
         el.classList.remove(`w-${NAME}`, 'ns-narrow', 'ns-predicting');
         ['--ns-phone-w', '--ns-phone-h', '--ns-fs'].forEach((p) => el.style.removeProperty(p));
+        if (!el.getAttribute('style')) el.removeAttribute('style');
       },
     };
   },

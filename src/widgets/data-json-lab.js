@@ -2,6 +2,8 @@
 // with it. The decoder below mirrors Swift 6.2's JSONDecoder for one small
 // struct, including the exact DecodingError text Swift prints.
 
+import { esc, highlightSwift, JSON_MAX_DEPTH, jsonDepthError } from './services-kit.js';
+
 const SAMPLES = [
   { id: 'valid', label: 'Valid' },
   { id: 'missing', label: 'Missing key', text: '{\n  "title": "Swift Basics",\n  "isAvailable": true\n}' },
@@ -19,13 +21,15 @@ const LOC_FORMAT = 'The data couldn’t be read because it isn’t in the correc
 const INT_MAX = 9223372036854775807n;
 const INT_MIN = -9223372036854775808n;
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
 // ---------------------------------------------------------------------------
 // A strict JSON parser that reports errors the way Swift's JSON scanner does.
+// Like Foundation it refuses more than 512 nested arrays and objects, with
+// JSONDecoder's message and byte index; that also keeps this recursive parser
+// far from the JavaScript stack limit.
 function parseJSON(text) {
   const n = text.length;
   let i = 0;
+  let depth = 0;
   const fail = (msg, idx) => { const e = new Error(msg); e.idx = idx; throw e; };
   const loc = (idx) => {
     let line = 1, last = -1;
@@ -38,6 +42,12 @@ function parseJSON(text) {
     fail(`Unexpected character '${text[i]}'${where ? ' ' + where : ''} ${loc(i)}`, i);
   };
   const ws = () => { while (i < n && ' \t\n\r'.includes(text[i])) i++; };
+  // Called with i on the opening bracket or brace.
+  const enter = () => {
+    if (depth >= JSON_MAX_DEPTH) { const deep = jsonDepthError(text, i); fail(deep.message, deep.index); }
+    depth++;
+    i++;
+  };
 
   function value() {
     ws();
@@ -49,16 +59,17 @@ function parseJSON(text) {
     if (c === '-' || (c >= '0' && c <= '9')) return number();
     for (const [word, node] of [['true', { t: 'bool', v: true }], ['false', { t: 'bool', v: false }], ['null', { t: 'null' }]]) {
       if (text.startsWith(word, i)) { i += word.length; return node; }
-      if (word.startsWith(text.slice(i)) && i < n) eof();
+      // The text ends partway through the word: only then is the (short) rest copied.
+      if (n - i < word.length && word.startsWith(text.slice(i))) eof();
     }
     return unexpected('');
   }
   function object() {
-    i++;
+    enter();
     const keys = [];
     const map = new Map();
     ws();
-    if (text[i] === '}') { i++; return { t: 'object', keys, map }; }
+    if (text[i] === '}') { i++; depth--; return { t: 'object', keys, map }; }
     for (;;) {
       ws();
       if (i >= n) eof();
@@ -81,13 +92,14 @@ function parseJSON(text) {
       if (text[i] === '}') { i++; break; }
       unexpected('in object');
     }
+    depth--;
     return { t: 'object', keys, map };
   }
   function array() {
-    i++;
+    enter();
     const items = [];
     ws();
-    if (text[i] === ']') { i++; return { t: 'array', items }; }
+    if (text[i] === ']') { i++; depth--; return { t: 'array', items }; }
     for (;;) {
       items.push(value());
       ws();
@@ -100,6 +112,7 @@ function parseJSON(text) {
       if (text[i] === ']') { i++; break; }
       unexpected('in array');
     }
+    depth--;
     return { t: 'array', items };
   }
   function string() {
@@ -371,18 +384,7 @@ function codeLines(opts) {
   return lines;
 }
 
-function highlight(line) {
-  const re = /("(?:[^"\\]|\\.)*")|\b(struct|var|let|try|enum|case)\b|\b(Book|String|Int|Bool|Codable|CodingKey|CodingKeys|JSONDecoder)\b|\b(decode|print)\b|(\.self)\b/g;
-  let out = '';
-  let last = 0;
-  for (const m of line.matchAll(re)) {
-    out += esc(line.slice(last, m.index));
-    const cls = m[1] ? 'str' : m[2] ? 'kw' : m[3] ? 'type' : m[4] ? 'fn' : 'kw';
-    out += `<span class="${cls}">${esc(m[0])}</span>`;
-    last = m.index + m[0].length;
-  }
-  return out + esc(line.slice(last));
-}
+const highlight = (line) => highlightSwift(line, { prefix: '' });
 
 function nodePreview(node) {
   if (node.t === 'string') return swiftString(node.v).length > 22 ? swiftString(node.v).slice(0, 20) + '…"' : swiftString(node.v);

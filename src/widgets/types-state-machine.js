@@ -3,8 +3,10 @@
 // a grid of all 8 combinations shows which ones are impossible. With the
 // enum, only the 4 meaningful states can even be written.
 
+import { esc, idScope, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'types-state-machine';
-const ID = (s) => `${NAME}-${s}`;
+const ID = idScope(NAME);
 
 const FLAGS = [
   { key: 'isLoading', part: 'spinner' },
@@ -53,14 +55,12 @@ const css = `
 .w-${NAME} .sm-code .t { color: var(--type); }
 .w-${NAME} .sm-code .c { color: var(--cmt); }
 
-.w-${NAME} .sm-phone { --ios-bg: #F2F2F7; --ios-card: #FFFFFF; --ios-label: #000000; --ios-sec: #8E8E93; --ios-sep: #E5E5EA;
-  --ios-blue: #007AFF; --ios-red: #FF3B30; --ios-red-bg: #FFE5E3;
-  position: relative; width: 150px; height: 236px; border-radius: 26px; padding: 7px; background: #1C1C1E; box-shadow: var(--shadow); }
-.w-${NAME} .sm-phone.dark { --ios-bg: #000000; --ios-card: #1C1C1E; --ios-label: #FFFFFF; --ios-sec: #8E8E93; --ios-sep: #38383A;
-  --ios-blue: #0A84FF; --ios-red: #FF453A; --ios-red-bg: #3A1D1B; background: #3A3A3C; }
+${iosThemeCss(`.w-${NAME} .sm-phone`, { darkSelector: `.w-${NAME} .sm-phone.dark`, light: { 'ios-bg': '#F2F2F7', 'ios-sec': '#8E8E93', 'ios-sep': '#E5E5EA', 'ios-red-bg': '#FFE5E3' }, dark: { 'ios-sec': '#8E8E93', 'ios-sep': '#38383A', 'ios-red-bg': '#3A1D1B' } })}
+${phoneFrameCss(`.w-${NAME}`, { frame: '.sm-phone', island: '.sm-island', radius: '26px', islandTop: '6px', islandWidth: '44px', islandHeight: '12px' })}
+.w-${NAME} .sm-phone { width: 150px; height: 236px; }
+.w-${NAME} .sm-phone.dark { background: #3A3A3C; }
 .w-${NAME} .sm-screen { position: relative; height: 100%; border-radius: 20px; overflow: hidden; background: var(--ios-bg);
   color: var(--ios-label); font-family: -apple-system, system-ui, sans-serif; }
-.w-${NAME} .sm-island { position: absolute; top: 6px; left: 50%; width: 44px; height: 12px; margin-left: -22px; border-radius: 999px; background: #000; }
 .w-${NAME} .sm-title { padding: 26px 10px 4px; font-size: 17px; font-weight: 700; }
 .w-${NAME} .sm-body { position: relative; padding: 2px 8px; display: flex; flex-direction: column; gap: 6px; }
 .w-${NAME} .sm-hint { margin-top: 48px; text-align: center; font-size: 11px; color: var(--ios-sec); }
@@ -100,8 +100,6 @@ const css = `
   .w-${NAME} .sm-ctrls { width: 100%; }
 }
 `;
-
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 function colorCode(code) {
   return esc(code)

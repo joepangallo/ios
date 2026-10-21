@@ -5,6 +5,8 @@
 // It uses the live SwiftUI preview engine when available and an HTML renderer
 // that mirrors SwiftUI's propose / choose / place rules otherwise.
 
+import { esc, listenerBag, idScope, highlightSwift, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'swiftui-layout-lab';
 
 const V_ALIGN = ['leading', 'center', 'trailing'];
@@ -19,26 +21,7 @@ const INITIAL = {
   frame: 'hug', color: true, bounds: true, predict: false,
 };
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const KW = new Set(['struct', 'var', 'let', 'some', 'import', 'func', 'private', 'return', 'if', 'else', 'true', 'false', 'in', 'enum', 'case', 'self', 'class', 'final']);
-function highlight(line) {
-  const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*")|(@\w+|#\w+)|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_]\w*\b)|(\.[a-z]\w*)/g;
-  let out = '', last = 0, m;
-  while ((m = re.exec(line))) {
-    out += esc(line.slice(last, m.index));
-    const t = m[0];
-    let cls = '';
-    if (m[1]) cls = 'cmt';
-    else if (m[2]) cls = 'str';
-    else if (m[3]) cls = 'attr';
-    else if (m[4]) cls = 'num';
-    else if (m[5]) cls = KW.has(t) ? 'kw' : /^[A-Z]/.test(t) ? 'type' : '';
-    else if (m[6]) cls = 'fn';
-    out += cls ? `<span class="t-${cls}">${esc(t)}</span>` : esc(t);
-    last = m.index + t.length;
-  }
-  return out + esc(line.slice(last));
-}
+const highlight = (line) => highlightSwift(line, { prefix: 't-' });
 
 function zWords(a) {
   return { topLeading: 'top leading corner', top: 'top edge', topTrailing: 'top trailing corner', leading: 'leading edge', center: 'center',
@@ -80,14 +63,10 @@ function fullCode(s) {
 export default {
   name: 'swiftui-layout-lab',
   css: `
+${iosThemeCss('.w-swiftui-layout-lab', { light: { 'ios-yellow': 'rgba(255,204,0,.3)' }, dark: { 'ios-yellow': 'rgba(255,214,10,.3)' } })}
 .w-swiftui-layout-lab {
-  --ios-bg:#FFFFFF; --ios-label:#000000; --ios-label-2:rgba(60,60,67,.6); --ios-yellow:rgba(255,204,0,.3);
   container-type: inline-size; box-sizing:border-box; height:100%; padding:14px; font:14px/1.45 var(--font-ui); color:var(--ink);
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .w-swiftui-layout-lab {
-  --ios-bg:#000000; --ios-label:#FFFFFF; --ios-label-2:rgba(235,235,245,.6); --ios-yellow:rgba(255,214,10,.3); } }
-:root[data-theme="dark"] .w-swiftui-layout-lab {
-  --ios-bg:#000000; --ios-label:#FFFFFF; --ios-label-2:rgba(235,235,245,.6); --ios-yellow:rgba(255,214,10,.3); }
 .w-swiftui-layout-lab *, .w-swiftui-layout-lab *::before, .w-swiftui-layout-lab *::after { box-sizing:border-box; }
 .w-swiftui-layout-lab .ll-root { height:100%; min-height:0; display:grid; gap:12px;
   grid-template-columns:minmax(0,228px) minmax(0,248px) minmax(0,1fr);
@@ -128,11 +107,9 @@ export default {
 .w-swiftui-layout-lab .ll-phonecol { grid-area:phone; display:flex; flex-direction:column; gap:8px; min-height:0; min-width:0; align-items:center; }
 .w-swiftui-layout-lab .ll-rend { display:none; width:100%; }
 .w-swiftui-layout-lab .ll-rend.show { display:flex; }
-.w-swiftui-layout-lab .ll-phone { position:relative; flex:1 1 auto; min-height:0; width:100%; max-width:248px; border-radius:30px; border:7px solid #1c1c1e; box-shadow:0 0 0 1px var(--line); background:var(--ios-bg); overflow:hidden;
-  font-family:-apple-system,"SF Pro Text",system-ui,sans-serif; color:var(--ios-label); }
-.w-swiftui-layout-lab .ll-island { position:absolute; top:7px; left:50%; width:62px; height:17px; margin-left:-31px; border-radius:10px; background:#1c1c1e; z-index:3; }
+${phoneFrameCss('.w-swiftui-layout-lab', { frame: '.ll-phone', screen: '.ll-phone', island: '.ll-island', home: '.ll-home', bezel: 'border', shadow: '0 0 0 1px var(--line)', islandWidth: '62px', islandHeight: '17px', islandRadius: '10px', homeWidth: '70px', homeOpacity: '.8' })}
+.w-swiftui-layout-lab .ll-phone { flex:1 1 auto; min-height:0; width:100%; max-width:248px; }
 .w-swiftui-layout-lab .ll-sbar { position:absolute; top:8px; left:16px; right:14px; display:flex; justify-content:space-between; font:600 10.5px -apple-system,system-ui,sans-serif; z-index:2; }
-.w-swiftui-layout-lab .ll-home { position:absolute; bottom:5px; left:50%; width:70px; height:4px; margin-left:-35px; border-radius:2px; background:var(--ios-label); opacity:.8; }
 .w-swiftui-layout-lab .ll-safe { position:absolute; inset:32px 0 14px 0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
 .w-swiftui-layout-lab .ll-live { flex:1 1 auto; min-height:0; width:100%; display:none; }
 .w-swiftui-layout-lab .ll-live.show { display:block; }
@@ -212,9 +189,8 @@ export default {
     let renderer = 'lab';
     let live = null;
     let liveOK = false;
-    const listeners = [];
-    const on = (node, ev, fn) => { node.addEventListener(ev, fn); listeners.push(() => node.removeEventListener(ev, fn)); };
-    const id = (x) => `${NAME}-${x}`;
+    const bag = listenerBag();
+    const id = idScope(NAME);
 
     el.innerHTML = `
 <div class="ll-root">
@@ -511,11 +487,11 @@ export default {
     }
 
     // ---------- events ----------
-    on($('stack'), 'click', (e) => {
+    bag.on($('stack'), 'click', (e) => {
       const b = e.target.closest('button[data-v]');
       if (b && b.dataset.v !== s.stack) change('stack', () => { s.stack = b.dataset.v; });
     });
-    on($('align'), 'click', (e) => {
+    bag.on($('align'), 'click', (e) => {
       const b = e.target.closest('button[data-a]');
       if (!b) return;
       change('stack', () => {
@@ -526,22 +502,22 @@ export default {
       const again = el.querySelector(`#${id('align')} button[data-a="${b.dataset.a}"]`);
       if (again) again.focus();
     });
-    on($('spacing'), 'input', (e) => change('stack', () => { s.spacing = +e.target.value; }));
-    on($('spacing-def'), 'change', (e) => change('stack', () => { s.spacingDefault = e.target.checked; }));
-    on($('padding'), 'input', (e) => change('padding', () => { s.padding = +e.target.value; }));
-    on($('spacer'), 'change', (e) => change('spacer', () => { s.spacer = e.target.value; }));
-    on($('frame'), 'change', (e) => change('frame', () => { s.frame = e.target.value; }));
-    on($('stretch'), 'change', (e) => change('stretch', () => { s.stretch = e.target.checked; }));
-    on($('color'), 'change', (e) => change('color', () => { s.color = e.target.checked; }));
-    on($('bounds'), 'change', (e) => change('bounds', () => { s.bounds = e.target.checked; }));
-    on($('predict'), 'change', (e) => change('predict', () => { s.predict = e.target.checked; if (!s.predict) veiled = false; }));
-    on($('reveal'), 'click', () => { veiled = false; render(); });
+    bag.on($('spacing'), 'input', (e) => change('stack', () => { s.spacing = +e.target.value; }));
+    bag.on($('spacing-def'), 'change', (e) => change('stack', () => { s.spacingDefault = e.target.checked; }));
+    bag.on($('padding'), 'input', (e) => change('padding', () => { s.padding = +e.target.value; }));
+    bag.on($('spacer'), 'change', (e) => change('spacer', () => { s.spacer = e.target.value; }));
+    bag.on($('frame'), 'change', (e) => change('frame', () => { s.frame = e.target.value; }));
+    bag.on($('stretch'), 'change', (e) => change('stretch', () => { s.stretch = e.target.checked; }));
+    bag.on($('color'), 'change', (e) => change('color', () => { s.color = e.target.checked; }));
+    bag.on($('bounds'), 'change', (e) => change('bounds', () => { s.bounds = e.target.checked; }));
+    bag.on($('predict'), 'change', (e) => change('predict', () => { s.predict = e.target.checked; if (!s.predict) veiled = false; }));
+    bag.on($('reveal'), 'click', () => { veiled = false; render(); });
     const tabbar = el.querySelector('.ll-tabbar');
-    on(tabbar, 'click', (e) => {
+    bag.on(tabbar, 'click', (e) => {
       const b = e.target.closest('[role="tab"]');
       if (b) { tab = b.id.replace(id('tab-'), ''); renderTabs(); }
     });
-    on(tabbar, 'keydown', (e) => {
+    bag.on(tabbar, 'keydown', (e) => {
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
       const tabs = ['controls', 'code', 'explain'];
       tab = tabs[(tabs.indexOf(tab) + (e.key === 'ArrowRight' ? 1 : 2)) % 3];
@@ -549,7 +525,7 @@ export default {
       $('tab-' + tab).focus();
       e.preventDefault();
     });
-    on(switchEl, 'click', (e) => {
+    bag.on(switchEl, 'click', (e) => {
       const b = e.target.closest('button[data-r]');
       if (!b) return;
       renderer = b.dataset.r;
@@ -591,7 +567,7 @@ export default {
 
     return {
       destroy() {
-        listeners.forEach((off) => off());
+        bag.off();
         if (ro) ro.disconnect();
         cancelAnimationFrame(raf);
         try { if (live && live.destroy) live.destroy(); } catch (e) { /* ignore */ }

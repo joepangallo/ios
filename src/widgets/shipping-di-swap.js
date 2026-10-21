@@ -4,6 +4,8 @@
 // line changes. The live service calls the free Open-Meteo API and falls back
 // to a clearly labeled offline sample when the network is unavailable.
 
+import { esc, reducedMotionCss } from './services-kit.js';
+
 const NAME = 'shipping-di-swap';
 let uid = 0;
 
@@ -17,10 +19,6 @@ const IMPLS = [
 
 // Swift prints whole Doubles with ".0"; mirror that so the text matches.
 const swiftDouble = (t) => (Number.isInteger(t) ? t.toFixed(1) : String(t));
-
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 export default {
   name: 'shipping-di-swap',
@@ -68,7 +66,7 @@ export default {
 .w-shipping-di-swap .di-count b { color:var(--ok); }
 .w-shipping-di-swap .di-log { margin:0; font-size:11.5px; color:var(--ink-3); min-height:16px; }
 .w-shipping-di-swap .di-tag { display:inline-block; margin-left:4px; padding:0 5px; border-radius:4px; background:var(--warn-soft); color:var(--warn); font-size:10px; font-weight:700; }
-.w-shipping-di-swap.still * { transition:none !important; }
+${reducedMotionCss('.w-shipping-di-swap', { still: 'still' })}
 `,
   mount(el, props, ctx) {
     el.classList.add(`w-${NAME}`);

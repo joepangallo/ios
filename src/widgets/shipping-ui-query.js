@@ -3,6 +3,8 @@
 // matches an identifier OR a label), switch the language or the -ui-testing
 // launch argument, and replay the lesson's UI test step by step.
 
+import { esc, reducedMotionCss, phoneFrameCss, highlightSwift } from './services-kit.js';
+
 const NAME = 'shipping-ui-query';
 let uid = 0;
 
@@ -23,20 +25,7 @@ const QUERIES = [
   { code: 'app.navigationBars["Sessions"]', q: 'navigationBars', match: 'Sessions' },
 ];
 
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function hl(line) {
-  if (/^\s*\/\//.test(line)) return `<span class="t-cmt">${esc(line)}</span>`;
-  return line.split(/("(?:[^"\\]|\\.)*")/).map((p, i) => {
-    if (i % 2) return `<span class="t-str">${esc(p)}</span>`;
-    return esc(p)
-      .replace(/\b(let)\b/g, '<span class="t-kw">$1</span>')
-      .replace(/\b(XCUIApplication|XCTAssertTrue)\b/g, '<span class="t-type">$1</span>')
-      .replace(/\b(\d+)\b/g, '<span class="t-num">$1</span>');
-  }).join('');
-}
+const hl = (line) => highlightSwift(line, { prefix: 't-' });
 
 export default {
   name: 'shipping-ui-query',
@@ -62,7 +51,8 @@ export default {
 .w-shipping-ui-query .uq-switch input:focus-visible + .uq-track { outline:2px solid var(--focus); outline-offset:2px; }
 .w-shipping-ui-query .uq-switch code { font:600 11.5px var(--font-code); color:var(--ink); }
 .w-shipping-ui-query .uq-main { flex:1; min-height:0; display:grid; grid-template-columns:232px minmax(0,1fr); gap:14px; }
-.w-shipping-ui-query .uq-phone { position:relative; min-height:0; height:100%; max-height:430px; align-self:start; border-radius:30px; border:7px solid #1c1c1e; background:#F2F2F7; overflow:hidden; color:#000; font:13px/1.3 -apple-system, system-ui, sans-serif; box-shadow:0 0 0 1px var(--line), var(--shadow); }
+${phoneFrameCss('.w-shipping-ui-query', { frame: '.uq-phone', bezel: 'border' })}
+.w-shipping-ui-query .uq-phone { min-height:0; height:100%; max-height:430px; align-self:start; background:#F2F2F7; color:#000; font:13px/1.3 -apple-system, system-ui, sans-serif; }
 .w-shipping-ui-query .ph-status { display:flex; justify-content:space-between; padding:7px 16px 0; font-size:11px; font-weight:600; }
 .w-shipping-ui-query .ph-nav { position:relative; padding:4px 12px 6px; }
 .w-shipping-ui-query .ph-add { position:absolute; right:10px; top:2px; width:30px; height:30px; border-radius:50%; display:grid; place-items:center; color:#007AFF; background:rgba(120,120,128,.12); }
@@ -133,7 +123,7 @@ export default {
 .w-shipping-ui-query .uq-run { flex:none; font:600 12.5px var(--font-ui); color:var(--on-accent); background:var(--accent); border:1px solid var(--accent); border-radius:var(--r-sm); padding:6px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
 .w-shipping-ui-query .uq-run:disabled { opacity:.55; cursor:default; }
 .w-shipping-ui-query .uq-run:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
-.w-shipping-ui-query.still * { transition:none !important; }
+${reducedMotionCss('.w-shipping-ui-query', { still: 'still' })}
 @media (max-width:560px) {
   .w-shipping-ui-query .uq-main { grid-template-columns:minmax(0,1fr); grid-template-rows:236px minmax(0,1fr); }
   .w-shipping-ui-query .uq-phone { width:212px; justify-self:center; max-height:236px; }

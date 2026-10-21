@@ -1,6 +1,9 @@
 // Two devices share one grocery list through iCloud. Each device saves locally
 // first and keeps an outbox; airplane mode makes changes queue; a stale upload
 // collides with a newer server record and is resolved by the chosen policy.
+
+import { esc, plural, clockLabel } from './services-kit.js';
+
 const P = 'data-icloud-sync';
 
 const POLICIES = {
@@ -21,10 +24,7 @@ const POLICIES = {
   },
 };
 
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const num = (rec) => Number(rec.split('-')[1]);
-const fmt = (m) => `${9 + Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 function describe(fields, vals) {
   const parts = [];
@@ -501,8 +501,8 @@ export default {
       const typedFirst = late.madeAt < early.madeAt;
       S.conflict = {
         rec: c.rec, policy,
-        early: `${esc(early.by)} ${esc(describe(early.fields, early.vals))} at ${fmt(early.madeAt)} and reached iCloud first (${fmt(early.at)}, change tag ${early.version}).`,
-        late: `${dev.label} ${esc(describe(c.fields, mine))} at ${fmt(late.madeAt)}${late.offline ? ' while offline' : ''}, starting from an older copy (tag ${late.base}; iCloud already had tag ${serverVersion}), and reached iCloud last (${fmt(at)}).`,
+        early: `${esc(early.by)} ${esc(describe(early.fields, early.vals))} at ${clockLabel(early.madeAt)} and reached iCloud first (${clockLabel(early.at)}, change tag ${early.version}).`,
+        late: `${dev.label} ${esc(describe(c.fields, mine))} at ${clockLabel(late.madeAt)}${late.offline ? ' while offline' : ''}, starting from an older copy (tag ${late.base}; iCloud already had tag ${serverVersion}), and reached iCloud last (${clockLabel(at)}).`,
         kept, lost,
         order: policy === 'lww'
           ? (typedFirst
@@ -602,7 +602,7 @@ export default {
       ui.recs.innerHTML = sortedRecs(S.records.keys()).map((rec) => {
         const r = S.records.get(rec);
         return `<li class="rec${S.cloudFlash.has(rec) ? ' flash' : ''}"><span class="rn">${rec}</span><span class="rt">${esc(r.text)}</span>`
-          + `<span class="tg">tag ${r.version}</span><span class="meta"><code>isDone ${r.isDone}</code> · saved by ${r.savedBy} at ${fmt(r.savedAt)}</span></li>`;
+          + `<span class="tg">tag ${r.version}</span><span class="meta"><code>isDone ${r.isDone}</code> · saved by ${r.savedBy} at ${clockLabel(r.savedAt)}</span></li>`;
       }).join('') || '<li class="rec"><span class="meta">No records</span></li>';
       ui.seg.forEach((b) => {
         const on = b.dataset.policy === policy;
@@ -612,7 +612,7 @@ export default {
     }
 
     function renderLog() {
-      ui.log.innerHTML = S.log.map((e) => `<li class="${e.kind}"><span class="t">${fmt(e.t)}</span>${esc(e.text)}</li>`).join('');
+      ui.log.innerHTML = S.log.map((e) => `<li class="${e.kind}"><span class="t">${clockLabel(e.t)}</span>${esc(e.text)}</li>`).join('');
     }
 
     function renderExplain() {
@@ -635,7 +635,7 @@ export default {
       devices().forEach((d) => { renderDevice(d); renderWire(d); });
       renderCloud();
       renderExplain();
-      ui.clock.textContent = fmt(S.clock);
+      ui.clock.textContent = clockLabel(S.clock);
       ui.scenario.disabled = running;
     }
 

@@ -2,6 +2,8 @@
 // (empty, loading, error, partial, ideal), with the SwiftUI building block
 // that produces each one. Buttons inside the phone really move between states.
 
+import { idScope, snapshotHost, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'design-states-switcher';
 let instances = 0;
 
@@ -43,11 +45,8 @@ const TRIPS = [
 export default {
   name: 'design-states-switcher',
   css: `
+${iosThemeCss('.w-design-states-switcher', { light: { 'ios-banner': 'rgba(255,149,0,.14)' }, dark: { 'ios-banner': 'rgba(255,159,10,.18)' } })}
 .w-design-states-switcher {
-  --ios-bg:#FFFFFF; --ios-grouped:#F2F2F7; --ios-cell:#FFFFFF; --ios-label:#000000;
-  --ios-label-2:rgba(60,60,67,.6); --ios-label-3:rgba(60,60,67,.3);
-  --ios-sep:rgba(60,60,67,.29); --ios-fill:rgba(120,120,128,.2); --ios-blue:#007AFF;
-  --ios-red:#FF3B30; --ios-green:#34C759; --ios-orange:#FF9500; --ios-banner:rgba(255,149,0,.14);
   box-sizing:border-box; height:100%; width:100%; font-family:var(--font-ui); color:var(--ink);
   container-type:inline-size; min-height:0;
 }
@@ -55,32 +54,15 @@ export default {
   height:100%; padding:12px; display:grid; gap:10px; min-height:0;
   grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr) auto;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .w-design-states-switcher {
-    --ios-bg:#000000; --ios-grouped:#000000; --ios-cell:#1C1C1E; --ios-label:#FFFFFF;
-    --ios-label-2:rgba(235,235,245,.6); --ios-label-3:rgba(235,235,245,.3);
-    --ios-sep:rgba(84,84,88,.6); --ios-fill:rgba(120,120,128,.36); --ios-blue:#0A84FF;
-    --ios-red:#FF453A; --ios-green:#30D158; --ios-orange:#FF9F0A; --ios-banner:rgba(255,159,10,.18);
-  }
-}
-:root[data-theme="dark"] .w-design-states-switcher {
-  --ios-bg:#000000; --ios-grouped:#000000; --ios-cell:#1C1C1E; --ios-label:#FFFFFF;
-  --ios-label-2:rgba(235,235,245,.6); --ios-label-3:rgba(235,235,245,.3);
-  --ios-sep:rgba(84,84,88,.6); --ios-fill:rgba(120,120,128,.36); --ios-blue:#0A84FF;
-  --ios-red:#FF453A; --ios-green:#30D158; --ios-orange:#FF9F0A; --ios-banner:rgba(255,159,10,.18);
-}
 .w-design-states-switcher * { box-sizing:border-box; }
 .w-design-states-switcher .ss-phonewrap { min-height:0; height:100%; display:flex; align-items:center; justify-content:center; }
-.w-design-states-switcher .ss-phone {
-  height:100%; max-height:452px; aspect-ratio: 0.49; max-width:100%;
-  background:#1d1d1f; border-radius:30px; padding:6px; box-shadow:var(--shadow); position:relative;
-}
+${phoneFrameCss('.w-design-states-switcher', { frame: '.ss-phone', island: '.ss-island', home: '.ss-home', pad: '6px', islandRadius: '8px' })}
+.w-design-states-switcher .ss-phone { height:100%; max-height:452px; aspect-ratio: 0.49; max-width:100%; }
 .w-design-states-switcher .ss-screen {
   position:relative; height:100%; width:100%; border-radius:24px; overflow:hidden;
   background:var(--ios-grouped); color:var(--ios-label);
   font-family:-apple-system, "SF Pro Text", system-ui, sans-serif; display:flex; flex-direction:column;
 }
-.w-design-states-switcher .ss-island { position:absolute; top:7px; left:50%; transform:translateX(-50%); width:31%; height:13px; border-radius:8px; background:#000; z-index:2; }
 .w-design-states-switcher .ss-status { height:28px; flex:none; display:flex; align-items:flex-end; justify-content:space-between; padding:0 16px 3px 20px; font-size:10px; font-weight:600; }
 .w-design-states-switcher .ss-status .ss-bars { display:flex; gap:2px; align-items:flex-end; }
 .w-design-states-switcher .ss-status .ss-bars i { display:block; width:2.5px; background:currentColor; border-radius:1px; }
@@ -114,7 +96,6 @@ export default {
 .w-design-states-switcher .ss-banner .ss-warnic { color:var(--ios-orange); display:flex; flex:none; margin-top:1px; }
 .w-design-states-switcher .ss-link { background:none; border:0; padding:0; color:var(--ios-blue); font:600 10.5px -apple-system, "SF Pro Text", system-ui, sans-serif; cursor:pointer; margin-top:2px; }
 .w-design-states-switcher .ss-foot { font-size:9.5px; color:var(--ios-label-2); text-align:center; padding:8px; }
-.w-design-states-switcher .ss-home { position:absolute; bottom:5px; left:50%; transform:translateX(-50%); width:34%; height:4px; border-radius:3px; background:var(--ios-label); opacity:.85; }
 .w-design-states-switcher .ss-fade { animation:w-design-states-switcher-fade .22s ease-out; }
 .w-design-states-switcher.ss-still .ss-fade { animation:none; }
 @keyframes w-design-states-switcher-fade { from { opacity:0; } to { opacity:1; } }
@@ -155,8 +136,9 @@ export default {
 `,
   mount(el, props, ctx) {
     const n = ++instances;
-    const id = (f) => (n === 1 ? `${NAME}-${f}` : `${NAME}-${f}-${n}`);
+    const id = idScope(NAME, n);
     const icon = (name, size = 16, label = '') => ctx.icon(name, size, label);
+    const restoreHost = snapshotHost(el);
     el.classList.add(`w-${NAME}`);
     if (ctx.reducedMotion) el.classList.add('ss-still');
 
@@ -284,6 +266,7 @@ export default {
         group.removeEventListener('keydown', onRadioKey);
         screen.removeEventListener('click', onScreenClick);
         el.innerHTML = '';
+        restoreHost();
       },
     };
   },

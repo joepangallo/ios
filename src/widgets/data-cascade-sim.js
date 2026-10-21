@@ -1,6 +1,9 @@
 // Delete-rule simulator for a one-to-many SwiftData relationship:
 // Folder.notes <-> Note.folder. Students pick a deleteRule, delete a folder,
 // and see what happens to its notes (.nullify, .cascade, .deny, .noAction).
+
+import { esc, plural } from './services-kit.js';
+
 const W = 'data-cascade-sim';
 
 const RULES = {
@@ -10,9 +13,6 @@ const RULES = {
   noAction: { what: 'Delete the folder and do nothing to its notes.', short: 'Notes keep pointing at the deleted folder.' },
 };
 const ORDER = ['nullify', 'cascade', 'deny', 'noAction'];
-
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 function initialState() {
   return {

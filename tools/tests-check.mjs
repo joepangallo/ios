@@ -2,12 +2,12 @@
 // Usage: node tools/tests-check.mjs
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { runTests } from '../src/engine/index.js';
 import { testResultProblems } from './check-test-results.mjs';
-const DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../src/content');
+const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../src/content');
 let failed = 0;
-for (const f of fs.readdirSync(DIR).filter((x) => /^\d\d/.test(x)).sort()) {
+for (const f of fs.readdirSync(DIR).filter((x) => /^\d\d-.*\.js$/.test(x)).sort()) {
   const m = (await import(pathToFileURL(path.join(DIR, f)).href)).default;
   for (const l of m.lessons) for (const [i, s] of l.steps.entries()) {
     if (s.kind === 'code' && s.run === 'swifttest') {

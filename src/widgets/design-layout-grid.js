@@ -2,6 +2,8 @@
 // with switchable overlays for safe areas, 16 pt margins, the 8-pt grid,
 // the shared leading edge, and grouping by proximity.
 
+import { svgEl, idScope, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'design-layout-grid';
 let mountCount = 0;
 
@@ -37,10 +39,8 @@ function layoutFor(m) {
 export default {
   name: 'design-layout-grid',
   css: `
-.w-design-layout-grid { --ios-bg:#FFFFFF; --ios-grouped:#F2F2F7; --ios-label:#000000; --ios-label-2:rgba(60,60,67,.6); --ios-sep:rgba(60,60,67,.29); --ios-blue:#007AFF;
-  display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; box-sizing: border-box; padding: 12px; color: var(--ink); font: 13px/1.4 var(--font-ui); overflow: hidden; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .w-design-layout-grid { --ios-bg:#000000; --ios-grouped:#1C1C1E; --ios-label:#FFFFFF; --ios-label-2:rgba(235,235,245,.6); --ios-sep:rgba(84,84,88,.6); --ios-blue:#0A84FF; } }
-:root[data-theme="dark"] .w-design-layout-grid { --ios-bg:#000000; --ios-grouped:#1C1C1E; --ios-label:#FFFFFF; --ios-label-2:rgba(235,235,245,.6); --ios-sep:rgba(84,84,88,.6); --ios-blue:#0A84FF; }
+${iosThemeCss('.w-design-layout-grid', { dark: { 'ios-grouped': '#1C1C1E' } })}
+.w-design-layout-grid { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; box-sizing: border-box; padding: 12px; color: var(--ink); font: 13px/1.4 var(--font-ui); overflow: hidden; }
 .w-design-layout-grid *, .w-design-layout-grid *::before, .w-design-layout-grid *::after { box-sizing: border-box; }
 .w-design-layout-grid .lg-controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .w-design-layout-grid .lg-model { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
@@ -51,7 +51,7 @@ export default {
 .w-design-layout-grid :is(select, input):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .w-design-layout-grid .lg-main { flex: 1; min-height: 0; display: flex; gap: 12px; }
 .w-design-layout-grid .lg-phonecol { flex: none; display: flex; align-items: center; justify-content: center; min-height: 0; }
-.w-design-layout-grid .lg-phone { background: #1d1d1f; padding: 6px; border-radius: calc(var(--s) * var(--corner) * 1px + 6px); box-shadow: 0 0 0 1px var(--line); }
+${phoneFrameCss('.w-design-layout-grid', { frame: '.lg-phone', radius: 'calc(var(--s) * var(--corner) * 1px + 6px)', pad: '6px', shadow: '0 0 0 1px var(--line)' })}
 .w-design-layout-grid .lg-phone.is-se { padding: calc(var(--s) * 60px) calc(var(--s) * 14px); border-radius: calc(var(--s) * 50px); }
 .w-design-layout-grid .lg-screen { position: relative; overflow: hidden; background: var(--ios-bg); color: var(--ios-label); font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; border-radius: calc(var(--s) * var(--corner) * 1px); }
 .w-design-layout-grid .lg-abs { position: absolute; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
@@ -86,7 +86,7 @@ export default {
   mount(el, props, ctx) {
     el.classList.add('w-' + NAME);
     const n = ++mountCount;
-    const id = (f) => (n === 1 ? `${NAME}-${f}` : `${NAME}-${f}-${n}`);
+    const id = idScope(NAME, n);
     const icon = (name, size = 16) => (ctx && ctx.icon ? ctx.icon(name, size) : '');
     const on = Object.fromEntries(LAYERS.map((l) => [l.id, l.on]));
     let model = MODELS[0];
@@ -139,14 +139,6 @@ export default {
         ${m.bottom ? `<div class="lg-abs lg-home" style="${box(W / 2 - 67, L.H - 13, 134, 5)}"></div>` : ''}
         <svg class="lg-overlay" viewBox="0 0 ${W} ${L.H}" aria-hidden="true"></svg>`;
     }
-
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svgEl = (tag, attrs, text) => {
-      const e = document.createElementNS(svgNS, tag);
-      for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
-      if (text) e.textContent = text;
-      return e;
-    };
 
     function drawOverlays() {
       const svg = screen.querySelector('.lg-overlay');

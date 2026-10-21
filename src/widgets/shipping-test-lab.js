@@ -4,6 +4,8 @@
 // (with IEEE doubles, like Swift), and failure text mirrors real
 // `swift test` output from Swift Testing.
 
+import { esc, swiftDouble, reducedMotionCss, highlightSwift, plural } from './services-kit.js';
+
 const NAME = 'shipping-test-lab';
 let uid = 0;
 
@@ -51,52 +53,18 @@ function share(bill, tip, people, bugs) {
   return r / 100;
 }
 
-// Swift's description of a Double? as Swift Testing prints it.
-function fmt(v) {
-  if (v === null) return 'nil';
-  if (Number.isNaN(v)) return 'nan';
-  if (!Number.isFinite(v)) return v > 0 ? 'inf' : '-inf';
-  if (Object.is(v, -0)) return '-0.0';
-  if (Number.isInteger(v) && Math.abs(v) < 1e16) return `${v}.0`;
-  return String(v);
-}
-
 const exprText = (t) => `share(of: ${t.args[0]}, tip: ${t.args[1]}, people: ${t.args[2]})`;
 
 function evaluate(t, bugs) {
   const value = share(t.args[0], t.args[1], t.args[2], bugs);
   const equal = value === null || t.rhsVal === null ? value === t.rhsVal : value === t.rhsVal;
   const pass = t.op === '==' ? equal : !equal;
-  const rhsShown = fmt(t.rhsVal) === t.rhs || t.rhs === 'nil' ? t.rhs : `(${t.rhs} → ${fmt(t.rhsVal)})`;
-  const message = `Expectation failed: (${exprText(t)} → ${fmt(value)}) ${t.op} ${rhsShown}`;
+  const rhsShown = swiftDouble(t.rhsVal) === t.rhs || t.rhs === 'nil' ? t.rhs : `(${t.rhs} → ${swiftDouble(t.rhsVal)})`;
+  const message = `Expectation failed: (${exprText(t)} → ${swiftDouble(value)}) ${t.op} ${rhsShown}`;
   return { pass, value, message };
 }
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-const KW = new Set(['func', 'guard', 'else', 'return', 'let', 'var', 'nil', 'struct', 'import']);
-const FN = new Set(['share', 'rounded', 'down']);
-function highlight(code) {
-  const re = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|(\b\d+(?:\.\d+)?\b)|([#@][A-Za-z]+)|(\.?[A-Za-z_][A-Za-z0-9_]*)|([\s\S])/g;
-  let out = '';
-  let m;
-  while ((m = re.exec(code))) {
-    if (m[1]) out += `<span class="t-str">${esc(m[1])}</span>`;
-    else if (m[2]) out += `<span class="t-cmt">${esc(m[2])}</span>`;
-    else if (m[3]) out += `<span class="t-num">${m[3]}</span>`;
-    else if (m[4]) out += `<span class="t-attr">${esc(m[4])}</span>`;
-    else if (m[5]) {
-      const w = m[5];
-      const bare = w.replace(/^\./, '');
-      const dot = w.startsWith('.') ? '.' : '';
-      if (KW.has(bare) && !dot) out += `<span class="t-kw">${bare}</span>`;
-      else if (/^[A-Z]/.test(bare)) out += `${dot}<span class="t-type">${bare}</span>`;
-      else if (FN.has(bare)) out += `${dot}<span class="t-fn">${bare}</span>`;
-      else out += esc(w);
-    } else out += esc(m[6]);
-  }
-  return out;
-}
+const highlight = (code) => highlightSwift(code, { prefix: 't-' });
 
 function sourceLines(bugs) {
   let guard;
@@ -198,6 +166,7 @@ export default {
 .w-shipping-test-lab .tl-console .c-ok { color:var(--ok); }
 .w-shipping-test-lab .tl-console .c-bad { color:var(--bad); }
 .w-shipping-test-lab .tl-console .c-dim { color:var(--ink-3); }
+.w-shipping-test-lab .tl-console svg { width:11px; height:11px; vertical-align:-1px; }
 .w-shipping-test-lab .tl-verdict { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--panel-2); font-size:12.5px; font-weight:600; min-height:36px; }
 .w-shipping-test-lab .tl-verdict svg { flex:none; }
 .w-shipping-test-lab .tl-verdict.ok { background:var(--ok-soft); border-color:var(--ok); color:var(--ok); }
@@ -215,7 +184,7 @@ export default {
 .w-shipping-test-lab.narrow .tl-code { font-size:11px; }
 .w-shipping-test-lab.narrow .tl-line { white-space:pre-wrap; min-width:0; align-items:flex-start; flex-wrap:wrap; }
 .w-shipping-test-lab.narrow .tl-src { flex:1; min-width:0; word-break:break-word; padding-left:6ch; text-indent:-6ch; }
-@media (prefers-reduced-motion: reduce) { .w-shipping-test-lab * { transition:none !important; } }
+${reducedMotionCss('.w-shipping-test-lab')}
 `,
   mount(el, props, ctx) {
     el.classList.add(`w-${NAME}`);
@@ -255,7 +224,7 @@ export default {
         <div class="tl-col" data-panel="tests">
           <p class="tl-label" style="margin:0"><span>Test navigator</span><code>BillSplitTests.swift</code></p>
           <div class="tl-nav" id="${NAME}-nav" aria-live="polite"></div>
-          <pre class="tl-console" id="${NAME}-console" aria-label="Swift Testing console output (start lines and timings trimmed)"></pre>
+          <pre class="tl-console" id="${NAME}-console" aria-label="Swift Testing console output (test start lines trimmed)"></pre>
         </div>
       </div>
       <div class="tl-verdict" id="${NAME}-verdict" role="status"></div>`;
@@ -344,22 +313,28 @@ export default {
       if (running) {
         consoleEl.innerHTML = `<span class="c-dim">◇ Test run started.\n◇ Suite "Splitting a bill" started.\n…</span>`;
       } else {
+        // Swift Testing's console lines: a status icon, then "passed after
+        // N seconds" or "failed after N seconds with N issues".
+        const ok = (text) => `<span class="c-ok">${icon('checkmark', 11)} ${text}</span>`;
+        const bad = (text) => `<span class="c-bad">${icon('xmark', 11)} ${text}</span>`;
+        const seconds = (i) => (0.001 + i * 0.0004).toFixed(3);
         const lines = ['<span class="c-dim">◇ Test run started.</span>', '<span class="c-dim">◇ Suite "Splitting a bill" started.</span>'];
-        for (const { t, r } of results) {
-          if (r.pass) lines.push(`<span class="c-ok">✔ Test "${esc(t.name)}" passed.</span>`);
+        results.forEach(({ t, r }, i) => {
+          if (r.pass) lines.push(ok(`Test "${esc(t.name)}" passed after ${seconds(i)} seconds.`));
           else {
-            lines.push(`<span class="c-bad">✘ Test "${esc(t.name)}" recorded an issue at BillSplitTests.swift:${t.line}:9: ${esc(r.message)}</span>`);
-            lines.push(`<span class="c-bad">✘ Test "${esc(t.name)}" failed with 1 issue.</span>`);
+            lines.push(bad(`Test "${esc(t.name)}" recorded an issue at BillSplitTests.swift:${t.line}:9: ${esc(r.message)}`));
+            lines.push(bad(`Test "${esc(t.name)}" failed after ${seconds(i)} seconds with 1 issue.`));
           }
-        }
+        });
         const k = failed.length;
-        const issues = `${k} issue${k === 1 ? '' : 's'}`;
+        const issues = plural(k, 'issue');
+        const total = (0.004 + results.length * 0.0012).toFixed(3);
         if (k) {
-          lines.push(`<span class="c-bad">✘ Suite "Splitting a bill" failed with ${issues}.</span>`);
-          lines.push(`<span class="c-bad">✘ Test run with ${tests.length} tests in 1 suite failed with ${issues}.</span>`);
+          lines.push(bad(`Suite "Splitting a bill" failed after ${total} seconds with ${issues}.`));
+          lines.push(bad(`Test run with ${tests.length} tests in 1 suite failed after ${total} seconds with ${issues}.`));
         } else {
-          lines.push('<span class="c-ok">✔ Suite "Splitting a bill" passed.</span>');
-          lines.push(`<span class="c-ok">✔ Test run with ${tests.length} tests in 1 suite passed.</span>`);
+          lines.push(ok(`Suite "Splitting a bill" passed after ${total} seconds.`));
+          lines.push(ok(`Test run with ${tests.length} tests in 1 suite passed after ${total} seconds.`));
         }
         consoleEl.innerHTML = lines.join('\n');
         consoleEl.scrollTop = consoleEl.scrollHeight;

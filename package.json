@@ -2,6 +2,9 @@
   "name": "ios-development-course",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "node tools/build.mjs",
     "build:wasm": "bash tools/build-wasm.sh",
@@ -13,11 +16,14 @@
     "preview-check": "node tools/preview-check.mjs",
     "diag-check": "node tools/diag-check.mjs",
     "conformance": "node tools/conformance.mjs",
+    "wasm-check": "node tools/wasm-check.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "e2e": "node tests/e2e/run.mjs",
     "e2e:webkit": "node tests/e2e/run.mjs --browser=webkit",
-    "check": "node tools/validate-content.mjs && node tools/engine-check.mjs && vitest run && node tools/build.mjs"
+    "check": "node tools/validate-content.mjs && node tools/diag-check.mjs && node tools/conformance.mjs && node tools/wasm-check.mjs && vitest run --coverage && node tools/build.mjs",
+    "check:browser": "node tools/preview-check.mjs && node tests/e2e/run.mjs",
+    "check:xcode": "node tools/verify-swift.mjs"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",

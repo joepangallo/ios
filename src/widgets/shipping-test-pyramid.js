@@ -2,6 +2,8 @@
 // misses, then flip the suite into the "ice-cream cone" anti-pattern and
 // watch the run time of the same 200 tests explode. Costs are illustrative.
 
+import { reducedMotionCss } from './services-kit.js';
+
 const NAME = 'shipping-test-pyramid';
 let uid = 0;
 
@@ -88,8 +90,7 @@ export default {
 .w-shipping-test-pyramid .tp-verdict.slow { border-color:var(--bad); background:var(--bad-soft); }
 .w-shipping-test-pyramid .tp-verdict b { color:var(--ok); }
 .w-shipping-test-pyramid .tp-verdict.slow b { color:var(--bad); }
-.w-shipping-test-pyramid.still .tp-layer, .w-shipping-test-pyramid.still .tp-track > div { transition:none; }
-@media (prefers-reduced-motion: reduce) { .w-shipping-test-pyramid * { transition:none !important; } }
+${reducedMotionCss('.w-shipping-test-pyramid', { still: 'still' })}
 `,
   mount(el, props, ctx) {
     el.classList.add(`w-${NAME}`);

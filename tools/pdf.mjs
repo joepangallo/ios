@@ -1,12 +1,13 @@
 // Builds the printable study guide (PDF) from the same content as the page.
 // Usage: node tools/pdf.mjs  -> ios-development-study-guide.pdf
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { highlightCode } from '../src/app/highlight.js';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const files = fs.readdirSync(path.join(ROOT, 'src/content')).filter((f) => /^\d\d-.*\.js$/.test(f)).sort();
 const modules = [];
 for (const f of files) modules.push((await import(pathToFileURL(path.join(ROOT, 'src/content', f)).href)).default);
@@ -163,22 +164,29 @@ pre.code { background: #fbfbfc; border: 1px solid #d9dde4; border-radius: 6px; p
 svg { display: none; }
 </style></head><body>${body}</body></html>`;
 
-const out = path.join(ROOT, 'node_modules/.study-guide.html');
-fs.writeFileSync(out, html);
-const browser = await chromium.launch();
-const page = await browser.newPage();
-await page.goto(pathToFileURL(out).href, { waitUntil: 'networkidle' });
-await page.evaluate(() => document.fonts.ready);
+// The intermediate HTML goes to a temporary directory, never into the repo.
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'study-guide-'));
+const out = path.join(tmp, 'study-guide.html');
 const pdfPath = path.join(ROOT, 'ios-development-study-guide.pdf');
-await page.pdf({
-  path: pdfPath,
-  format: 'Letter',
-  printBackground: true,
-  displayHeaderFooter: true,
-  headerTemplate: '<div></div>',
-  footerTemplate: '<div style="font: 8px Helvetica, Arial, sans-serif; color: #8a8f99; width: 100%; padding: 0 0.7in; display: flex; justify-content: space-between;"><span>iOS Development Study Guide</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>',
-  margin: { top: '0.6in', bottom: '0.75in', left: '0.7in', right: '0.7in' },
-});
-await browser.close();
+let browser;
+try {
+  fs.writeFileSync(out, html);
+  browser = await chromium.launch();
+  const page = await browser.newPage();
+  await page.goto(pathToFileURL(out).href, { waitUntil: 'networkidle' });
+  await page.evaluate(() => document.fonts.ready);
+  await page.pdf({
+    path: pdfPath,
+    format: 'Letter',
+    printBackground: true,
+    displayHeaderFooter: true,
+    headerTemplate: '<div></div>',
+    footerTemplate: '<div style="font: 8px Helvetica, Arial, sans-serif; color: #8a8f99; width: 100%; padding: 0 0.7in; display: flex; justify-content: space-between;"><span>iOS Development Study Guide</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>',
+    margin: { top: '0.6in', bottom: '0.75in', left: '0.7in', right: '0.7in' },
+  });
+} finally {
+  if (browser) await browser.close();
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
 const stat = fs.statSync(pdfPath);
 console.log(`ios-development-study-guide.pdf  ${(stat.size / 1024 / 1024).toFixed(1)} MB`);

@@ -4,11 +4,11 @@
 // arrive as PhotosPickerItem values, load through Transferable as Data, and
 // can be handed to the system share sheet with ShareLink. A contrast mode
 // asks for full library access instead, to show what that costs.
-import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idFor } from './services-kit.js';
+import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idScope } from './services-kit.js';
 
 const NAME = 'services-photos-sim';
 const S = `.w-${NAME}`;
-const id = (role) => idFor(NAME, role);
+const id = idScope(NAME);
 
 // Generated "photos": a CSS gradient plus a few SVG shapes (viewBox 100x100).
 const PHOTOS = [

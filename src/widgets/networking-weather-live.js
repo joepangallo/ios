@@ -2,6 +2,8 @@
 // lights up each line of the Swift load function as the matching phase
 // actually happens, with measured timings and a phone showing the LoadState.
 
+import { esc, el, on, idScope, highlightSwift, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'networking-weather-live';
 const FORECAST = 'https://api.open-meteo.com/v1/forecast';
 const CITIES = [
@@ -51,33 +53,6 @@ const PHASES = {
   failed: { label: 'catch: state = .failed', lines: [19, 20] },
 };
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const KW = new Set(['func', 'async', 'do', 'var', 'let', 'try', 'await', 'guard', 'as', 'else', 'throw', 'catch']);
-function highlightLine(line) {
-  let out = '';
-  const re = /("(?:[^"\\]|\\.)*")|(\b\d+\b)|(\b[A-Za-z_][A-Za-z0-9_]*\b)|([\s\S])/g;
-  let m;
-  while ((m = re.exec(line))) {
-    if (m[1]) out += `<span class="t-str">${esc(m[1])}</span>`;
-    else if (m[2]) out += `<span class="t-num">${m[2]}</span>`;
-    else if (m[3]) out += KW.has(m[3]) ? `<span class="t-kw">${m[3]}</span>` : /^[A-Z]/.test(m[3]) ? `<span class="t-type">${m[3]}</span>` : m[3];
-    else out += esc(m[4]);
-  }
-  return out;
-}
-
-function el(tag, attrs = {}, ...kids) {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === false || v == null) continue;
-    if (k === 'class') node.className = v;
-    else if (k === 'text') node.textContent = v;
-    else node.setAttribute(k, v === true ? '' : v);
-  }
-  for (const kid of kids) if (kid != null) node.append(kid);
-  return node;
-}
-
 const fmtMs = (ms) => (ms == null ? '' : ms < 1 ? `${ms.toFixed(2)} ms` : `${Math.round(ms)} ms`);
 
 export default {
@@ -101,10 +76,11 @@ export default {
 .w-${NAME} .nwl-fetch:disabled { opacity: .55; cursor: default; }
 .w-${NAME} button:focus-visible, .w-${NAME} select:focus-visible, .w-${NAME} input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .w-${NAME} .nwl-phone-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.w-${NAME} .nwl-phone { --ios-bg: #F2F2F7; --ios-card: #FFFFFF; --ios-label: #000000; --ios-label-2: rgba(60, 60, 67, 0.6); --ios-blue: #007AFF; --ios-red: #FF3B30;
-  flex: 1; min-height: 150px; max-height: 330px; aspect-ratio: 9 / 17.5; max-width: 100%; box-sizing: border-box; border: 7px solid #1c1c1e; border-radius: 30px; background: var(--ios-bg); color: var(--ios-label); display: flex; flex-direction: column; overflow: hidden; font-family: -apple-system, system-ui, var(--font-ui); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .w-${NAME} .nwl-phone { --ios-bg: #000000; --ios-card: #1C1C1E; --ios-label: #FFFFFF; --ios-label-2: rgba(235, 235, 245, 0.6); --ios-blue: #0A84FF; --ios-red: #FF453A; border-color: #3a3a3c; } }
-:root[data-theme="dark"] .w-${NAME} .nwl-phone { --ios-bg: #000000; --ios-card: #1C1C1E; --ios-label: #FFFFFF; --ios-label-2: rgba(235, 235, 245, 0.6); --ios-blue: #0A84FF; --ios-red: #FF453A; border-color: #3a3a3c; }
+${iosThemeCss(`.w-${NAME} .nwl-phone`, { light: { 'ios-bg': '#F2F2F7' } })}
+${phoneFrameCss(`.w-${NAME}`, { frame: '.nwl-phone', screen: '.nwl-phone', bezel: 'border', shadow: 'none' })}
+.w-${NAME} .nwl-phone { flex: 1; min-height: 150px; max-height: 330px; aspect-ratio: 9 / 17.5; max-width: 100%; display: flex; flex-direction: column; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .w-${NAME} .nwl-phone { border-color: #3a3a3c; } }
+:root[data-theme="dark"] .w-${NAME} .nwl-phone { border-color: #3a3a3c; }
 .w-${NAME} .nwl-island { width: 34%; height: 11px; background: #000; border-radius: 999px; margin: 5px auto 0; flex: none; }
 .w-${NAME} .nwl-screen { flex: 1; display: flex; flex-direction: column; padding: 10px 12px; gap: 6px; min-height: 0; }
 .w-${NAME} .nwl-title { font: 700 19px/1.1 -apple-system, system-ui, var(--font-ui); margin: 6px 0 2px; }
@@ -163,7 +139,7 @@ export default {
     const phoneMode = props.mode === 'phone';
     if (phoneMode) root.classList.add('phone-mode');
     if (ctx?.reducedMotion) root.classList.add('reduced');
-    const id = (s) => `${NAME}-${s}`;
+    const id = idScope(NAME);
     const HOLD = ctx?.reducedMotion ? 120 : 420;
     let alive = true;
     const state = { city: CITIES[0], busy: false, model: 'idle', data: null, offline: false, badCoords: false, timings: {}, path: [], active: null, firstNetwork: null, note: '' };
@@ -188,7 +164,7 @@ export default {
       ...CODE.map((line, i) => {
         const row = el('div', { class: 'nwl-line', 'data-line': String(i) }, el('span', { class: 'ln', text: String(i + 1) }));
         const code = el('span');
-        code.innerHTML = highlightLine(line);
+        code.innerHTML = highlightSwift(line, { prefix: 't-' });
         row.append(code);
         return row;
       }));
@@ -200,7 +176,13 @@ export default {
     root.append(el('div', { class: 'nwl' }, left, right));
 
     const tickers = new Set();
-    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    // Hold timers are tracked so destroy() can clear them; a cleared hold
+    // resolves at once and the alive checks in phase() end the run.
+    const holds = new Map();
+    const sleep = (ms) => new Promise((resolve) => {
+      const t = setTimeout(() => { holds.delete(t); resolve(); }, ms);
+      holds.set(t, resolve);
+    });
 
     function renderPhone() {
       const c = state.city;
@@ -379,7 +361,6 @@ export default {
       }
     }
 
-    const on = (node, ev, fn) => { node.addEventListener(ev, fn); return () => node.removeEventListener(ev, fn); };
     const offs = [
       on(citySel, 'change', () => { if (state.busy) { render(); return; } state.city = CITIES.find((c) => c.key === citySel.value); state.model = 'idle'; state.path = []; state.timings = {}; state.note = ''; render(); }),
       on(offlineBox, 'change', () => { if (state.busy) { render(); return; } state.offline = offlineBox.checked; }),
@@ -387,6 +368,17 @@ export default {
       on(fetchBtn, 'click', run),
     ];
     render();
-    return { destroy() { alive = false; tickers.forEach(clearInterval); tickers.clear(); offs.forEach((off) => off()); root.replaceChildren(); root.classList.remove(`w-${NAME}`, 'phone-mode', 'reduced'); } };
+    return {
+      destroy() {
+        alive = false;
+        tickers.forEach(clearInterval);
+        tickers.clear();
+        holds.forEach((resolve, t) => { clearTimeout(t); resolve(); });
+        holds.clear();
+        offs.forEach((off) => off());
+        root.replaceChildren();
+        root.classList.remove(`w-${NAME}`, 'phone-mode', 'reduced');
+      },
+    };
   },
 };

@@ -4,9 +4,9 @@
 // Exit code 1 when any error is found; warnings never fail the run.
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONTENT_DIR = path.join(ROOT, 'src/content');
 const WIDGET_DIR = path.join(ROOT, 'src/widgets');
 
@@ -15,7 +15,7 @@ const RUNS = new Set(['swift', 'swiftui', 'static', 'swifttest']);
 const NOTE_KEYS = ['who', 'what', 'where', 'when', 'why'];
 // Generic student-facing hygiene checks. Institution- or course-specific terms can be
 // added, one regular expression per line, in tools/banned-terms.local.txt (not committed).
-const LOCAL_TERMS = path.join(path.dirname(new URL(import.meta.url).pathname), 'banned-terms.local.txt');
+const LOCAL_TERMS = path.join(path.dirname(fileURLToPath(import.meta.url)), 'banned-terms.local.txt');
 const BANNED = [/\brubric\b/i, /\bgrading\b/i, /\/Users\//,
   ...(fs.existsSync(LOCAL_TERMS) ? fs.readFileSync(LOCAL_TERMS, 'utf8').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => new RegExp(l, 'i')) : [])];
 // A line that is only closing punctuation (}, ), ], with optional commas) gets an automatic note.
@@ -130,7 +130,7 @@ export async function validateModule(file, widgets = widgetNames()) {
   return { errors, warnings, module: mod };
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const files = process.argv.slice(2).length
     ? process.argv.slice(2).map((f) => path.resolve(f))
     : fs.readdirSync(CONTENT_DIR).filter((f) => /^\d\d-.*\.js$/.test(f)).sort().map((f) => path.join(CONTENT_DIR, f));

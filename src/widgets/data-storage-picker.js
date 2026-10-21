@@ -2,6 +2,8 @@
 // example) and sees where it should live, why, the Swift API to use, and which
 // single answer would change the recommendation.
 
+import { esc, highlightSwift } from './services-kit.js';
+
 const QUESTIONS = [
   { key: 'secret', label: 'Is it a secret?', hint: 'a password, token, or key', short: 'Secret',
     options: [['yes', 'Yes'], ['no', 'No']] },
@@ -167,33 +169,7 @@ try data.write(to: folder.appending(path: "state.json"),
   },
 };
 
-const KW = new Set(['let', 'var', 'try', 'await', 'final', 'class', 'struct', 'init', 'private', 'func', 'return', 'true', 'false', 'as', 'self', 'if', 'in', 'some']);
-
-function esc(s) {
-  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-}
-
-// Tiny Swift highlighter: comments, strings, attributes, numbers, keywords, types, kSec constants.
-function highlight(code) {
-  const re = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*")|(@\w+)|(\b\d[\d_]*(?:\.\d+)?\b)|(\b[A-Za-z_]\w*\b)/g;
-  let out = '';
-  let last = 0;
-  let m;
-  while ((m = re.exec(code))) {
-    out += esc(code.slice(last, m.index));
-    const [t] = m;
-    if (m[1]) out += `<span class="cmt">${esc(t)}</span>`;
-    else if (m[2]) out += `<span class="str">${esc(t)}</span>`;
-    else if (m[3]) out += `<span class="kw">${esc(t)}</span>`;
-    else if (m[4]) out += `<span class="num">${esc(t)}</span>`;
-    else if (KW.has(t)) out += `<span class="kw">${esc(t)}</span>`;
-    else if (/^k[A-Z]/.test(t)) out += `<span class="fn">${esc(t)}</span>`;
-    else if (/^[A-Z]/.test(t)) out += `<span class="type">${esc(t)}</span>`;
-    else out += esc(t);
-    last = m.index + t.length;
-  }
-  return out + esc(code.slice(last));
-}
+const highlight = (code) => highlightSwift(code, { prefix: '', fnPattern: /^k[A-Z]/ });
 
 function decide(a) {
   const trail = [];
@@ -262,7 +238,7 @@ export default {
   border: 1px solid var(--line); border-radius: var(--r-md); white-space: pre; overflow-x: auto; }
 .w-data-storage-picker .code .kw { color: var(--kw); } .w-data-storage-picker .code .str { color: var(--str); }
 .w-data-storage-picker .code .num { color: var(--num); } .w-data-storage-picker .code .type { color: var(--type); }
-.w-data-storage-picker .code .cmt { color: var(--cmt); } .w-data-storage-picker .code .fn { color: var(--fn); }
+.w-data-storage-picker .code .cmt { color: var(--cmt); } .w-data-storage-picker .code .fn { color: var(--fn); } .w-data-storage-picker .code .attr { color: var(--attr); }
 .w-data-storage-picker .also { margin: 0 0 8px; font-size: 12.5px; line-height: 1.38; color: var(--ink-2); }
 .w-data-storage-picker .also strong { color: var(--ink); }
 .w-data-storage-picker .flips { display: flex; flex-wrap: wrap; gap: 5px; }

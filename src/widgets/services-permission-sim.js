@@ -3,7 +3,7 @@
 // the feature, sees the system alert built from the app's Info.plist purpose
 // string, picks an answer, and watches the authorization status, the Swift
 // branch that runs, and the recovery path through Settings.
-import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idFor } from './services-kit.js';
+import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idScope } from './services-kit.js';
 
 const NAME = 'services-permission-sim';
 const S = `.w-${NAME}`;
@@ -314,7 +314,7 @@ export default {
     const app = String(props.appName || 'Trailhead');
     const feature = ['camera', 'notifications'].includes(props.feature) ? props.feature : 'location';
     const cfg = featureConfig(feature, app);
-    const id = (role) => idFor(NAME, role);
+    const id = idScope(NAME);
     const timers = new Set();
     const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); };
 

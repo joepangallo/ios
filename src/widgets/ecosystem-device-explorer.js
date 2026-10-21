@@ -3,6 +3,8 @@
 // plus a true-scale comparison, a rasterization zoom and a points-to-pixels
 // converter.
 
+import { esc, idScope, reducedMotionCss } from './services-kit.js';
+
 const NAME = 'ecosystem-device-explorer';
 let mounted = 0;
 
@@ -80,8 +82,6 @@ const DEVICES = [
 ];
 
 const COMPARE = ['iphone-se', 'iphone-pro', 'iphone-max', 'watch'];
-
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ---------------------------------------------------------------------------
 // SVG drawing, in POINT coordinates (the viewBox does the scaling)
@@ -414,15 +414,14 @@ const CSS = `
   .w-${NAME} .dx-cap { display: none; }
   .w-${NAME} .dx-select { flex: 1 1 100%; }
 }
-@media (prefers-reduced-motion: reduce) { .w-${NAME} *, .w-${NAME} *::before, .w-${NAME} *::after { transition: none !important; animation: none !important; } }
+${reducedMotionCss(`.w-${NAME}`)}
 `;
 
 export default {
   name: 'ecosystem-device-explorer',
   css: CSS,
   mount(el, props = {}, ctx) {
-    const sfx = mounted++ ? `-${mounted}` : '';
-    const id = (s) => `${NAME}-${s}${sfx}`;
+    const id = idScope(NAME, ++mounted);
     el.classList.add(`w-${NAME}`);
     // The shared icon set has no TV symbol, so draw that one here.
     const TV = (s) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="12.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 20.5h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;

@@ -2,7 +2,7 @@
 // status, a model availability, an authorization status...) and see which
 // branch of the Swift switch runs and what the app shows the user. Content
 // supplies the code, the states and the phone screens through props.
-import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idFor } from './services-kit.js';
+import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idScope } from './services-kit.js';
 
 const NAME = 'services-state-switch';
 const S = `.w-${NAME}`;
@@ -145,7 +145,7 @@ export default {
     const reduced = !!ctx.reducedMotion;
     if (reduced) el.classList.add('ss-reduced');
     const icon = (n, size = 16) => (ctx.icon ? ctx.icon(n, size) : '');
-    const id = (role) => idFor(NAME, role);
+    const id = idScope(NAME);
     const cfg = normalize(props);
     const safeId = (s) => s.id.replace(/[^a-zA-Z0-9_-]/g, '-');
     let current = cfg.initial;

@@ -5,6 +5,25 @@ import { highlightCode } from './highlight.js';
 
 const LH = 22; // line height in px; must match CSS
 
+// Every keystroke repaints the whole editor, which at 200,000 lines costs
+// seconds, so the editor keeps at most this much text (far beyond any
+// example). A longer paste is cut, with a visible note.
+export const EDITOR_LIMITS = Object.freeze({ chars: 200_000, lines: 5_000 });
+export const EDITOR_LIMIT_NOTE = `This editor keeps the first ${EDITOR_LIMITS.lines.toLocaleString('en-US')} lines and ${EDITOR_LIMITS.chars.toLocaleString('en-US')} characters, so the rest of what you pasted was left out.`;
+
+// `code` cut to EDITOR_LIMITS: { code, cut }.
+export function limitCode(code) {
+  let cut = false;
+  if (code.length > EDITOR_LIMITS.chars) { code = code.slice(0, EDITOR_LIMITS.chars); cut = true; }
+  let at = -1;
+  for (let count = 0; count < EDITOR_LIMITS.lines; count++) {
+    at = code.indexOf('\n', at + 1);
+    if (at === -1) break;
+  }
+  if (at !== -1) { code = code.slice(0, at); cut = true; } // the text before the 5,000th newline is 5,000 lines
+  return { code, cut };
+}
+
 export class CodeEditor {
   constructor(host, opts = {}) {
     this.host = host;
@@ -23,7 +42,8 @@ export class CodeEditor {
             <textarea class="ed-ta" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off"></textarea>
           </div>
         </div>
-      </div>`;
+      </div>
+      <p class="ed-limit-note" role="status" hidden></p>`;
     this.scroll = host.querySelector('.ed-scroll');
     this.inner = host.querySelector('.ed-inner');
     this.gutter = host.querySelector('.ed-gutter');
@@ -31,10 +51,11 @@ export class CodeEditor {
     this.ta = host.querySelector('.ed-ta');
     this.band = host.querySelector('.ed-band');
     this.traceBand = host.querySelector('.ed-trace');
+    this.limitNote = host.querySelector('.ed-limit-note');
     this.ta.setAttribute('aria-label', opts.label || 'Swift code editor');
     if (opts.id) this.ta.id = opts.id;
     if (opts.readOnly) this.ta.readOnly = true;
-    this.ta.addEventListener('input', () => { this.paint(); this.updateLine(); if (this.opts.onChange) this.opts.onChange(this.ta.value); });
+    this.ta.addEventListener('input', () => { this.enforceLimits(); this.paint(); this.updateLine(); if (this.opts.onChange) this.opts.onChange(this.ta.value); });
     for (const ev of ['click', 'keyup', 'focus']) this.ta.addEventListener(ev, () => this.updateLine());
     this.ta.addEventListener('keydown', (e) => this.onKey(e));
     this.gutter.addEventListener('click', (e) => {
@@ -48,11 +69,25 @@ export class CodeEditor {
 
   setCode(code) {
     this.ta.value = code;
+    this.enforceLimits();
     this.paint();
     this.setLine(Math.min(this.line, this.lineCount()), false);
   }
 
   lineCount() { return this.ta.value.split('\n').length; }
+
+  // Cuts the text to EDITOR_LIMITS, keeping the caret where it was when it
+  // still fits, and shows or hides the note.
+  enforceLimits() {
+    const { code, cut } = limitCode(this.ta.value);
+    if (cut) {
+      const pos = Math.min(this.ta.selectionStart, code.length);
+      this.ta.value = code;
+      this.ta.setSelectionRange(pos, pos);
+      this.limitNote.textContent = EDITOR_LIMIT_NOTE;
+    }
+    this.limitNote.hidden = !cut;
+  }
 
   paint() {
     const code = this.ta.value;
@@ -66,7 +101,10 @@ export class CodeEditor {
       g += `<span data-n="${i}" class="${i === this.line ? 'on' : ''} ${mk ? 'mk-' + mk.kind : ''} ${noted ? 'noted' : ''}" title="${mk ? mk.msg.replace(/"/g, '&quot;') : `Line ${i}`}">${i}</span>`;
     }
     this.gutter.innerHTML = g;
-    const longest = Math.max(...code.split('\n').map((l) => l.length), 10);
+    // a loop, not Math.max(...lengths): spreading one argument per line throws
+    // RangeError once a paste has a few hundred thousand lines
+    let longest = 10;
+    for (const l of code.split('\n')) if (l.length > longest) longest = l.length;
     this.inner.style.height = `${n * LH + 24}px`;
     this.inner.style.setProperty('--chars', String(longest + 2));
   }
@@ -141,7 +179,7 @@ export class CodeEditor {
       const lineStart = value.lastIndexOf('\n', s - 1) + 1;
       const current = value.slice(lineStart, s);
       let indent = /^ */.exec(current)[0];
-      if (/[{(\[]\s*$/.test(current)) indent += '    ';
+      if (/[{(\[]$/.test(current.trimEnd())) indent += '    ';
       ta.setRangeText('\n' + indent, s, en, 'end');
       ta.dispatchEvent(new Event('input'));
       return;

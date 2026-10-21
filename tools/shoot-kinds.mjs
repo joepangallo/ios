@@ -2,9 +2,9 @@
 // Usage: node tools/shoot-kinds.mjs <outDir> [kinds=widget,figure] [width=1440] [height=900]
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const [out, kinds = 'widget,figure', w = '1440', h = '900'] = process.argv.slice(2);
 const want = new Set(kinds.split(','));
 fs.mkdirSync(out, { recursive: true });

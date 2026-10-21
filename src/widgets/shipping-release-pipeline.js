@@ -3,6 +3,8 @@
 // actually happens (rejected upload, broken feature, reviewer message) and
 // lets the student retry. Locked stages explain what breaks if skipped.
 
+import { esc, reducedMotionCss } from './services-kit.js';
+
 const NAME = 'shipping-release-pipeline';
 let uid = 0;
 
@@ -130,10 +132,6 @@ const STAGES = [
   },
 ];
 
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 export default {
   name: 'shipping-release-pipeline',
   css: `
@@ -189,7 +187,7 @@ export default {
 .w-shipping-release-pipeline .rp-summary { margin:0; padding:0; list-style:none; display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:4px 14px; font-size:12px; color:var(--ink-2); }
 .w-shipping-release-pipeline .rp-summary li { display:flex; gap:6px; align-items:flex-start; }
 .w-shipping-release-pipeline .rp-summary svg { flex:none; color:var(--ok); margin-top:2px; }
-.w-shipping-release-pipeline.still * { transition:none !important; }
+${reducedMotionCss('.w-shipping-release-pipeline', { still: 'still' })}
 @media (max-width:560px) {
   .w-shipping-release-pipeline .rp-main { grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); }
   .w-shipping-release-pipeline .rp-rail { flex-direction:row; overflow-x:auto; padding:5px; }

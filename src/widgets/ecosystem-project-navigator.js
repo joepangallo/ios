@@ -1,6 +1,8 @@
 // A clickable Xcode project navigator for a brand-new SwiftUI App project.
 // Each item explains what it is, who reads it, when, and how often you edit it.
 
+import { esc, idScope, reducedMotionCss } from './services-kit.js';
+
 const NAME = 'ecosystem-project-navigator';
 let mounted = 0;
 
@@ -81,8 +83,6 @@ const ITEMS = [
   },
 ];
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-
 const KIND_ICON = {
   project: '<i class="k k-proj"></i>', folder: '<i class="k k-fold"></i>', tab: '<i class="k k-tab"></i>',
   swift: '<i class="k k-swift"></i>', assets: '<i class="k k-assets"></i>', plist: '<i class="k k-plist"></i>',
@@ -119,15 +119,14 @@ const CSS = `
   .w-${NAME} .pn { flex-direction: row; }
   .w-${NAME} .tree { width: 300px; align-self: flex-start; }
 }
-@media (prefers-reduced-motion: reduce) { .w-${NAME} *, .w-${NAME} *::before, .w-${NAME} *::after { transition: none !important; animation: none !important; } }
+${reducedMotionCss(`.w-${NAME}`)}
 `;
 
 export default {
   name: 'ecosystem-project-navigator',
   css: CSS,
   mount(el, props = {}, ctx) {
-    const sfx = mounted++ ? `-${mounted}` : '';
-    const id = (s) => `${NAME}-${s}${sfx}`;
+    const id = idScope(NAME, ++mounted);
     el.classList.add(`w-${NAME}`);
     let current = props.start && ITEMS.some((i) => i.id === props.start) ? props.start : 'app';
 

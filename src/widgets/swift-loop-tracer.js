@@ -3,6 +3,8 @@
 // output change. Every trace is computed in JavaScript by simulating the exact
 // Swift program shown, so it needs no Swift engine.
 
+import { esc, idScope, highlightSwift } from './services-kit.js';
+
 const NAME = 'swift-loop-tracer';
 let instanceCount = 0;
 
@@ -216,68 +218,7 @@ const CHIP_LABELS = {
 
 const CHIP_ICONS = { used: 'checkmark', printed: 'checkmark', skipped: 'arrow.right', stopped: 'xmark' };
 
-const KEYWORDS = new Set(['var', 'let', 'for', 'in', 'while', 'if', 'else', 'continue', 'break', 'repeat', 'true', 'false']);
-
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-// Tiny Swift highlighter: keywords, strings (with \( ) interpolation), numbers, print.
-function highlight(code) {
-  let html = '';
-  let i = 0;
-  const n = code.length;
-  while (i < n) {
-    const c = code[i];
-    if (c === '"') {
-      let j = i + 1;
-      let buf = '"';
-      html += '<span class="lt-str">';
-      while (j < n && code[j] !== '"') {
-        if (code[j] === '\\' && code[j + 1] === '(') {
-          html += esc(buf) + '</span>\\(';
-          buf = '';
-          let depth = 1;
-          let k = j + 2;
-          while (k < n && depth > 0) {
-            if (code[k] === '(') depth += 1;
-            else if (code[k] === ')') depth -= 1;
-            if (depth > 0) k += 1;
-          }
-          html += highlight(code.slice(j + 2, k)) + ')<span class="lt-str">';
-          j = k + 1;
-          continue;
-        }
-        buf += code[j];
-        j += 1;
-      }
-      buf += '"';
-      html += esc(buf) + '</span>';
-      i = j + 1;
-      continue;
-    }
-    if (/[0-9]/.test(c)) {
-      let j = i;
-      while (j < n && /[0-9]/.test(code[j])) j += 1;
-      html += `<span class="lt-num">${code.slice(i, j)}</span>`;
-      i = j;
-      continue;
-    }
-    if (/[A-Za-z_]/.test(c)) {
-      let j = i;
-      while (j < n && /[A-Za-z0-9_]/.test(code[j])) j += 1;
-      const word = code.slice(i, j);
-      if (KEYWORDS.has(word)) html += `<span class="lt-kw">${word}</span>`;
-      else if (word === 'print') html += `<span class="lt-fn">${word}</span>`;
-      else html += word;
-      i = j;
-      continue;
-    }
-    html += esc(c);
-    i += 1;
-  }
-  return html;
-}
+const highlight = (code) => highlightSwift(code, { prefix: 'lt-' });
 
 export default {
   name: 'swift-loop-tracer',
@@ -435,7 +376,7 @@ export default {
   mount(el, props = {}, ctx = {}) {
     el.classList.add('w-' + NAME);
     instanceCount += 1;
-    const uid = `${NAME}-${instanceCount}`;
+    const id = idScope(NAME, instanceCount);
     const reduced = !!ctx.reducedMotion;
     const icon = (name, size = 16) => (ctx.icon ? ctx.icon(name, size) : '');
     const storage = ctx.storage || { get: (k, f) => f, set: () => false };
@@ -455,53 +396,53 @@ export default {
       <h3 class="lt-title">Loop tracer</h3>
       <p class="lt-sub">Run one line at a time. Watch the highlighted line, the variables and the output.</p>
     </div>
-    <fieldset class="lt-seg" id="${uid}-picker">
+    <fieldset class="lt-seg" id="${id('picker')}">
       <legend>Choose a loop to trace</legend>
-      ${LOOPS.map((l) => `<div><input type="radio" name="${uid}-loop" id="${uid}-loop-${l.id}" value="${l.id}"${l.id === loop.id ? ' checked' : ''}><label for="${uid}-loop-${l.id}"><span class="lt-long">${l.label}</span><span class="lt-short" aria-hidden="true">${l.short}</span></label></div>`).join('')}
+      ${LOOPS.map((l) => `<div><input type="radio" name="${id('loop')}" id="${id(`loop-${l.id}`)}" value="${l.id}"${l.id === loop.id ? ' checked' : ''}><label for="${id(`loop-${l.id}`)}"><span class="lt-long">${l.label}</span><span class="lt-short" aria-hidden="true">${l.short}</span></label></div>`).join('')}
     </fieldset>
   </div>
   <div class="lt-main">
     <div class="lt-left">
       <section class="lt-panel lt-code" aria-label="Swift code">
-        <div class="lt-cap"><span>Code</span><span id="${uid}-lineinfo"></span></div>
-        <ol class="lt-lines" id="${uid}-code" tabindex="0" aria-label="Code. The current line is highlighted. Use the Left and Right Arrow keys to step."></ol>
+        <div class="lt-cap"><span>Code</span><span id="${id('lineinfo')}"></span></div>
+        <ol class="lt-lines" id="${id('code')}" tabindex="0" aria-label="Code. The current line is highlighted. Use the Left and Right Arrow keys to step."></ol>
       </section>
-      <p class="lt-note" id="${uid}-note" aria-live="polite"></p>
+      <p class="lt-note" id="${id('note')}" aria-live="polite"></p>
     </div>
     <div class="lt-right">
       <section class="lt-panel lt-varsbox" aria-label="Variables">
         <div class="lt-cap"><span>Variables</span><span>after this step</span></div>
-        <table class="lt-vars" id="${uid}-vars">
+        <table class="lt-vars" id="${id('vars')}">
           <thead><tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Value</th></tr></thead>
           <tbody></tbody>
         </table>
       </section>
       <section class="lt-panel lt-progbox" aria-label="Loop progress">
-        <div class="lt-cap"><span id="${uid}-progcap">Loop progress</span><span id="${uid}-pass"></span></div>
-        <div class="lt-prog" id="${uid}-prog"></div>
+        <div class="lt-cap"><span id="${id('progcap')}">Loop progress</span><span id="${id('pass')}"></span></div>
+        <div class="lt-prog" id="${id('prog')}"></div>
       </section>
       <section class="lt-panel lt-out" aria-label="Output">
-        <div class="lt-cap"><span>Output</span><span id="${uid}-outcount"></span></div>
-        <ul class="lt-console" id="${uid}-out"></ul>
+        <div class="lt-cap"><span>Output</span><span id="${id('outcount')}"></span></div>
+        <ul class="lt-console" id="${id('out')}"></ul>
       </section>
     </div>
   </div>
   <div class="lt-controls">
     <div class="lt-btns">
-      <button type="button" class="lt-btn" id="${uid}-reset" aria-label="Reset to the start">${icon('arrow.clockwise')}<span class="lt-btxt">Reset</span></button>
-      <button type="button" class="lt-btn lt-grow" id="${uid}-back" aria-label="Step back">${icon('chevron.left')}<span>Back</span></button>
-      <button type="button" class="lt-btn is-primary lt-grow" id="${uid}-step" aria-label="Step forward one line"><span>Step</span>${icon('chevron.right')}</button>
-      <button type="button" class="lt-btn" id="${uid}-play"></button>
+      <button type="button" class="lt-btn" id="${id('reset')}" aria-label="Reset to the start">${icon('arrow.clockwise')}<span class="lt-btxt">Reset</span></button>
+      <button type="button" class="lt-btn lt-grow" id="${id('back')}" aria-label="Step back">${icon('chevron.left')}<span>Back</span></button>
+      <button type="button" class="lt-btn is-primary lt-grow" id="${id('step')}" aria-label="Step forward one line"><span>Step</span>${icon('chevron.right')}</button>
+      <button type="button" class="lt-btn" id="${id('play')}"></button>
     </div>
     <div class="lt-scrub">
-      <input type="range" id="${uid}-scrub" min="0" value="0" step="1" aria-label="Trace position">
-      <span class="lt-pos" id="${uid}-pos"></span>
+      <input type="range" id="${id('scrub')}" min="0" value="0" step="1" aria-label="Trace position">
+      <span class="lt-pos" id="${id('pos')}"></span>
     </div>
     <span class="lt-kbd">Arrow keys step</span>
   </div>
 </div>`;
 
-    const $ = (id) => el.querySelector(`#${uid}-${id}`);
+    const $ = (role) => el.querySelector(`#${id(role)}`);
     const codeEl = $('code');
     const noteEl = $('note');
     const varsBody = $('vars').querySelector('tbody');
@@ -661,7 +602,7 @@ export default {
       render(false);
     }
 
-    const onPick = (e) => { if (e.target.name === `${uid}-loop`) selectLoop(e.target.value); };
+    const onPick = (e) => { if (e.target.name === `${id('loop')}`) selectLoop(e.target.value); };
     const onReset = () => { stop(); go(0, false); };
     const onBack = () => { stop(); go(index - 1); };
     const onStep = () => { stop(); go(index + 1); };

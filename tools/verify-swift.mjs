@@ -5,23 +5,37 @@
 //   run:'swifttest'  -> type-checked for macOS (Swift Testing is available there)
 //   expectError:'x'  -> compilation must FAIL and the diagnostic must contain 'x'
 //   verify:'skip'    -> skipped (requires verifyReason)
+// Needs Xcode command line tools (xcrun) on macOS and exits 2 without them.
 // Usage: node tools/verify-swift.mjs [src/content/02-swift.js ...] [--only=lesson-id]
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
-import { pathToFileURL } from 'node:url';
+import { execFile, execFileSync } from 'node:child_process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONTENT_DIR = path.join(ROOT, 'src/content');
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'swiftverify-'));
-import { execFileSync } from 'node:child_process';
-const PLATFORM = {
-  macosx: execFileSync('xcrun', ['--sdk', 'macosx', '--show-sdk-platform-path'], { encoding: 'utf8' }).trim(),
-  iphonesimulator: execFileSync('xcrun', ['--sdk', 'iphonesimulator', '--show-sdk-platform-path'], { encoding: 'utf8' }).trim(),
-};
-const TOOLCHAIN = path.resolve(execFileSync('xcrun', ['--find', 'swiftc'], { encoding: 'utf8' }).trim(), '../..');
-const TESTING_PLUGINS = path.join(TOOLCHAIN, 'lib/swift/host/plugins/testing');
+export const XCRUN_MESSAGE = 'verify-swift requires Xcode command line tools (xcrun) on macOS';
+
+function xcrun(args) {
+  return execFileSync('xcrun', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 60_000 }).trim();
+}
+
+// Locates the SDK platform directories and the toolchain's Swift Testing macro
+// plugin. Returns null when xcrun is unavailable (not macOS, or no Xcode tools).
+export function detectToolchain() {
+  if (process.platform !== 'darwin') return null;
+  try {
+    const platform = {
+      macosx: xcrun(['--sdk', 'macosx', '--show-sdk-platform-path']),
+      iphonesimulator: xcrun(['--sdk', 'iphonesimulator', '--show-sdk-platform-path']),
+    };
+    const toolchain = path.resolve(xcrun(['--find', 'swiftc']), '../..');
+    return { platform, toolchain, testingPlugins: path.join(toolchain, 'lib/swift/host/plugins/testing') };
+  } catch {
+    return null;
+  }
+}
 
 function sh(cmd, args, timeout = 90000) {
   return new Promise((resolve) => {
@@ -33,8 +47,8 @@ function sh(cmd, args, timeout = 90000) {
 
 const joinLines = (lines) => lines.map((l) => l[0]).join('\n') + '\n';
 
-async function verifyUnit(unit) {
-  const file = path.join(TMP, `${unit.key.replace(/[^a-z0-9]+/gi, '_')}.swift`);
+async function verifyUnit(unit, tc, tmp) {
+  const file = path.join(tmp, `${unit.key.replace(/[^a-z0-9]+/gi, '_')}.swift`);
   const code = (unit.context ? unit.context + '\n' : '') + unit.code;
   fs.writeFileSync(file, code);
   let res;
@@ -51,10 +65,11 @@ async function verifyUnit(unit) {
   const lib = /@main\b/.test(code) ? ['-parse-as-library'] : [];
   // Swift Testing and XCTest live in the platform's Developer frameworks, and
   // the @Test / #expect macros need the TestingMacros compiler plugin.
+  const platformDir = tc.platform[ios ? 'iphonesimulator' : 'macosx'];
   const testing = /import (Testing|XCTest)/.test(code) ? [
-    '-F', `${PLATFORM[ios ? 'iphonesimulator' : 'macosx']}/Developer/Library/Frameworks`,
-    '-I', `${PLATFORM[ios ? 'iphonesimulator' : 'macosx']}/Developer/usr/lib`,
-    '-plugin-path', TESTING_PLUGINS,
+    '-F', `${platformDir}/Developer/Library/Frameworks`,
+    '-I', `${platformDir}/Developer/usr/lib`,
+    '-plugin-path', tc.testingPlugins,
   ] : [];
   const args = ios
     ? ['-sdk', 'iphonesimulator', 'swiftc', '-typecheck', ...lib, ...testing, '-target', 'arm64-apple-ios26.0-simulator', file]
@@ -98,7 +113,12 @@ async function pool(items, n, fn) {
   return out;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+async function main() {
+  const tc = detectToolchain();
+  if (!tc) {
+    console.error(XCRUN_MESSAGE);
+    return 2;
+  }
   const args = process.argv.slice(2);
   const only = args.find((a) => a.startsWith('--only='))?.slice(7);
   const files = args.filter((a) => !a.startsWith('--')).length
@@ -110,14 +130,22 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     units.push(...collectUnits(mod, path.basename(f)));
   }
   if (only) units = units.filter((u) => u.lesson === only);
-  const results = await pool(units, Math.max(2, os.cpus().length - 2), async (u) => (u.skip ? { ok: true, skipped: true } : verifyUnit(u)));
-  let fail = 0, skipped = 0;
-  units.forEach((u, i) => {
-    const r = results[i];
-    if (r.skipped) { skipped++; console.log(`SKIP ${u.tag} ${u.lesson} step ${u.step} "${u.title}": ${u.skip}`); return; }
-    if (!r.ok) { fail++; console.log(`\nFAIL ${u.tag} ${u.lesson} step ${u.step} "${u.title}" (${u.run})\n${r.why}\n`); }
-  });
-  console.log(`\n${units.length - fail - skipped}/${units.length} examples verified against the real Swift compiler, ${fail} failed, ${skipped} skipped.`);
-  fs.rmSync(TMP, { recursive: true, force: true });
-  process.exit(fail ? 1 : 0);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'swiftverify-'));
+  try {
+    const results = await pool(units, Math.max(2, os.cpus().length - 2), async (u) => (u.skip ? { ok: true, skipped: true } : verifyUnit(u, tc, tmp)));
+    let fail = 0, skipped = 0;
+    units.forEach((u, i) => {
+      const r = results[i];
+      if (r.skipped) { skipped++; console.log(`SKIP ${u.tag} ${u.lesson} step ${u.step} "${u.title}": ${u.skip}`); return; }
+      if (!r.ok) { fail++; console.log(`\nFAIL ${u.tag} ${u.lesson} step ${u.step} "${u.title}" (${u.run})\n${r.why}\n`); }
+    });
+    console.log(`\n${units.length - fail - skipped}/${units.length} examples verified against the real Swift compiler, ${fail} failed, ${skipped} skipped.`);
+    return fail ? 1 : 0;
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exitCode = await main();
 }

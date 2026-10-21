@@ -3,12 +3,13 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { run, runTests } from '../../src/engine/index.js';
 import { parse } from '../../src/engine/parser.js';
 import { tokenize } from '../../src/engine/lexer.js';
 import { formatDouble, describe as describeValue, Dbl, NIL, Opt, SArray, copyValue, equals, hashKey, compare } from '../../src/engine/values.js';
 
-const FIX = path.resolve('tests/fixtures');
+const FIX = fileURLToPath(new URL('../fixtures/', import.meta.url));
 
 describe('conformance with the real Swift compiler', () => {
   for (const f of fs.readdirSync(FIX).filter((x) => x.endsWith('.swift')).sort()) {
@@ -170,7 +171,7 @@ describe('lexer and parser', () => {
   });
   it('reports syntax errors with a line', () => {
     expect(() => parse('let x = (1 + \n')).toThrow();
-    try { parse('func f( {'); } catch (e) { expect(e.line).toBe(1); }
+    expect(() => parse('func f( {')).toThrow(expect.objectContaining({ line: 1 }));
   });
   it('parses SwiftUI trailing closures and modifiers', () => {
     const ast = parse('VStack {\n Text("a")\n}\n.padding()');
@@ -202,7 +203,7 @@ describe('value formatting', () => {
 });
 
 describe('beginner mistakes produce the same first error as swiftc', () => {
-  const DIAG = path.resolve('tests/diagnostics');
+  const DIAG = fileURLToPath(new URL('../diagnostics/', import.meta.url));
   for (const f of fs.readdirSync(DIAG).filter((x) => x.endsWith('.swift')).sort()) {
     it(f, async () => {
       const want = fs.readFileSync(path.join(DIAG, f.replace(/\.swift$/, '.err')), 'utf8').trim();
@@ -242,7 +243,8 @@ describe('review fixes: limits, values, captures', () => {
     const r = await run('let a = repeatElement(0, count: 1000000000)');
     expect(r.error?.message).toMatch(/out of range/);
     const p = await run('import Foundation\nprint("x".padding(toLength: 2, withPad: "", startingAt: 0))');
-    expect(p.error?.message).toMatch(/must not be empty/);
+    expect(p.error?.message).toMatch(/NSInvalidArgumentException.*nil or empty padString/);
+    expect(p.error?.kind).toBe('runtime');
   });
   it('coercion never changes the original value', async () => {
     const r = await run('let a = [1, 2]\nlet b: [Int?] = a\nprint(a)');

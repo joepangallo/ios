@@ -4,11 +4,11 @@
 // mode streams PartiallyGenerated snapshots that fill in field by field and
 // always satisfy the schema; plain mode streams prose that has to be parsed.
 // The responses are canned and deterministic; the page says so.
-import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idFor } from './services-kit.js';
+import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idScope } from './services-kit.js';
 
 const NAME = 'services-guided-gen';
 const S = `.w-${NAME}`;
-const id = (role) => idFor(NAME, role);
+const id = idScope(NAME);
 
 const PROMPTS = [
   {

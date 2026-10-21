@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 beforeAll(() => {
   globalThis.ResizeObserver = class { observe() {} disconnect() {} };
@@ -92,7 +92,8 @@ struct N: View {
   });
 });
 
-const DIR = path.resolve('src/content');
+// Under jsdom, relative URLs resolve against the fake document origin, so resolve with path instead.
+const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../src/content');
 for (const f of fs.readdirSync(DIR).filter((x) => /^\d\d-.*\.js$/.test(x)).sort()) {
   const mod = (await import(pathToFileURL(path.join(DIR, f)).href)).default;
   const units = [];
@@ -107,7 +108,11 @@ for (const f of fs.readdirSync(DIR).filter((x) => /^\d\d-.*\.js$/.test(x)).sort(
         const { root, errors, ctl } = mount(lines.map((l) => l[0]).join('\n'));
         await tick();
         expect(errors.map((e) => e.message)).toEqual([]);
-        expect(root.querySelector('.content')).toBeTruthy();
+        // The .content wrapper exists whatever the renderer does, so require the
+        // lesson's own views inside it: every view the renderer draws carries data-path.
+        const content = root.querySelector('.screen .content');
+        expect(content).toBeTruthy();
+        expect(content.querySelector('[data-path]')).toBeTruthy();
         ctl.destroy();
       });
     }

@@ -4,6 +4,8 @@ import { coreWidgets } from './core-widgets.js';
 import { renderStep } from './steps.js';
 import { createContext, storage, toast, loadSwiftCore } from './runtime.js';
 import { icon } from './icons.js';
+import { esc } from './highlight.js';
+import { createRunner } from './run-worker.js';
 import * as engine from '../engine/index.js';
 
 const KIND = {
@@ -39,11 +41,17 @@ let current = 0;
 let mounted = null;
 const storedVisited = storage.get('visited', []);
 const visited = new Set(Array.isArray(storedVisited) ? storedVisited.filter((x) => typeof x === 'string' && x.length < 120) : []);
-const runtime = createContext(engine);
+// Console programs, Swift Testing files and widget programs run in a Web
+// Worker with a wall-clock watchdog (run-worker.js). __WORKER_SOURCE__ is the
+// worker bundle, defined by tools/build.mjs; without it (unit tests) runs use
+// the main thread.
+/* global __WORKER_SOURCE__ */
+const runner = createRunner({ source: typeof __WORKER_SOURCE__ === 'string' ? __WORKER_SOURCE__ : '', fallback: engine });
+const runtime = createContext(engine, runner);
 const ctxBase = {
   widgets,
   runtime,
-  engine,
+  engine: { run: runner.run, runTests: runner.runTests, mountPreview: engine.mountPreview },
   storage,
   toast,
   scheme: () => (document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')),
@@ -74,7 +82,7 @@ app.innerHTML = `
   </main>
   <footer class="foot">
     <button type="button" class="nav-btn prev" aria-label="Previous step">${icon('arrow.left', 18)}<span class="nav-label"><small>Previous</small><span class="t"></span></span></button>
-    <div class="dots" role="tablist" aria-label="Steps in this lesson"></div>
+    <div class="dots" role="group" aria-label="Steps in this lesson"></div>
     <span class="key-hint"><kbd>←</kbd> <kbd>→</kbd> to move</span>
     <button type="button" class="nav-btn next" aria-label="Next step"><span class="nav-label"><small>Next</small><span class="t"></span></span>${icon('arrow.right', 18)}</button>
   </footer>`;
@@ -91,15 +99,15 @@ function drawRail() {
     const pct = mSteps.length ? Math.round((seen / mSteps.length) * 100) : 0;
     const isCur = cur.mi === mi;
     return `<div class="rail-mod ${isCur ? 'current' : ''} ${pct === 100 ? 'done' : ''}">
-      <button type="button" class="rail-mod-btn" data-go="${steps.indexOf(mSteps[0])}" aria-expanded="${isCur}" title="${m.title}">
+      <button type="button" class="rail-mod-btn" data-go="${steps.indexOf(mSteps[0])}" aria-expanded="${isCur}" title="${esc(m.title)}">
         <span class="mod-num">${String(m.number).padStart(2, '0')}</span>
-        <span class="mod-title">${m.short || m.title}<span class="mod-sub">${m.lessons.length} lessons</span></span>
-        <span class="mod-bar" aria-label="${pct}% visited"><i style="width:${pct}%"></i></span>
+        <span class="mod-title">${esc(m.short || m.title)}<span class="mod-sub">${m.lessons.length} lessons</span></span>
+        <span class="mod-bar" aria-hidden="true"><i style="width:${pct}%"></i></span><span class="sr-only"> ${pct}% visited</span>
       </button>
       ${isCur ? `<ul class="rail-lessons">${m.lessons.map((l, li) => {
         const ls = steps.filter((s) => s.mi === mi && s.li === li);
         const done = ls.every((s) => visited.has(s.id));
-        return `<li><button type="button" class="rail-lesson ${cur.li === li ? 'on' : ''}" data-go="${steps.indexOf(ls[0])}" ${cur.li === li ? 'aria-current="true"' : ''}>${l.title}${done ? `<span class="tick">${icon('checkmark', 14)}</span>` : ''}</button></li>`;
+        return `<li><button type="button" class="rail-lesson ${cur.li === li ? 'on' : ''}" data-go="${steps.indexOf(ls[0])}" ${cur.li === li ? 'aria-current="true"' : ''}>${esc(l.title)}${done ? `<span class="tick">${icon('checkmark', 14)}</span>` : ''}</button></li>`;
       }).join('')}</ul>` : ''}
     </div>`;
   }).join('') + `<p class="rail-foot">Every code line is explained: who, what, where, when, and why. Click a line to read its note.</p>`;
@@ -108,13 +116,14 @@ rail.addEventListener('click', (e) => {
   const b = e.target.closest('[data-go]');
   if (!b) return;
   go(Number(b.dataset.go));
-  if (matchMedia('(max-width: 820px)').matches) app.classList.remove('rail-open');
+  if (overlayRail.matches) { app.classList.remove('rail-open'); syncRail(); }
 });
 
 // ------------------------------------------------------------------ navigation
 function go(i, { focus = true, replace = false } = {}) {
   i = Math.max(0, Math.min(steps.length - 1, i));
   if (mounted && mounted.destroy) mounted.destroy();
+  runner.cancelAll(); // a program still running on the step being left is terminated
   current = i;
   const s = steps[i];
   visited.add(s.id);
@@ -137,7 +146,7 @@ function go(i, { focus = true, replace = false } = {}) {
   $('.prev .t').textContent = prev ? prev.step.title : '';
   $('.next').disabled = !next;
   $('.next .t').textContent = next ? (next.li !== s.li ? `Lesson: ${next.lesson.title}` : next.step.title) : 'You finished the course';
-  $('.dots').innerHTML = lessonSteps.map((x) => `<button type="button" role="tab" class="dot-btn ${x === s ? 'on' : ''} ${visited.has(x.id) ? 'seen' : ''}" data-go="${steps.indexOf(x)}" aria-label="Step ${x.si + 1}: ${x.step.title.replace(/"/g, '&quot;')}" aria-selected="${x === s}"></button>`).join('');
+  $('.dots').innerHTML = lessonSteps.map((x) => `<button type="button" class="dot-btn ${x === s ? 'on' : ''} ${visited.has(x.id) ? 'seen' : ''}" data-go="${steps.indexOf(x)}" aria-label="Step ${x.si + 1}: ${esc(x.step.title)}" ${x === s ? 'aria-current="step"' : ''}></button>`).join('');
   drawRail();
   updateProgress();
   const body = $('#stage-body');
@@ -169,16 +178,32 @@ window.addEventListener('popstate', () => {
 });
 
 // ------------------------------------------------------------------ chrome controls
+// Up to 1080px the rail is icon-only and `rail-open` widens it; up to 820px it
+// becomes an off-screen drawer. A closed drawer is translated away by CSS but
+// must also be `inert`, or its buttons stay in the Tab order and are read aloud.
+const compactRail = matchMedia('(max-width: 1080px)');
+const overlayRail = matchMedia('(max-width: 820px)');
+function syncRail() {
+  const open = app.classList.contains('rail-open');
+  const expanded = compactRail.matches ? open : !app.classList.contains('rail-collapsed');
+  $('.rail-toggle').setAttribute('aria-expanded', String(expanded));
+  rail.toggleAttribute('inert', overlayRail.matches && !open);
+}
 $('.rail-toggle').addEventListener('click', () => {
-  const narrow = matchMedia('(max-width: 1080px)').matches;
-  if (narrow) app.classList.toggle('rail-open');
+  if (compactRail.matches) app.classList.toggle('rail-open');
   else {
     app.classList.toggle('rail-collapsed');
     storage.set('railCollapsed', app.classList.contains('rail-collapsed'));
   }
-  $('.rail-toggle').setAttribute('aria-expanded', String(narrow ? app.classList.contains('rail-open') : !app.classList.contains('rail-collapsed')));
+  syncRail();
+  if (overlayRail.matches && app.classList.contains('rail-open')) {
+    const first = rail.querySelector('.rail-lesson.on') || rail.querySelector('[data-go]');
+    if (first) first.focus({ preventScroll: true });
+  }
 });
 if (storage.get('railCollapsed', false) === true) app.classList.add('rail-collapsed');
+for (const mq of [compactRail, overlayRail]) if (mq.addEventListener) mq.addEventListener('change', syncRail);
+syncRail();
 
 const THEMES = ['system', 'light', 'dark'];
 function applyTheme(t) {
@@ -205,36 +230,96 @@ loadSwiftCore().then((core) => {
   pill.querySelector('.label').textContent = core ? 'Swift + WASM ready' : 'Swift ready';
 });
 
-// ------------------------------------------------------------------ search palette
-function openPalette() {
+// ------------------------------------------------------------------ modal dialogs
+// One modal at a time: aria-modal, Tab/Shift+Tab cycle inside, Escape closes,
+// and focus returns to whatever opened it. `html` must start with the
+// role="dialog" element.
+let overlay = null;
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+function openDialog(html, { onKey } = {}) {
+  if (overlay) overlay.close();
+  const opener = document.activeElement;
   const bg = document.createElement('div');
   bg.className = 'overlay-bg';
-  bg.innerHTML = `<div class="palette" role="dialog" aria-label="Jump to a lesson or step"><input type="search" placeholder="Search lessons and steps…" aria-label="Search"><ul role="listbox"></ul></div>`;
+  bg.innerHTML = html;
+  const dialog = bg.firstElementChild;
+  dialog.setAttribute('aria-modal', 'true');
+  if (!dialog.hasAttribute('tabindex')) dialog.tabIndex = -1;
   document.body.appendChild(bg);
-  const input = bg.querySelector('input');
-  const list = bg.querySelector('ul');
+  const focusables = () => [...dialog.querySelectorAll(FOCUSABLE)].filter((x) => !x.closest('[hidden]'));
+  const api = {
+    bg,
+    dialog,
+    close() {
+      if (overlay !== api) return;
+      overlay = null;
+      document.removeEventListener('keydown', onKeyCapture, true);
+      bg.remove();
+      if (opener && opener.isConnected && opener !== document.body && typeof opener.focus === 'function') opener.focus({ preventScroll: true });
+    },
+  };
+  const onKeyCapture = (e) => {
+    if (e.key === 'Tab') {
+      const f = focusables();
+      if (!f.length) { e.preventDefault(); dialog.focus(); return; }
+      const active = document.activeElement;
+      const inside = active !== dialog && dialog.contains(active);
+      if (!inside) { e.preventDefault(); (e.shiftKey ? f[f.length - 1] : f[0]).focus(); }
+      else if (e.shiftKey && active === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && active === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+      return;
+    }
+    if (e.key === 'Escape') { e.preventDefault(); api.close(); return; }
+    if (onKey) onKey(e);
+  };
+  document.addEventListener('keydown', onKeyCapture, true);
+  bg.addEventListener('click', (e) => { if (e.target === bg) api.close(); });
+  overlay = api;
+  return api;
+}
+
+// ------------------------------------------------------------------ search palette
+function openPalette() {
   let sel = 0, results = [];
+  // `sel` is the highlighted result: the one Enter opens. It follows keyboard
+  // focus (Tab or the arrows onto a result), so Enter on a focused result opens
+  // that result.
+  const options = () => [...list.querySelectorAll('[role="option"]')];
+  const select = (k, { focus = false } = {}) => {
+    const all = options();
+    if (!all.length) return;
+    sel = Math.max(0, Math.min(all.length - 1, k));
+    all.forEach((o, n) => o.setAttribute('aria-selected', String(n === sel)));
+    if (focus) all[sel].focus({ preventScroll: true });
+    all[sel].scrollIntoView({ block: 'nearest' });
+  };
+  const { dialog, close } = openDialog(`<div class="palette" role="dialog" aria-label="Jump to a lesson or step"><input type="search" placeholder="Search lessons and steps…" aria-label="Search"><ul role="listbox"></ul></div>`, {
+    onKey: (e) => {
+      // with focus on a result, the arrows move focus too (a redraw would drop it)
+      const onOption = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('[role="option"]'));
+      if (e.key === 'ArrowDown') { e.preventDefault(); select(sel + 1, { focus: onOption }); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); select(sel - 1, { focus: onOption }); }
+      if (e.key === 'Enter' && results[sel]) { e.preventDefault(); close(); go(results[sel].i); }
+    },
+  });
+  const input = dialog.querySelector('input');
+  const list = dialog.querySelector('ul');
+  dialog.addEventListener('focusin', (e) => {
+    const k = options().indexOf(e.target.closest('[role="option"]'));
+    if (k >= 0 && k !== sel) select(k);
+  });
   const draw = () => {
     const q = input.value.trim().toLowerCase();
     results = steps.map((s, i) => ({ s, i, hay: `${s.step.title} ${s.lesson.title} ${s.module.title}`.toLowerCase() }))
       .filter((r) => !q || q.split(/\s+/).every((w) => r.hay.includes(w)))
       .slice(0, 40);
     sel = Math.min(sel, Math.max(0, results.length - 1));
-    list.innerHTML = results.map((r, k) => `<li><button type="button" role="option" aria-selected="${k === sel}" data-i="${r.i}"><span class="mod-num">${String(r.s.module.number).padStart(2, '0')}</span><span class="p-title">${r.s.step.title}<span class="p-where">${r.s.lesson.title}</span></span><span class="p-kind">${(KIND[r.s.step.kind] || [])[1] || ''}</span></button></li>`).join('') || '<li class="muted" style="padding:12px">No matches.</li>';
+    list.innerHTML = results.map((r, k) => `<li><button type="button" role="option" aria-selected="${k === sel}" data-i="${r.i}"><span class="mod-num">${String(r.s.module.number).padStart(2, '0')}</span><span class="p-title">${esc(r.s.step.title)}<span class="p-where">${esc(r.s.lesson.title)}</span></span><span class="p-kind">${(KIND[r.s.step.kind] || [])[1] || ''}</span></button></li>`).join('') || '<li class="muted" style="padding:12px">No matches.</li>';
   };
-  const close = () => { bg.remove(); document.removeEventListener('keydown', onKey, true); };
-  const onKey = (e) => {
-    if (e.key === 'Escape') { e.preventDefault(); close(); }
-    if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(results.length - 1, sel + 1); draw(); }
-    if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(0, sel - 1); draw(); }
-    if (e.key === 'Enter' && results[sel]) { e.preventDefault(); close(); go(results[sel].i); }
-  };
-  document.addEventListener('keydown', onKey, true);
   input.addEventListener('input', () => { sel = 0; draw(); });
-  bg.addEventListener('click', (e) => {
+  dialog.addEventListener('click', (e) => {
     const b = e.target.closest('[data-i]');
-    if (b) { close(); go(Number(b.dataset.i)); return; }
-    if (e.target === bg) close();
+    if (b) { close(); go(Number(b.dataset.i)); }
   });
   draw();
   input.focus();
@@ -242,30 +327,32 @@ function openPalette() {
 $('.search-btn').addEventListener('click', openPalette);
 
 function openShortcuts() {
-  const bg = document.createElement('div');
-  bg.className = 'overlay-bg';
-  bg.innerHTML = `<div class="shortcuts" role="dialog" aria-label="Keyboard shortcuts"><h2>Keyboard shortcuts</h2><dl>
+  const { dialog, close } = openDialog(`<div class="shortcuts" role="dialog" aria-labelledby="shortcuts-title"><h2 id="shortcuts-title">Keyboard shortcuts</h2><dl>
     <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Previous or next step</dd>
     <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Explain the previous or next code line</dd>
     <dt><kbd>⌘</kbd> <kbd>Return</kbd></dt><dd>Run the code in the editor</dd>
     <dt><kbd>Esc</kbd></dt><dd>Leave the editor so the arrow keys move between steps</dd>
     <dt><kbd>⌘</kbd> <kbd>K</kbd> or <kbd>/</kbd></dt><dd>Jump to any lesson or step</dd>
     <dt><kbd>?</kbd></dt><dd>Show this list</dd>
-  </dl><p class="muted small" style="margin:14px 0 0">On Windows and Linux use Ctrl instead of ⌘.</p></div>`;
-  document.body.appendChild(bg);
-  const close = () => { bg.remove(); document.removeEventListener('keydown', onKey, true); };
-  const onKey = (e) => { if (e.key === 'Escape' || e.key === '?') { e.preventDefault(); close(); } };
-  document.addEventListener('keydown', onKey, true);
-  bg.addEventListener('click', (e) => { if (e.target === bg) close(); });
+  </dl><p class="muted small" style="margin:14px 0 0">On Windows and Linux use Ctrl instead of ⌘.</p>
+  <div class="dialog-foot"><button type="button" class="btn ghost dialog-close">Close</button></div></div>`, {
+    onKey: (e) => { if (e.key === '?') { e.preventDefault(); close(); } },
+  });
+  dialog.querySelector('.dialog-close').addEventListener('click', close);
+  dialog.focus();
 }
 $('.help-btn').addEventListener('click', openShortcuts);
 
 // ------------------------------------------------------------------ keyboard
 document.addEventListener('keydown', (e) => {
+  if (overlay) return; // the open dialog owns the keyboard (its own capture-phase handler)
   const t = e.target;
   const typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || (t.shadowRoot && t.shadowRoot.activeElement));
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); return; }
   if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'Escape' && overlayRail.matches && app.classList.contains('rail-open')) { app.classList.remove('rail-open'); syncRail(); $('.rail-toggle').focus(); return; }
+  // Holding an arrow key auto-repeats; each step mounts (and may compile), so only the first press moves.
+  if (e.repeat && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { e.preventDefault(); return; }
   if (e.key === 'ArrowRight') { e.preventDefault(); go(current + 1); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); go(current - 1); }
   else if (e.key === 'ArrowDown' && mounted && mounted.lineDown) { e.preventDefault(); mounted.lineDown(); }
@@ -279,4 +366,4 @@ const fromHash = indexById.get(location.hash.slice(1));
 const last = storage.get('last', '');
 const fromStore = typeof last === 'string' ? indexById.get(last) : undefined;
 go(fromHash ?? fromStore ?? 0, { focus: false, replace: true });
-window.__course = { steps, go, engine };
+window.__course = { steps, go, engine, runner };

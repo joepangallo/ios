@@ -2,6 +2,8 @@
 // that fits, and get feedback naming the framework and explaining why the
 // tempting alternative falls short.
 
+import { esc, idScope, reducedMotionCss } from './services-kit.js';
+
 const NAME = 'ecosystem-app-type-matcher';
 let mounted = 0;
 
@@ -81,7 +83,6 @@ const SCENARIOS = [
   },
 ];
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const shuffle = (a) => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
 
 const CSS = `
@@ -135,15 +136,14 @@ const CSS = `
   .w-${NAME} .answered .opts { display: none; }
   .w-${NAME} .opts button { font-size: 11.5px; padding: 5px 7px; gap: 6px; }
 }
-@media (prefers-reduced-motion: reduce) { .w-${NAME} *, .w-${NAME} *::before, .w-${NAME} *::after { transition: none !important; animation: none !important; } }
+${reducedMotionCss(`.w-${NAME}`)}
 `;
 
 export default {
   name: 'ecosystem-app-type-matcher',
   css: CSS,
   mount(el, props = {}, ctx) {
-    const sfx = mounted++ ? `-${mounted}` : '';
-    const id = (s) => `${NAME}-${s}${sfx}`;
+    const id = idScope(NAME, ++mounted);
     el.classList.add(`w-${NAME}`);
     const icon = (n, s = 20) => (ctx && ctx.icon ? ctx.icon(n, s) : '');
     let order = shuffle(SCENARIOS.map((_, i) => i));

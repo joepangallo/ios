@@ -5,6 +5,8 @@
 // and an eager VStack that builds every row before the first frame (a hang).
 // Numbers are illustrative, not measurements.
 
+import { esc, reducedMotionCss, phoneFrameCss, highlightSwift } from './services-kit.js';
+
 const NAME = 'shipping-frame-budget';
 let uid = 0;
 
@@ -75,16 +77,7 @@ const PROBLEMS = {
   },
 };
 
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function hl(code) {
-  return code.split(/("(?:[^"\\]|\\.)*")/).map((p, i) => (i % 2 ? `<span class="t-str">${esc(p)}</span>` : esc(p)
-    .replace(/\b(let|await)\b/g, '<span class="t-kw">$1</span>')
-    .replace(/\.(task)\b/g, '.<span class="t-attr">$1</span>')
-    .replace(/\b([A-Z][A-Za-z]+)\b/g, '<span class="t-type">$1</span>'))).join('');
-}
+const hl = (code) => highlightSwift(code, { prefix: 't-' });
 
 export default {
   name: 'shipping-frame-budget',
@@ -95,7 +88,8 @@ export default {
 .w-shipping-frame-budget .fb-title { margin:0; font:600 16px/1.25 var(--font-display); }
 .w-shipping-frame-budget .fb-sub { margin:2px 0 0; color:var(--ink-2); font-size:12.5px; }
 .w-shipping-frame-budget .fb-main { flex:1; min-height:0; display:grid; grid-template-columns:184px minmax(0,1fr); gap:14px; }
-.w-shipping-frame-budget .fb-phone { position:relative; height:100%; max-height:400px; align-self:start; border-radius:28px; border:7px solid #1c1c1e; background:#F2F2F7; overflow:hidden; box-shadow:0 0 0 1px var(--line), var(--shadow); font:11px/1.3 -apple-system, system-ui, sans-serif; color:#000; }
+${phoneFrameCss('.w-shipping-frame-budget', { frame: '.fb-phone', bezel: 'border', radius: '28px' })}
+.w-shipping-frame-budget .fb-phone { height:100%; max-height:400px; align-self:start; background:#F2F2F7; font:11px/1.3 -apple-system, system-ui, sans-serif; color:#000; }
 .w-shipping-frame-budget .fb-bar { position:relative; z-index:1; display:flex; justify-content:space-between; padding:6px 14px 4px; font-size:10px; font-weight:600; background:#F2F2F7; }
 .w-shipping-frame-budget .fb-navt { position:relative; z-index:1; margin:0; padding:0 12px 6px; font-size:18px; font-weight:700; background:#F2F2F7; }
 .w-shipping-frame-budget .fb-list { padding:0 9px; display:flex; flex-direction:column; gap:7px; will-change:transform; }
@@ -160,7 +154,7 @@ export default {
 .w-shipping-frame-budget .t-type { color:var(--type); }
 .w-shipping-frame-budget .t-attr { color:var(--attr); }
 .w-shipping-frame-budget .fb-note { color:var(--ink-3); font-size:10.5px; font-weight:600; letter-spacing:0; text-transform:none; }
-.w-shipping-frame-budget.still * { transition:none !important; }
+${reducedMotionCss('.w-shipping-frame-budget', { still: 'still' })}
 @media (max-width:560px) {
   .w-shipping-frame-budget .fb-main { grid-template-columns:minmax(0,1fr); }
   .w-shipping-frame-budget .fb-phone { display:none; }

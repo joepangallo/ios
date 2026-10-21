@@ -2,6 +2,9 @@
 // the SQLite file (middle), and the @Query the view declares (right). It
 // shows that inserts, edits and deletes live in the ModelContext until a
 // save writes them to disk, while @Query reads through the context.
+
+import { esc, iosThemeCss, highlightSwift } from './services-kit.js';
+
 const W = 'data-swiftdata-sim';
 
 const SORTS = {
@@ -18,44 +21,18 @@ const SEED = [
   { title: 'Plan weekend hike', isDone: false, priority: 2, createdAt: 783015985.0 },
 ];
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const fold = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 const swiftString = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 const fmtDate = (t) => t.toFixed(1);
 
-// Minimal Swift highlighter for the generated @Query code.
-function highlight(code) {
-  const out = [];
-  const re = /("(?:\\.|[^"\\])*")|(@\w+|#\w+)|\b(private|var|let|in)\b|\b(TaskItem|Bool|String|Int|Date)\b|(\.\w+)|(\\\w+)/g;
-  let last = 0, m;
-  while ((m = re.exec(code))) {
-    out.push(esc(code.slice(last, m.index)));
-    const t = esc(m[0]);
-    if (m[1]) out.push(`<span class="str">${t}</span>`);
-    else if (m[2]) out.push(`<span class="attr">${t}</span>`);
-    else if (m[3]) out.push(`<span class="kw">${t}</span>`);
-    else if (m[4]) out.push(`<span class="type">${t}</span>`);
-    else if (m[5]) out.push(`<span class="fn">${t}</span>`);
-    else out.push(`<span class="type">${t}</span>`);
-    last = re.lastIndex;
-  }
-  out.push(esc(code.slice(last)));
-  return out.join('');
-}
+const highlight = (code) => highlightSwift(code, { prefix: '' });
 
 export default {
   name: 'data-swiftdata-sim',
   css: `
+${iosThemeCss(`.w-${W}`, { light: { 'ios-bg': '#F2F2F7', 'ios-sep': '#C6C6C8', 'ios-tint': '#007AFF', 'ios-fill': '#E5E5EA' }, dark: { 'ios-sep': '#38383A', 'ios-tint': '#0A84FF', 'ios-fill': '#2C2C2E' } })}
 .w-${W} { height: 100%; box-sizing: border-box; container-type: inline-size; overflow: hidden;
-  font: 14px/1.45 var(--font-ui); color: var(--ink);
-  --ios-bg: #F2F2F7; --ios-cell: #FFFFFF; --ios-label: #000000; --ios-secondary: #8E8E93;
-  --ios-sep: #C6C6C8; --ios-tint: #007AFF; --ios-fill: #E5E5EA; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .w-${W} {
-  --ios-bg: #000000; --ios-cell: #1C1C1E; --ios-label: #FFFFFF; --ios-secondary: #8E8E93;
-  --ios-sep: #38383A; --ios-tint: #0A84FF; --ios-fill: #2C2C2E; } }
-:root[data-theme="dark"] .w-${W} {
-  --ios-bg: #000000; --ios-cell: #1C1C1E; --ios-label: #FFFFFF; --ios-secondary: #8E8E93;
-  --ios-sep: #38383A; --ios-tint: #0A84FF; --ios-fill: #2C2C2E; }
+  font: 14px/1.45 var(--font-ui); color: var(--ink); }
 .w-${W} *, .w-${W} *::before, .w-${W} *::after { box-sizing: border-box; }
 .w-${W} .sds { height: 100%; display: grid; gap: 10px; padding: 12px;
   grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr) minmax(0, 1.2fr);

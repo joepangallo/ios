@@ -4,11 +4,11 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { run, runTests } from '../../src/engine/index.js';
 import { testResultProblems } from '../../tools/check-test-results.mjs';
 
-const DIR = path.resolve('src/content');
+const DIR = fileURLToPath(new URL('../../src/content/', import.meta.url));
 const files = fs.readdirSync(DIR).filter((f) => /^\d\d-.*\.js$/.test(f)).sort();
 for (const f of files) {
   const mod = (await import(pathToFileURL(path.join(DIR, f)).href)).default;

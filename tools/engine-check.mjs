@@ -5,10 +5,10 @@
 // Usage: node tools/engine-check.mjs [src/content/02-swift.js ...] [--verbose]
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { run } from '../src/engine/index.js';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const verbose = args.includes('--verbose');
 const files = args.filter((a) => !a.startsWith('--')).length

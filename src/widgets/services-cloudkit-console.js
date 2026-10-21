@@ -3,11 +3,11 @@
 // current iCloud user's PRIVATE database and in the app's shared PUBLIC
 // database. Switching the signed-in user, signing out, or going offline shows
 // the isolation rules and the CKError paths a real app must handle.
-import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idFor } from './services-kit.js';
+import { esc, codeHtml, codeCss, phoneHtml, phoneCss, panelCss, idScope } from './services-kit.js';
 
 const NAME = 'services-cloudkit-console';
 const S = `.w-${NAME}`;
-const id = (role) => idFor(NAME, role);
+const id = idScope(NAME);
 
 const CODE = {
   save: [

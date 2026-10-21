@@ -5,6 +5,8 @@
 // announced by their file names, every star is its own stop, and a colored
 // Circle is skipped entirely because a shape has no accessibility element.
 
+import { esc, idScope, snapshotHost, iosThemeCss, phoneFrameCss } from './services-kit.js';
+
 const NAME = 'design-voiceover-sim';
 let instances = 0;
 
@@ -86,27 +88,10 @@ const TRAIT_WORD = { image: 'image', button: 'button', heading: 'heading' };
 export default {
   name: 'design-voiceover-sim',
   css: `
+${iosThemeCss('.w-design-voiceover-sim')}
 .w-design-voiceover-sim {
-  --ios-bg:#FFFFFF; --ios-grouped:#F2F2F7; --ios-cell:#FFFFFF; --ios-label:#000000;
-  --ios-label-2:rgba(60,60,67,.6); --ios-label-3:rgba(60,60,67,.3);
-  --ios-sep:rgba(60,60,67,.29); --ios-fill:rgba(120,120,128,.16); --ios-blue:#007AFF;
-  --ios-red:#FF3B30; --ios-green:#34C759; --ios-orange:#FF9500;
   box-sizing:border-box; height:100%; width:100%; container-type:inline-size; min-height:0;
   font-family:var(--font-ui); color:var(--ink);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .w-design-voiceover-sim {
-    --ios-bg:#000000; --ios-grouped:#000000; --ios-cell:#1C1C1E; --ios-label:#FFFFFF;
-    --ios-label-2:rgba(235,235,245,.6); --ios-label-3:rgba(235,235,245,.3);
-    --ios-sep:rgba(84,84,88,.6); --ios-fill:rgba(120,120,128,.32); --ios-blue:#0A84FF;
-    --ios-red:#FF453A; --ios-green:#30D158; --ios-orange:#FF9F0A;
-  }
-}
-:root[data-theme="dark"] .w-design-voiceover-sim {
-  --ios-bg:#000000; --ios-grouped:#000000; --ios-cell:#1C1C1E; --ios-label:#FFFFFF;
-  --ios-label-2:rgba(235,235,245,.6); --ios-label-3:rgba(235,235,245,.3);
-  --ios-sep:rgba(84,84,88,.6); --ios-fill:rgba(120,120,128,.32); --ios-blue:#0A84FF;
-  --ios-red:#FF453A; --ios-green:#30D158; --ios-orange:#FF9F0A;
 }
 .w-design-voiceover-sim * { box-sizing:border-box; }
 .w-design-voiceover-sim .vo-root { height:100%; display:grid; gap:8px; padding:10px; min-height:0;
@@ -114,7 +99,8 @@ export default {
 
 /* ---------- phone ---------- */
 .w-design-voiceover-sim .vo-phonewrap { min-height:0; display:flex; justify-content:center; }
-.w-design-voiceover-sim .vo-phone { width:100%; max-width:330px; background:#1d1d1f; border-radius:26px; padding:6px; box-shadow:var(--shadow); }
+${phoneFrameCss('.w-design-voiceover-sim', { frame: '.vo-phone', radius: '26px', pad: '6px' })}
+.w-design-voiceover-sim .vo-phone { width:100%; max-width:330px; }
 .w-design-voiceover-sim .vo-screen { position:relative; border-radius:20px; overflow:hidden; background:var(--ios-bg); color:var(--ios-label);
   font-family:-apple-system, "SF Pro Text", system-ui, sans-serif; display:flex; flex-direction:column; outline:none; cursor:default; }
 .w-design-voiceover-sim .vo-screen:focus-visible { outline:2px solid var(--focus); outline-offset:4px; }
@@ -239,7 +225,7 @@ export default {
   .w-design-voiceover-sim .vo-phone { height:100%; max-height:500px; max-width:250px; }
   .w-design-voiceover-sim .vo-screen { height:100%; }
   .w-design-voiceover-sim .vo-status { display:flex; height:30px; flex:none; align-items:flex-end; justify-content:space-between; padding:0 16px 2px 22px; font-size:10.5px; font-weight:600; position:relative; }
-  .w-design-voiceover-sim .vo-island { position:absolute; top:8px; left:50%; transform:translateX(-50%); width:30%; height:14px; border-radius:8px; background:#000; }
+  ${phoneFrameCss('.w-design-voiceover-sim', { island: '.vo-island', home: '.vo-home', islandTop: '8px', islandWidth: '30%', islandHeight: '14px', islandRadius: '8px' })}
   .w-design-voiceover-sim .vo-photo { height:150px; margin:6px 10px 0; }
   .w-design-voiceover-sim .vo-divider { margin-top:12px; }
   .w-design-voiceover-sim .vo-title { margin-top:8px; font-size:19px; }
@@ -247,15 +233,15 @@ export default {
   .w-design-voiceover-sim .vo-actions { margin-top:16px; }
   .w-design-voiceover-sim .vo-caption { display:block; position:absolute; left:8px; right:8px; bottom:16px; background:rgba(28,28,30,.92); color:#fff; border-radius:10px; padding:6px 9px; font-size:10.5px; line-height:1.35; min-height:2.8em; }
   .w-design-voiceover-sim .vo-caption[hidden] { display:none; }
-  .w-design-voiceover-sim .vo-home { position:absolute; bottom:5px; left:50%; transform:translateX(-50%); width:34%; height:4px; border-radius:3px; background:var(--ios-label); opacity:.85; }
   .w-design-voiceover-sim .vo-panel { display:flex; flex-direction:column; gap:9px; min-width:0; min-height:0; justify-content:center; }
   .w-design-voiceover-sim .vo-said { font-size:17px; }
 }
 `,
   mount(el, props, ctx) {
     const n = ++instances;
-    const id = (f) => (n === 1 ? `${NAME}-${f}` : `${NAME}-${f}-${n}`);
+    const id = idScope(NAME, n);
     const icon = (name, size = 16, label = '') => ctx.icon(name, size, label);
+    const restoreHost = snapshotHost(el);
     el.classList.add(`w-${NAME}`);
     if (ctx.reducedMotion) el.classList.add('vo-still');
 
@@ -377,8 +363,6 @@ export default {
       cursor.style.width = `${r.width + pad * 2}px`;
       cursor.style.height = `${r.height + pad * 2}px`;
     }
-
-    const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
     function renderNote(info) {
       const ic = info.tone === 'bad' ? 'xmark.circle.fill' : info.tone === 'warn' ? 'exclamationmark.triangle.fill' : 'checkmark.circle.fill';
@@ -561,6 +545,7 @@ export default {
         btnSpeak.removeEventListener('click', speakNow);
         auto.removeEventListener('change', onAuto);
         el.innerHTML = '';
+        restoreHost();
       },
     };
   },
