@@ -2,6 +2,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['tests/unit/**/*.test.js'],
+    // src/generated/registry.js is gitignored; write it before any test imports the app shell.
+    globalSetup: ['tools/registry.mjs'],
     testTimeout: 60000,
     coverage: {
       provider: 'v8',
