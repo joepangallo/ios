@@ -4,6 +4,91 @@
 const R = String.raw;
 const n = (who, what, where, when, why) => ({ who, what, where, when, why });
 
+// Five-part notes shared by the worked examples at the end of this module:
+// the same line appears in many frames, so its note is written once here.
+const WJ_CITY_BAD = n("Your code, naming the place to look up.", "Stores the city name with a spelling mistake in it.", "The first line of the program, before the URL is built.", "First, before any request work happens in this program.", "Starting with the users own typed text is where this failure begins.");
+const WJ_URL = n("Your code, building the address as a string.", "Builds the full request URL by inserting the city into the query part.", "The second line, using the city value declared above it.", "After the city exists and before the request is described.", "A weather request names its place in the URL, as the module lessons showed.");
+const WJ_PRINT_URL = n("The print function from the Swift standard library.", "Prints the URL line so the journey can be followed in the console.", "In the output section, after the values it prints exist.", "After the URL is built, as the first printed line.", "Printing each stage makes the request journey visible step by step.");
+const WJ_METHOD = n("Your code, choosing the HTTP method.", "Stores the method GET, because this request only reads data.", "With the other request facts, above the prints that use it.", "While the request is being described, before transport runs.", "GET is the safe, idempotent read method from the HTTP lesson.");
+const WJ_PRINT_REQ = n("The print function from the Swift standard library.", "Prints the request line: the method followed by the full URL.", "In the output section, after the URL line is printed.", "After the request is described, before transport runs.", "Method plus URL is the whole first line of an HTTP request.");
+const WJ_STATUS_BAD = n("Your model of the server reply, standing in for transport.", "Stores the canned status code 404, the city was not found.", "With the reply facts, after the request description lines.", "When the canned response arrives in this program.", "A 404 is delivered news, not a thrown error, so the code must check it.");
+const WJ_BODY_BAD = n("Your model of the server, supplying a canned body.", "Stores the error JSON body that came back with the 404.", "Beside the status value that describes the same reply.", "When the canned response arrives in this program.", "Error replies carry a body too; reading it explains the failure.");
+const WJ_PRINT_STATUS = n("The print function from the Swift standard library.", "Prints the status code that the canned transport delivered.", "In the output section, after the reply values exist.", "After the response arrives, before any decoding happens.", "The status decides whether decoding is even worth trying.");
+const WJ_PRINT_BODY = n("The print function from the Swift standard library.", "Prints the raw body text exactly as the server sent it.", "In the output section, right after the status line.", "After the response arrives, while it is still undecoded text.", "Seeing the raw body separates transport problems from decoding problems.");
+const WJ_IF404 = n("Your code, reacting to the status check result.", "Opens the failure branch that runs only when the status is 404.", "After the status print, wrapping the fallback line below.", "When a response has arrived and its status was checked.", "Friendly failure handling is planned code, not an afterthought.");
+const WJ_FALLBACK = n("The print function, inside the failure branch.", "Prints a friendly fallback naming the city that was not found.", "Inside the 404 branch, indented under its condition.", "Only when the status is 404, instead of decoding.", "The user gets a sentence they can act on, not a raw error body.");
+const WJ_CITY_GOOD = n("Your code, naming the place to look up.", "Stores the correctly spelled city name, Lisbon.", "The first line of the program, before the URL is built.", "First, before any request work happens in this program.", "The repair in this example is this one corrected spelling.");
+const WJ_STATUS_OK = n("Your model of the server reply, standing in for transport.", "Stores the canned status code 200, the request succeeded.", "With the reply facts, after the request description lines.", "When the canned response arrives in this program.", "Checking for a 2xx status is phase three of every fetch in this module.");
+const WJ_BODY_OK = n("Your model of the server, supplying a canned body.", "Stores the success JSON body with city, temperature and summary fields.", "Beside the status value that describes the same reply.", "When the canned response arrives in this program.", "Canned JSON lets the decode step run in the engine with no network.");
+const WJ_IMPORT = n("The Swift compiler, which loads the Foundation framework.", "Makes JSONDecoder and Data available in this program.", "The first line of the file, above the model struct.", "At compile time, before any decoding code is checked.", "JSON decoding lives in Foundation, as every decoding step in this module showed.");
+const WJ_STRUCT = n("You declare it; JSONDecoder creates values of it.", "Declares the weather model that the JSON body will decode into.", "At file scope, above the program that uses it.", "Compiled once; values are created when decoding runs.", "A typed model replaces string keys with checked properties.");
+const WJ_S_CITY = n("The Weather struct; the decoder assigns it from the city key.", "Stores the city name decoded from the JSON string.", "The first stored property inside the Weather struct.", "Filled in during decoding, from the body text.", "Property names match the JSON keys, so no mapping code is needed.");
+const WJ_S_TEMP = n("The Weather struct; the decoder assigns it from the temp key.", "Stores the temperature as a whole number of degrees.", "The second stored property inside the Weather struct.", "Filled in during decoding, from the body text.", "The canned body sends 21 with no fraction, so Int is the right type.");
+const WJ_S_SUM = n("The Weather struct; the decoder assigns it from the summary key.", "Stores the short weather description decoded from the JSON.", "The last stored property inside the Weather struct.", "Filled in during decoding, from the body text.", "The summary is the word the final screen line shows to the user.");
+const WJ_DECODE1 = n("JSONDecoder, created by your code for this body.", "Creates a decoder and begins the decoding statement.", "In the output section, after the body value exists.", "After the status check passed with 200 in this journey.", "Decoding is phase four: it only runs on a successful response.");
+const WJ_DECODE2 = n("JSONDecoder, parsing the body bytes into a Weather value.", "Decodes the body text, converted to Data, into a typed Weather value.", "The continuation of the decoding statement on the line above.", "Immediately after the decoder is created, in the same statement.", "URLSession hands apps Data, so decoding from Data matches real code.");
+const WJ_PRINT_CITY = n("The print function, reading the decoded model.", "Prints the city field of the decoded Weather value.", "In the output section, after decoding has succeeded.", "After decoding, as the first decoded field line.", "Reading a property proves the JSON key landed in the model.");
+const WJ_PRINT_TEMP = n("The print function, reading the decoded model.", "Prints the temperature field of the decoded Weather value.", "In the output section, between the city and summary lines.", "After decoding, as the second decoded field line.", "A number here proves the JSON number decoded as a number.");
+const WJ_PRINT_SUM = n("The print function, reading the decoded model.", "Prints the summary field of the decoded Weather value.", "In the output section, after the temperature line.", "After decoding, as the last decoded field line.", "All three fields are now typed values the screen can use directly.");
+const WJ_PRINT_UI = n("Your code, formatting the line the screen would show.", "Prints the final user-facing line built from the decoded fields.", "The last line of the program, after every field was printed.", "Last, once decoding has succeeded and the fields are known.", "This is the UI update station: data becomes one readable sentence.");
+const WJ_TRY_CITY = n("Your code, naming the place to look up.", "Stores the city name Porto for this practice journey.", "The first line of the practice program.", "First, before the URL is built from it.", "A second city proves the URL building was not a one-off.");
+const RT_RESULTS = n("Your code, scripting the fake transport in advance.", "Stores the three scripted outcomes in the order attempts will meet them.", "The first line of the program, above the transport type.", "At program start, before any attempt is made.", "Scripted data keeps the example deterministic: no randomness, no network.");
+const RT_PRINT_COUNT = n("The print function from the Swift standard library.", "Prints how many scripted outcomes the transport will work through.", "The output line right after the results array is declared.", "At program start, before the transport exists.", "Counting the script confirms the plan before the first attempt runs.");
+const RT_STRUCT = n("You declare it; the program creates one value of it.", "Declares a fake transport that replays scripted results instead of networking.", "At file scope, above the code that creates it.", "Compiled once; one value is created below.", "A stand-in transport is the testing seam this module teaches.");
+const RT_PROP = n("Each FakeTransport value, which stores its own script.", "Stores the scripted outcomes this transport will replay in order.", "The first stored property inside the FakeTransport struct.", "Set when the transport is created, from the script above.", "The script is data the caller supplies, so scenarios are easy to change.");
+const RT_CALLS = n("Each FakeTransport value, which counts its own attempts.", "Counts how many times fetch has been called on this transport.", "The second stored property inside the FakeTransport struct.", "Starts at zero and grows by one on every fetch call.", "The call count is the index into the script, so order is guaranteed.");
+const RT_FETCH = n("Callers of the transport, one attempt at a time.", "Declares the one fake request: it returns the next scripted outcome.", "A method inside FakeTransport, below its stored properties.", "Once per attempt, whenever retry code asks for a result.", "mutating lets the method advance the call count stored in the struct.");
+const RT_INC = n("The fetch method, updating its own transport value.", "Adds one to the call count before the result is read.", "The first statement inside fetch, before the return line.", "At the start of every fetch call, once per attempt.", "Counting first means calls minus one indexes the outcome just used.");
+const RT_RETURN = n("The fetch method, handing back the scripted outcome.", "Returns the scripted result for this call number.", "The last statement inside fetch, after the count grows.", "Once per attempt, after the counter has advanced.", "Indexing with calls minus one replays the script in its written order.");
+const RT_TRANSPORT = n("Your code, creating the transport for this run.", "Creates the fake transport and hands it the scripted results.", "Top-level code below the transport type declaration.", "At program start, before the first attempt is made.", "It is var because fetch mutates the value as calls are counted.");
+const RT_FIRST = n("Your code, making a single first attempt.", "Calls fetch once and stores the first scripted outcome.", "Top-level code, right after the transport is created.", "The first attempt, before any retry loop exists.", "One attempt on its own is the baseline the retry loop improves on.");
+const RT_PRINT_FIRST = n("The print function from the Swift standard library.", "Prints the outcome of the single first attempt.", "Top-level code, after the first fetch returns.", "Right after the first attempt, as the last line here.", "The printed failure is the problem the retry loop is built to solve.");
+const RT_FOR = n("The retry loop, written by your code.", "Opens a loop that tries at most three attempts, numbered from one.", "Top-level code, wrapping the attempt statements below.", "Runs until an attempt succeeds or three attempts are used.", "A bounded loop is the promise that retrying always gives up eventually.");
+const RT_RESULT = n("The transport, replaying the next scripted outcome.", "Fetches one outcome and stores it for the checks below.", "The first statement inside the retry loop body.", "Once per attempt, at the top of each iteration.", "Every attempt goes through the same fetch, scripted or real.");
+const RT_PRINT_ATTEMPT = n("The print function, logging inside the loop.", "Prints the attempt number and its outcome as a log line.", "Inside the loop, right after the fetch returns.", "Once per attempt, before the success check runs.", "An attempt log is how retry behavior stays visible while testing.");
+const RT_IF = n("Your code, checking the outcome of this attempt.", "Opens the success branch that runs only when the result is success.", "Inside the loop, after the attempt log line.", "Once per attempt, after its outcome is known.", "Success ends the work; failure falls through to the backoff lines.");
+const RT_BREAK = n("The break statement, controlled by your success check.", "Leaves the retry loop immediately, skipping any further attempts.", "Inside the success branch, as its last statement.", "Only when an attempt succeeds, never after a failure.", "Breaking on success is what makes the attempt count stop at three here.");
+const RT_DELAYS = n("Your code, preparing the record of planned waits.", "Creates an empty list that will hold each delay the loop would wait.", "Top-level code, before the retry loop starts.", "Before the loop, while it is still empty.", "Delays are recorded as data and printed, never actually slept through.");
+const RT_DELAY = n("Your code, setting the first backoff wait.", "Stores the first planned wait: 200 milliseconds.", "Top-level code, beside the delays list it feeds.", "Before the loop, and doubled after every failed attempt.", "Starting at 200 matches the backoff lesson: 200, 400, 800.");
+const RT_APPEND = n("Your code, recording the planned wait.", "Appends the current delay to the record of waits.", "Inside the loop, after the success branch did not run.", "After each failed attempt, before the delay doubles.", "Recording instead of sleeping keeps the run instant and deterministic.");
+const RT_DOUBLE = n("Your code, growing the backoff wait.", "Doubles the delay for the next failure: 200 becomes 400.", "Inside the loop, as the last statement of the body.", "After each failed attempt, once its delay was recorded.", "Doubling is the exponential part of exponential backoff.");
+const RT_PRINT_DELAYS = n("The print function from the Swift standard library.", "Prints the recorded delays as one list, in the order planned.", "Top-level code, right after the retry loop ends.", "After the loop, once a success or the bound stopped it.", "The list proves the waits grew: 200 then 400 milliseconds.");
+const RT_PAYLOAD = n("Your code, preparing storage for the successful result.", "Creates the payload text, empty until an attempt succeeds.", "Top-level code, before the retry loop starts.", "Before the loop; filled only on the successful attempt.", "An empty starting value makes a total failure visible in the output.");
+const RT_SET_PAYLOAD = n("Your code, keeping the successful result.", "Stores the payload text that the successful attempt delivered.", "Inside the success branch, before the break line.", "Only on the attempt whose result is success.", "Later code reads the payload, not the raw per-attempt result.");
+const RT_PRINT_PAYLOAD = n("The print function from the Swift standard library.", "Prints the payload that the successful attempt delivered.", "Top-level code, after the delays line is printed.", "After the loop, when the payload holds its final value.", "A filled payload line is the visible sign the retries worked.");
+const RT_PRINT_CALLS = n("The print function, reading the transport counters.", "Prints how many fetch calls the transport actually received.", "The last line of the program, after the payload line.", "Last, after the loop has finished all its attempts.", "Three calls confirms the loop stopped at success, not at its bound.");
+const CA_VALUES = n("Your code, creating the cache storage.", "Creates the dictionary that maps each city to its cached weather text.", "The first line of the program, at file scope.", "At program start, empty, before any lookup runs.", "A dictionary keyed by city is the whole storage idea of a small cache.");
+const CA_TIMES = n("Your code, creating the timestamp storage.", "Creates the dictionary that maps each city to the minute it was stored.", "Beside the values dictionary, at file scope.", "At program start, empty, before any lookup runs.", "Freshness needs a stored time beside every stored value.");
+const CA_FETCHES = n("Your code, counting real fetches for proof.", "Counts how many times a lookup actually fetched new data.", "Beside the two cache dictionaries, at file scope.", "Starts at zero and grows only on a miss or a stale refetch.", "The counter is the evidence that a fresh hit did no fetching.");
+const CA_PRINT_COUNT = n("The print function from the Swift standard library.", "Prints how many cities the cache holds right now.", "Top-level code, after the cache storage is created.", "At program start, while the cache is still empty.", "Zero here confirms every later entry arrived through a lookup.");
+const CA_LOOKUP = n("Screens that need weather, calling through this function.", "Declares the one lookup entry point: a city and a logical time go in, a report line comes out.", "At file scope, below the cache storage it uses.", "Once per lookup, whenever weather is asked for.", "One entry point means the freshness rule lives in exactly one place.");
+const CA_IF_SIMPLE = n("The lookup function, checking the cache first.", "Opens the branch for a city that already has a cached value.", "The first statement inside lookup, before any fetching.", "On every lookup, before the miss path can run.", "Checking the cache first is what makes a hit possible at all.");
+const CA_HIT_SIMPLE = n("The lookup function, answering from the cache.", "Returns the hit report with the cached value, without fetching.", "Inside the cached-city branch, as its only statement.", "Only when the city already has a cached value.", "Returning here is why a hit never reaches the fetch lines below.");
+const CA_INC_OUTER = n("The lookup function, counting a real fetch.", "Adds one to the fetch counter for a first-time fetch.", "In the miss path of lookup, after the cached branch closes.", "Only when the city has no cached entry at all.", "A miss always fetches; the counter records that it happened.");
+const CA_SET21 = n("The lookup function, storing a fetched value.", "Stores the weather text fetched on a miss.", "In the miss path, beside its timestamp store.", "Only on a miss, after the fetch counter grows.", "Storing on a miss is what turns the next lookup into a hit.");
+const CA_TIME_OUTER = n("The lookup function, stamping the fetched value.", "Records the current logical minute as the stored time.", "In the miss path, right after the value store.", "Only on a miss, together with the value store.", "Without a stored time, no later lookup could judge freshness.");
+const CA_MISS_RETURN = n("The lookup function, reporting the miss path.", "Returns the miss report naming the value that was fetched.", "The last statement inside lookup, in the miss path.", "Only on a miss, after the fetch has been stored.", "The word MISS in the output makes the first cache state visible.");
+const CA_NOW0 = n("Your code, playing the clock by hand.", "Creates the logical clock variable and sets it to minute zero.", "Top-level code below the lookup function.", "Before the first lookup, at the start of the timeline.", "Time is plain integer data here, advanced by assignment, never by waiting.");
+const CA_PRINT_LOOKUP = n("The print function, showing one lookup report.", "Runs one lookup for Lisbon at the current minute and prints its report.", "Top-level code, in the timeline sequence of lookups.", "Once per timeline step, at whatever minute now holds.", "Each printed report is one cache state: miss, hit or stale.");
+const CA_NOW10 = n("Your code, advancing the logical clock.", "Moves the logical time to minute ten by assignment.", "Top-level code, between the first and second lookups.", "After the first lookup and before the second one.", "Ten minutes is inside the thirty minute freshness window.");
+const CA_IF_FULL = n("The lookup function, checking value and time together.", "Opens the cached branch only when both a value and its stored time exist.", "The first statement inside lookup, before any fetching.", "On every lookup, before the miss path can run.", "Freshness can only be judged when the value and its age are both known.");
+const CA_HIT_IF = n("The lookup function, applying the freshness window.", "Returns the fresh hit at once when the entry is at most thirty minutes old.", "Inside the cached branch, as a single-line freshness check.", "On every cached lookup, after the age is compared.", "Thirty minutes is the freshness window this cache promises.");
+const CA_INC_INNER = n("The lookup function, counting a real fetch.", "Adds one to the fetch counter for a stale refetch.", "Inside the cached branch, after the freshness check failed.", "Only on a stale lookup, before the new value is stored.", "Counting refetches separately from hits keeps the proof honest.");
+const CA_SET22_INNER = n("The lookup function, storing the refetched value.", "Stores the new weather text fetched for the stale city.", "Inside the cached branch, beside its timestamp update.", "Only on a stale lookup, after the fetch counter grows.", "The refetched value replaces the stale one in the same slot.");
+const CA_TIME_INNER = n("The lookup function, stamping the refetched value.", "Records the current logical minute as the new stored time.", "Inside the cached branch, right after the new value.", "Only on a stale lookup, together with the value store.", "Value and time must move together or the age math lies.");
+const CA_STALE_RETURN = n("The lookup function, reporting the stale path.", "Returns the stale report naming the refetched value.", "Inside the cached branch, as its last statement.", "Only on a stale lookup, after the refetch is stored.", "The word STALE in the output makes the third cache state visible.");
+const CA_NOW45 = n("Your code, advancing the logical clock.", "Moves the logical time to minute forty-five by assignment.", "Top-level code, between the second and third lookups.", "After the fresh hit and before the stale check.", "Forty-five minutes is past the thirty minute freshness window.");
+const CA_PRINT_FETCHES = n("The print function from the Swift standard library.", "Prints the total number of real fetches the lookups caused.", "The last line of the program, after every lookup.", "Last, once the whole timeline has run.", "This count is the proof: fresh hits added nothing to it.");
+const CA_NOW50 = n("Your code, advancing the logical clock.", "Moves the logical time to minute fifty by assignment.", "Top-level code, before the last lookup in the program.", "After the stale refetch stored its new value at forty-five.", "Five minutes after a refetch, the new entry is fresh again.");
+const CA_PRINT_PORTO = n("The print function, showing one lookup report.", "Runs one lookup for Porto at the current minute and prints its report.", "Top-level code, after the Lisbon timeline finishes.", "Last lookup, at minute fifty, for a city never cached.", "A different key misses on its own; cache entries are per city.");
+const CA_TRY_STORED = n("Your code, setting up the practice times.", "Stores the minute the practice entry was cached: zero.", "The first line of the practice program.", "First, before the age is computed from it.", "An entry stored at minute zero is the baseline for its age.");
+const CA_TRY_NOW = n("Your code, setting up the practice times.", "Stores the current logical minute for the practice check: forty-five.", "The second line of the practice program.", "Second, before the age is computed from it.", "Forty-five is deliberately past the thirty minute window.");
+const CA_TRY_AGE = n("Swift integer arithmetic, subtracting the two minutes.", "Computes the age of the practice entry in minutes.", "The third line, after both times exist.", "After both times are set, before the freshness check.", "Age is always now minus stored time; the rule compares that.");
+const CA_TRY_PRINT_AGE = n("The print function from the Swift standard library.", "Prints the computed age of the practice entry.", "In the output section, after the age exists.", "After the subtraction, before the verdict line.", "Showing the age makes the verdict below easy to check.");
+const CA_TRY_FRESH = n("Your code, applying the freshness rule.", "Stores whether the entry is inside the thirty minute window.", "After the age is computed, before the verdict print.", "Once the age is known, as the rule check.", "One named Bool keeps the window value in exactly one place.");
+const CA_TRY_PRINT_VERDICT = n("The print function, choosing with the ternary operator.", "Prints HIT when the entry is fresh and STALE when it is not.", "The last line of the practice program.", "Last, after the freshness rule has run.", "The verdict word is the same word the cache reports use.");
+
+
 const foundations = {
   id: 'networking-foundations',
   title: 'How an App Talks to a Server',
@@ -3353,6 +3438,521 @@ func validate(_ response: URLResponse) throws {
   ],
 };
 
+const workedExamples = {
+  id: 'networking-worked-examples',
+  title: 'Worked Examples',
+  steps: [
+        {
+          kind: 'example',
+          title: "One weather request, station by station",
+          problem: "<p>Follow one weather request from its URL to the line on screen. A misspelled city returns a 404 and a friendly fallback; fixing the spelling returns JSON that decodes into the line the screen shows.</p>",
+          adapter: 'diagram',
+          diagram: 'request-journey',
+          frames: [
+            {
+              caption: "The journey starts at the URL station: the city the user typed, Lisbn, is inserted into the query string, and the printed URL already carries the spelling mistake.",
+              lines: [
+                [R`let city = "Lisbn"`, WJ_CITY_BAD],
+                [R`let url = "https://api.example.com/weather?city=\(city)"`, WJ_URL],
+                [R`print("URL: \(url)")`, WJ_PRINT_URL],
+              ],
+              diagram: {"at": 0, "detail": "https://api.example.com/weather?city=Lisbn", "note": "Station 1 of 6: URL"},
+              claims: ["URL: https://api.example.com/weather?city=Lisbn"],
+            },
+            {
+              caption: "At the Request station the program describes a GET request for that URL. Nothing has travelled yet; the method and address are simply written down and printed.",
+              lines: [
+                [R`let city = "Lisbn"`, WJ_CITY_BAD],
+                [R`let url = "https://api.example.com/weather?city=\(city)"`, WJ_URL],
+                [R`let method = "GET"`, WJ_METHOD],
+                [R`print("URL: \(url)")`, WJ_PRINT_URL],
+                [R`print("Request: \(method) \(url)")`, WJ_PRINT_REQ],
+              ],
+              diagram: {"at": 1, "detail": "GET weather?city=Lisbn", "note": "Station 2 of 6: Request"},
+              claims: ["Request: GET https://api.example.com/weather?city=Lisbn"],
+            },
+            {
+              caption: "Transport delivers the canned reply in this model: status 404 with an error body. The printed status and body are exactly what a real response would hand the code.",
+              lines: [
+                [R`let city = "Lisbn"`, WJ_CITY_BAD],
+                [R`let url = "https://api.example.com/weather?city=\(city)"`, WJ_URL],
+                [R`let method = "GET"`, WJ_METHOD],
+                [R`let status = 404`, WJ_STATUS_BAD],
+                [R`let body = "{\"error\":\"city not found\"}"`, WJ_BODY_BAD],
+                [R`print("URL: \(url)")`, WJ_PRINT_URL],
+                [R`print("Request: \(method) \(url)")`, WJ_PRINT_REQ],
+                [R`print("Status: \(status)")`, WJ_PRINT_STATUS],
+                [R`print("Body: \(body)")`, WJ_PRINT_BODY],
+              ],
+              diagram: {"at": 2, "detail": "Canned reply arrives: 404", "note": "Station 3 of 6: Transport"},
+              claims: ["Status: 404", "Body: {\"error\":\"city not found\"}"],
+            },
+            {
+              caption: "At the Response station the code checks the status, sees 404, and prints a friendly fallback instead of decoding. The diagram marks this station failed for this request.",
+              lines: [
+                [R`let city = "Lisbn"`, WJ_CITY_BAD],
+                [R`let url = "https://api.example.com/weather?city=\(city)"`, WJ_URL],
+                [R`let method = "GET"`, WJ_METHOD],
+                [R`let status = 404`, WJ_STATUS_BAD],
+                [R`let body = "{\"error\":\"city not found\"}"`, WJ_BODY_BAD],
+                [R`print("URL: \(url)")`, WJ_PRINT_URL],
+                [R`print("Request: \(method) \(url)")`, WJ_PRINT_REQ],
+                [R`print("Status: \(status)")`, WJ_PRINT_STATUS],
+                [R`if status == 404 {`, WJ_IF404],
+                [R`    print("Fallback: weather unavailable for \(city)")`, WJ_FALLBACK],
+                ['}', null],
+              ],
+              diagram: {"at": 3, "failed": true, "detail": "404: city not found", "note": "The response is checked before decoding"},
+              claims: ["Status: 404", "Fallback: weather unavailable for Lisbn"],
+            },
+            {
+              caption: "The repair is one letter: the city is now Lisbon. The same journey now answers 200, and the body holds the weather JSON the next station will decode.",
+              lines: [
+                [R`let city = "Lisbon"`, WJ_CITY_GOOD],
+                [R`let url = "https://api.example.com/weather?city=\(city)"`, WJ_URL],
+                [R`let method = "GET"`, WJ_METHOD],
+                [R`let status = 200`, WJ_STATUS_OK],
+                [R`let body = "{\"city\":\"Lisbon\",\"temp\":21,\"summary\":\"sunny\"}"`, WJ_BODY_OK],
+                [R`print("URL: \(url)")`, WJ_PRINT_URL],
+                [R`print("Request: \(method) \(url)")`, WJ_PRINT_REQ],
+                [R`print("Status: \(status)")`, WJ_PRINT_STATUS],
+                [R`print("Body: \(body)")`, WJ_PRINT_BODY],
+              ],
+              diagram: {"at": 3, "detail": "200 OK", "note": "Station 4 of 6: Response"},
+              claims: ["Status: 200", "Body: {\"city\":\"Lisbon\",\"temp\":21,\"summary\":\"sunny\"}"],
+            },
+            {
+              caption: "At the Decode station a Decodable struct and JSONDecoder turn the canned body into typed values. The prints read the decoded fields, not the raw JSON text.",
+              lines: [
+                [R`import Foundation`, WJ_IMPORT],
+                ['', null],
+                [R`struct Weather: Decodable {`, WJ_STRUCT],
+                [R`    let city: String`, WJ_S_CITY],
+                [R`    let temp: Int`, WJ_S_TEMP],
+                [R`    let summary: String`, WJ_S_SUM],
+                ['}', null],
+                ['', null],
+                [R`let city = "Lisbon"`, WJ_CITY_GOOD],
+                [R`let url = "https://api.example.com/weather?city=\(city)"`, WJ_URL],
+                [R`let method = "GET"`, WJ_METHOD],
+                [R`let status = 200`, WJ_STATUS_OK],
+                [R`let body = "{\"city\":\"Lisbon\",\"temp\":21,\"summary\":\"sunny\"}"`, WJ_BODY_OK],
+                [R`let weather = try JSONDecoder()`, WJ_DECODE1],
+                [R`    .decode(Weather.self, from: Data(body.utf8))`, WJ_DECODE2],
+                [R`print("Status: \(status)")`, WJ_PRINT_STATUS],
+                [R`print("City: \(weather.city)")`, WJ_PRINT_CITY],
+                [R`print("Temp: \(weather.temp)")`, WJ_PRINT_TEMP],
+                [R`print("Summary: \(weather.summary)")`, WJ_PRINT_SUM],
+              ],
+              diagram: {"at": 4, "detail": "Decoded into Weather", "note": "Station 5 of 6: Decode"},
+              claims: ["City: Lisbon", "Temp: 21", "Summary: sunny"],
+            },
+            {
+              caption: "The final station is the UI update: one line built from the decoded fields. Lisbon, 21 degrees and sunny is exactly what the screen would show the user.",
+              lines: [
+                [R`import Foundation`, WJ_IMPORT],
+                ['', null],
+                [R`struct Weather: Decodable {`, WJ_STRUCT],
+                [R`    let city: String`, WJ_S_CITY],
+                [R`    let temp: Int`, WJ_S_TEMP],
+                [R`    let summary: String`, WJ_S_SUM],
+                ['}', null],
+                ['', null],
+                [R`let city = "Lisbon"`, WJ_CITY_GOOD],
+                [R`let url = "https://api.example.com/weather?city=\(city)"`, WJ_URL],
+                [R`let method = "GET"`, WJ_METHOD],
+                [R`let status = 200`, WJ_STATUS_OK],
+                [R`let body = "{\"city\":\"Lisbon\",\"temp\":21,\"summary\":\"sunny\"}"`, WJ_BODY_OK],
+                [R`let weather = try JSONDecoder()`, WJ_DECODE1],
+                [R`    .decode(Weather.self, from: Data(body.utf8))`, WJ_DECODE2],
+                [R`print("Status: \(status)")`, WJ_PRINT_STATUS],
+                [R`print("City: \(weather.city)")`, WJ_PRINT_CITY],
+                [R`print("Temp: \(weather.temp)")`, WJ_PRINT_TEMP],
+                [R`print("Summary: \(weather.summary)")`, WJ_PRINT_SUM],
+                [R`print("\(weather.city): \(weather.temp)° and \(weather.summary)")`, WJ_PRINT_UI],
+              ],
+              diagram: {"at": 5, "detail": "Lisbon: 21° and sunny", "note": "Station 6 of 6: UI update"},
+              claims: ["Lisbon: 21° and sunny"],
+            },
+          ],
+          tryIt: {
+            task: "<p>Build the same opening journey for Porto: store the city, build its weather URL, then print the URL line and the request line for a GET request to that URL.</p>",
+            lines: [
+              [R`let city = "Porto"`, WJ_TRY_CITY],
+              [R`let url = "https://api.example.com/weather?city=\(city)"`, WJ_URL],
+              [R`print("URL: \(url)")`, WJ_PRINT_URL],
+            ],
+            solution: [
+              [R`let city = "Porto"`, WJ_TRY_CITY],
+              [R`let url = "https://api.example.com/weather?city=\(city)"`, WJ_URL],
+              [R`let method = "GET"`, WJ_METHOD],
+              [R`print("URL: \(url)")`, WJ_PRINT_URL],
+              [R`print("Request: \(method) \(url)")`, WJ_PRINT_REQ],
+            ],
+            expect: "URL: https://api.example.com/weather?city=Porto\nRequest: GET https://api.example.com/weather?city=Porto",
+          },
+        },
+        {
+          kind: 'example',
+          title: "Retry a flaky service with bounded backoff",
+          problem: "<p>A service fails twice, then succeeds. Build a retry loop around a scripted fake transport that tries at most three times, records the backoff delays it would wait, and prints the successful payload.</p>",
+          adapter: 'trace',
+          expect: "Attempt 1: failure\nAttempt 2: failure\nAttempt 3: success\nDelays: [200, 400]\nPayload: Weather for Lisbon\nCalls: 3",
+          frames: [
+            {
+              caption: "The script comes first: three outcomes written as data, failure, failure, success. The print confirms the plan holds three results before any transport exists.",
+              lines: [
+                [R`let results = ["failure", "failure", "success"]`, RT_RESULTS],
+                [R`print("Scripted results: \(results.count)")`, RT_PRINT_COUNT],
+              ],
+              expect: "Scripted results: 3",
+            },
+            {
+              caption: "A fake transport type replays the script by counting its calls. One fetch returns the first scripted outcome, and the print shows attempt one failing.",
+              lines: [
+                [R`let results = ["failure", "failure", "success"]`, RT_RESULTS],
+                [R`struct FakeTransport {`, RT_STRUCT],
+                [R`    var results: [String]`, RT_PROP],
+                [R`    var calls = 0`, RT_CALLS],
+                [R`    mutating func fetch() -> String {`, RT_FETCH],
+                [R`        calls += 1`, RT_INC],
+                [R`        return results[calls - 1]`, RT_RETURN],
+                ['    }', null],
+                ['}', null],
+                [R`var transport = FakeTransport(results: results)`, RT_TRANSPORT],
+                [R`let first = transport.fetch()`, RT_FIRST],
+                [R`print("Attempt 1: \(first)")`, RT_PRINT_FIRST],
+              ],
+              expect: "Attempt 1: failure",
+            },
+            {
+              caption: "A bounded loop replaces the single attempt: it fetches, logs each attempt, and breaks the moment a result is success. Three attempts appear, the third succeeding.",
+              lines: [
+                [R`let results = ["failure", "failure", "success"]`, RT_RESULTS],
+                [R`struct FakeTransport {`, RT_STRUCT],
+                [R`    var results: [String]`, RT_PROP],
+                [R`    var calls = 0`, RT_CALLS],
+                [R`    mutating func fetch() -> String {`, RT_FETCH],
+                [R`        calls += 1`, RT_INC],
+                [R`        return results[calls - 1]`, RT_RETURN],
+                ['    }', null],
+                ['}', null],
+                [R`var transport = FakeTransport(results: results)`, RT_TRANSPORT],
+                [R`for attempt in 1...3 {`, RT_FOR],
+                [R`    let result = transport.fetch()`, RT_RESULT],
+                [R`    print("Attempt \(attempt): \(result)")`, RT_PRINT_ATTEMPT],
+                [R`    if result == "success" {`, RT_IF],
+                [R`        break`, RT_BREAK],
+                ['    }', null],
+                ['}', null],
+              ],
+              expect: "Attempt 1: failure\nAttempt 2: failure\nAttempt 3: success",
+            },
+            {
+              caption: "Backoff joins the loop, but as data: each failed attempt appends the current delay and doubles it. The printed list records 200 then 400, with no actual waiting.",
+              lines: [
+                [R`let results = ["failure", "failure", "success"]`, RT_RESULTS],
+                [R`struct FakeTransport {`, RT_STRUCT],
+                [R`    var results: [String]`, RT_PROP],
+                [R`    var calls = 0`, RT_CALLS],
+                [R`    mutating func fetch() -> String {`, RT_FETCH],
+                [R`        calls += 1`, RT_INC],
+                [R`        return results[calls - 1]`, RT_RETURN],
+                ['    }', null],
+                ['}', null],
+                [R`var transport = FakeTransport(results: results)`, RT_TRANSPORT],
+                [R`var delays: [Int] = []`, RT_DELAYS],
+                [R`var delay = 200`, RT_DELAY],
+                [R`for attempt in 1...3 {`, RT_FOR],
+                [R`    let result = transport.fetch()`, RT_RESULT],
+                [R`    print("Attempt \(attempt): \(result)")`, RT_PRINT_ATTEMPT],
+                [R`    if result == "success" {`, RT_IF],
+                [R`        break`, RT_BREAK],
+                ['    }', null],
+                [R`    delays.append(delay)`, RT_APPEND],
+                [R`    delay *= 2`, RT_DOUBLE],
+                ['}', null],
+                [R`print("Delays: \(delays)")`, RT_PRINT_DELAYS],
+              ],
+              expect: "Attempt 1: failure\nAttempt 2: failure\nAttempt 3: success\nDelays: [200, 400]",
+            },
+            {
+              caption: "The successful attempt now stores a payload before breaking, and the program prints it after the delays. The payload line proves the loop kept the winning result.",
+              lines: [
+                [R`let results = ["failure", "failure", "success"]`, RT_RESULTS],
+                [R`struct FakeTransport {`, RT_STRUCT],
+                [R`    var results: [String]`, RT_PROP],
+                [R`    var calls = 0`, RT_CALLS],
+                [R`    mutating func fetch() -> String {`, RT_FETCH],
+                [R`        calls += 1`, RT_INC],
+                [R`        return results[calls - 1]`, RT_RETURN],
+                ['    }', null],
+                ['}', null],
+                [R`var transport = FakeTransport(results: results)`, RT_TRANSPORT],
+                [R`var delays: [Int] = []`, RT_DELAYS],
+                [R`var delay = 200`, RT_DELAY],
+                [R`var payload = ""`, RT_PAYLOAD],
+                [R`for attempt in 1...3 {`, RT_FOR],
+                [R`    let result = transport.fetch()`, RT_RESULT],
+                [R`    print("Attempt \(attempt): \(result)")`, RT_PRINT_ATTEMPT],
+                [R`    if result == "success" {`, RT_IF],
+                [R`        payload = "Weather for Lisbon"`, RT_SET_PAYLOAD],
+                [R`        break`, RT_BREAK],
+                ['    }', null],
+                [R`    delays.append(delay)`, RT_APPEND],
+                [R`    delay *= 2`, RT_DOUBLE],
+                ['}', null],
+                [R`print("Delays: \(delays)")`, RT_PRINT_DELAYS],
+                [R`print("Payload: \(payload)")`, RT_PRINT_PAYLOAD],
+              ],
+              expect: "Attempt 1: failure\nAttempt 2: failure\nAttempt 3: success\nDelays: [200, 400]\nPayload: Weather for Lisbon",
+            },
+            {
+              caption: "A final print reads the transport call count: three calls. The loop stopped because an attempt succeeded, not because it ran out of tries, and the log shows it.",
+              lines: [
+                [R`let results = ["failure", "failure", "success"]`, RT_RESULTS],
+                [R`struct FakeTransport {`, RT_STRUCT],
+                [R`    var results: [String]`, RT_PROP],
+                [R`    var calls = 0`, RT_CALLS],
+                [R`    mutating func fetch() -> String {`, RT_FETCH],
+                [R`        calls += 1`, RT_INC],
+                [R`        return results[calls - 1]`, RT_RETURN],
+                ['    }', null],
+                ['}', null],
+                [R`var transport = FakeTransport(results: results)`, RT_TRANSPORT],
+                [R`var delays: [Int] = []`, RT_DELAYS],
+                [R`var delay = 200`, RT_DELAY],
+                [R`var payload = ""`, RT_PAYLOAD],
+                [R`for attempt in 1...3 {`, RT_FOR],
+                [R`    let result = transport.fetch()`, RT_RESULT],
+                [R`    print("Attempt \(attempt): \(result)")`, RT_PRINT_ATTEMPT],
+                [R`    if result == "success" {`, RT_IF],
+                [R`        payload = "Weather for Lisbon"`, RT_SET_PAYLOAD],
+                [R`        break`, RT_BREAK],
+                ['    }', null],
+                [R`    delays.append(delay)`, RT_APPEND],
+                [R`    delay *= 2`, RT_DOUBLE],
+                ['}', null],
+                [R`print("Delays: \(delays)")`, RT_PRINT_DELAYS],
+                [R`print("Payload: \(payload)")`, RT_PRINT_PAYLOAD],
+                [R`print("Calls: \(transport.calls)")`, RT_PRINT_CALLS],
+              ],
+              expect: "Attempt 1: failure\nAttempt 2: failure\nAttempt 3: success\nDelays: [200, 400]\nPayload: Weather for Lisbon\nCalls: 3",
+            },
+          ],
+          tryIt: {
+            task: "<p>The starter makes one attempt against the scripted transport and stops at its failure. Change it to loop up to three times like the example, recording delays, and print the delays list after the loop.</p>",
+            lines: [
+              [R`let results = ["failure", "failure", "success"]`, RT_RESULTS],
+              [R`struct FakeTransport {`, RT_STRUCT],
+              [R`    var results: [String]`, RT_PROP],
+              [R`    var calls = 0`, RT_CALLS],
+              [R`    mutating func fetch() -> String {`, RT_FETCH],
+              [R`        calls += 1`, RT_INC],
+              [R`        return results[calls - 1]`, RT_RETURN],
+              ['    }', null],
+              ['}', null],
+              [R`var transport = FakeTransport(results: results)`, RT_TRANSPORT],
+              [R`let first = transport.fetch()`, RT_FIRST],
+              [R`print("Attempt 1: \(first)")`, RT_PRINT_FIRST],
+            ],
+            solution: [
+              [R`let results = ["failure", "failure", "success"]`, RT_RESULTS],
+              [R`struct FakeTransport {`, RT_STRUCT],
+              [R`    var results: [String]`, RT_PROP],
+              [R`    var calls = 0`, RT_CALLS],
+              [R`    mutating func fetch() -> String {`, RT_FETCH],
+              [R`        calls += 1`, RT_INC],
+              [R`        return results[calls - 1]`, RT_RETURN],
+              ['    }', null],
+              ['}', null],
+              [R`var transport = FakeTransport(results: results)`, RT_TRANSPORT],
+              [R`var delays: [Int] = []`, RT_DELAYS],
+              [R`var delay = 200`, RT_DELAY],
+              [R`for attempt in 1...3 {`, RT_FOR],
+              [R`    let result = transport.fetch()`, RT_RESULT],
+              [R`    print("Attempt \(attempt): \(result)")`, RT_PRINT_ATTEMPT],
+              [R`    if result == "success" {`, RT_IF],
+              [R`        break`, RT_BREAK],
+              ['    }', null],
+              [R`    delays.append(delay)`, RT_APPEND],
+              [R`    delay *= 2`, RT_DOUBLE],
+              ['}', null],
+              [R`print("Delays: \(delays)")`, RT_PRINT_DELAYS],
+            ],
+            expect: "Attempt 1: failure\nAttempt 2: failure\nAttempt 3: success\nDelays: [200, 400]",
+          },
+        },
+        {
+          kind: 'example',
+          title: "Cache: miss, fresh hit, stale",
+          problem: "<p>Build a tiny weather cache keyed by city, with a thirty minute freshness window and a logical clock the program advances by assignment. Show a miss that fetches, a fresh hit that does not, and a stale entry that refetches.</p>",
+          adapter: 'trace',
+          expect: "MISS Lisbon: fetched sunny 21\nHIT Lisbon: sunny 21\nSTALE Lisbon: refetched sunny 22\nMISS Porto: fetched sunny 21\nFetches: 3",
+          frames: [
+            {
+              caption: "The cache starts as three pieces of state: a values dictionary, a times dictionary, and a fetch counter. The print proves it starts completely empty.",
+              lines: [
+                [R`var values: [String: String] = [:]`, CA_VALUES],
+                [R`var times: [String: Int] = [:]`, CA_TIMES],
+                [R`var fetches = 0`, CA_FETCHES],
+                [R`print("Cached cities: \(values.count)")`, CA_PRINT_COUNT],
+              ],
+              expect: "Cached cities: 0",
+            },
+            {
+              caption: "A lookup function appears in its simplest form: a cached city returns HIT, anything else fetches, stores, and returns MISS. At minute zero Lisbon misses and fetches.",
+              lines: [
+                [R`var values: [String: String] = [:]`, CA_VALUES],
+                [R`var times: [String: Int] = [:]`, CA_TIMES],
+                [R`var fetches = 0`, CA_FETCHES],
+                [R`func lookup(city: String, now: Int) -> String {`, CA_LOOKUP],
+                [R`    if let value = values[city] {`, CA_IF_SIMPLE],
+                [R`        return "HIT \(city): \(value)"`, CA_HIT_SIMPLE],
+                ['    }', null],
+                [R`    fetches += 1`, CA_INC_OUTER],
+                [R`    values[city] = "sunny 21"`, CA_SET21],
+                [R`    times[city] = now`, CA_TIME_OUTER],
+                [R`    return "MISS \(city): fetched sunny 21"`, CA_MISS_RETURN],
+                ['}', null],
+                [R`var now = 0`, CA_NOW0],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+              ],
+              expect: "MISS Lisbon: fetched sunny 21",
+            },
+            {
+              caption: "The clock advances to minute ten and the same lookup runs again. This time Lisbon is cached, so the report is HIT and no fetch lines run at all.",
+              lines: [
+                [R`var values: [String: String] = [:]`, CA_VALUES],
+                [R`var times: [String: Int] = [:]`, CA_TIMES],
+                [R`var fetches = 0`, CA_FETCHES],
+                [R`func lookup(city: String, now: Int) -> String {`, CA_LOOKUP],
+                [R`    if let value = values[city] {`, CA_IF_SIMPLE],
+                [R`        return "HIT \(city): \(value)"`, CA_HIT_SIMPLE],
+                ['    }', null],
+                [R`    fetches += 1`, CA_INC_OUTER],
+                [R`    values[city] = "sunny 21"`, CA_SET21],
+                [R`    times[city] = now`, CA_TIME_OUTER],
+                [R`    return "MISS \(city): fetched sunny 21"`, CA_MISS_RETURN],
+                ['}', null],
+                [R`var now = 0`, CA_NOW0],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+                [R`now = 10`, CA_NOW10],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+              ],
+              expect: "MISS Lisbon: fetched sunny 21\nHIT Lisbon: sunny 21",
+            },
+            {
+              caption: "The lookup gains its freshness rule: a cached entry returns HIT only within thirty minutes. At minute forty-five the entry is stale, so the program refetches and stores sunny 22.",
+              lines: [
+                [R`var values: [String: String] = [:]`, CA_VALUES],
+                [R`var times: [String: Int] = [:]`, CA_TIMES],
+                [R`var fetches = 0`, CA_FETCHES],
+                [R`func lookup(city: String, now: Int) -> String {`, CA_LOOKUP],
+                [R`    if let value = values[city], let stored = times[city] {`, CA_IF_FULL],
+                [R`        if now - stored <= 30 { return "HIT \(city): \(value)" }`, CA_HIT_IF],
+                [R`        fetches += 1`, CA_INC_INNER],
+                [R`        values[city] = "sunny 22"`, CA_SET22_INNER],
+                [R`        times[city] = now`, CA_TIME_INNER],
+                [R`        return "STALE \(city): refetched sunny 22"`, CA_STALE_RETURN],
+                ['}', null],
+                [R`    fetches += 1`, CA_INC_OUTER],
+                [R`    values[city] = "sunny 21"`, CA_SET21],
+                [R`    times[city] = now`, CA_TIME_OUTER],
+                [R`    return "MISS \(city): fetched sunny 21"`, CA_MISS_RETURN],
+                ['}', null],
+                [R`var now = 0`, CA_NOW0],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+                [R`now = 10`, CA_NOW10],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+                [R`now = 45`, CA_NOW45],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+              ],
+              expect: "MISS Lisbon: fetched sunny 21\nHIT Lisbon: sunny 21\nSTALE Lisbon: refetched sunny 22",
+            },
+            {
+              caption: "The fetch counter prints after the timeline: two fetches. The miss fetched, the fresh hit did not, and the stale lookup did, which is exactly the promised behavior.",
+              lines: [
+                [R`var values: [String: String] = [:]`, CA_VALUES],
+                [R`var times: [String: Int] = [:]`, CA_TIMES],
+                [R`var fetches = 0`, CA_FETCHES],
+                [R`func lookup(city: String, now: Int) -> String {`, CA_LOOKUP],
+                [R`    if let value = values[city], let stored = times[city] {`, CA_IF_FULL],
+                [R`        if now - stored <= 30 { return "HIT \(city): \(value)" }`, CA_HIT_IF],
+                [R`        fetches += 1`, CA_INC_INNER],
+                [R`        values[city] = "sunny 22"`, CA_SET22_INNER],
+                [R`        times[city] = now`, CA_TIME_INNER],
+                [R`        return "STALE \(city): refetched sunny 22"`, CA_STALE_RETURN],
+                ['}', null],
+                [R`    fetches += 1`, CA_INC_OUTER],
+                [R`    values[city] = "sunny 21"`, CA_SET21],
+                [R`    times[city] = now`, CA_TIME_OUTER],
+                [R`    return "MISS \(city): fetched sunny 21"`, CA_MISS_RETURN],
+                ['}', null],
+                [R`var now = 0`, CA_NOW0],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+                [R`now = 10`, CA_NOW10],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+                [R`now = 45`, CA_NOW45],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+                [R`print("Fetches: \(fetches)")`, CA_PRINT_FETCHES],
+              ],
+              expect: "MISS Lisbon: fetched sunny 21\nHIT Lisbon: sunny 21\nSTALE Lisbon: refetched sunny 22\nFetches: 2",
+            },
+            {
+              caption: "One more lookup, for Porto at minute fifty, misses on its own key and raises the count to three. Cache entries are per city; Lisbon being fresh never helps Porto.",
+              lines: [
+                [R`var values: [String: String] = [:]`, CA_VALUES],
+                [R`var times: [String: Int] = [:]`, CA_TIMES],
+                [R`var fetches = 0`, CA_FETCHES],
+                [R`func lookup(city: String, now: Int) -> String {`, CA_LOOKUP],
+                [R`    if let value = values[city], let stored = times[city] {`, CA_IF_FULL],
+                [R`        if now - stored <= 30 { return "HIT \(city): \(value)" }`, CA_HIT_IF],
+                [R`        fetches += 1`, CA_INC_INNER],
+                [R`        values[city] = "sunny 22"`, CA_SET22_INNER],
+                [R`        times[city] = now`, CA_TIME_INNER],
+                [R`        return "STALE \(city): refetched sunny 22"`, CA_STALE_RETURN],
+                ['}', null],
+                [R`    fetches += 1`, CA_INC_OUTER],
+                [R`    values[city] = "sunny 21"`, CA_SET21],
+                [R`    times[city] = now`, CA_TIME_OUTER],
+                [R`    return "MISS \(city): fetched sunny 21"`, CA_MISS_RETURN],
+                ['}', null],
+                [R`var now = 0`, CA_NOW0],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+                [R`now = 10`, CA_NOW10],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+                [R`now = 45`, CA_NOW45],
+                [R`print(lookup(city: "Lisbon", now: now))`, CA_PRINT_LOOKUP],
+                [R`now = 50`, CA_NOW50],
+                [R`print(lookup(city: "Porto", now: now))`, CA_PRINT_PORTO],
+                [R`print("Fetches: \(fetches)")`, CA_PRINT_FETCHES],
+              ],
+              expect: "MISS Lisbon: fetched sunny 21\nHIT Lisbon: sunny 21\nSTALE Lisbon: refetched sunny 22\nMISS Porto: fetched sunny 21\nFetches: 3",
+            },
+          ],
+          tryIt: {
+            task: "<p>The starter computes the age of an entry stored at minute zero and checked at minute forty-five, and prints only the age. Add the freshness check and print the verdict word, HIT or STALE, after the age line.</p>",
+            lines: [
+              [R`let storedAt = 0`, CA_TRY_STORED],
+              [R`let now = 45`, CA_TRY_NOW],
+              [R`let age = now - storedAt`, CA_TRY_AGE],
+              [R`print("Age: \(age)")`, CA_TRY_PRINT_AGE],
+            ],
+            solution: [
+              [R`let storedAt = 0`, CA_TRY_STORED],
+              [R`let now = 45`, CA_TRY_NOW],
+              [R`let age = now - storedAt`, CA_TRY_AGE],
+              [R`print("Age: \(age)")`, CA_TRY_PRINT_AGE],
+              [R`let isFresh = age <= 30`, CA_TRY_FRESH],
+              [R`print(isFresh ? "HIT" : "STALE")`, CA_TRY_PRINT_VERDICT],
+            ],
+            expect: "Age: 45\nSTALE",
+          },
+        },
+  ],
+};
+
 export default {
   id: 'networking',
   number: 8,
@@ -3361,5 +3961,5 @@ export default {
   summary: 'Explain how a request travels from an iPhone to a server and back, speak HTTP and REST, decode JSON with Codable, call APIs with URLSession and async/await, handle failures and secrets safely, choose between polling, WebSockets and push, and structure a testable API layer.',
   objectives: ['CLO6', 'CLO5'],
   outcomes: ['SLO1'],
-  lessons: [foundations, http, jsonRest, urlsession, errorsSecurity, realtime, architecture],
+  lessons: [foundations, http, jsonRest, urlsession, errorsSecurity, realtime, architecture, workedExamples],
 };

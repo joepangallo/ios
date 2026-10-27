@@ -5,6 +5,86 @@
 // the design process ending in a hands-on critique. Every number quoted here was
 // checked: Dynamic Type sizes against the iOS 26.1 simulator, contrast ratios
 // with the Swift contrastRatio function this page runs as WebAssembly.
+// Five-part notes shared by the worked examples at the end of this module:
+// the same line appears in many frames, so its note is written once here.
+const NOW_IMPORT = { who: 'The Swift compiler, which loads the SwiftUI framework for this file.', what: 'Makes View, Text, VStack, HStack, Image, Spacer, Button and @State available in this file.', where: 'The first line of the file; an import covers only its own file.', when: 'At compile time, before any of the code below is checked.', why: 'SwiftUI is a separate framework, so every file that describes a screen imports it.' };
+const NOW_STRUCT = { who: 'You declare it; SwiftUI creates values of it wherever a song row is shown.', what: 'Declares NowPlayingRow, a struct that conforms to View and describes one song row.', where: 'At file scope, so the preview at the bottom can create it.', when: 'Compiled once; a fresh value is created whenever a parent asks for the row.', why: 'A row is a small reusable view: one description serves every song in a list.' };
+const NOW_STATE = { who: 'SwiftUI, which stores the value outside the struct, tied to this row on screen.', what: 'Declares playing, whether the song is playing, starting false; @State makes SwiftUI keep and watch it.', where: 'Inside NowPlayingRow, marked private because only this row changes it.', when: 'Created when the row first appears and kept across every redraw.', why: 'The status word below is computed from playing, so the row can never claim to play a paused song.' };
+const NOW_BODY = { who: 'SwiftUI calls this property; your code never calls body directly.', what: 'Returns the description of the row for the current data.', where: 'A computed property inside NowPlayingRow.', when: 'When the row appears, and again after every change to playing.', why: 'Describing the row as a function of the data is the whole SwiftUI model.' };
+const NOW_HSTACK = { who: 'SwiftUI\'s layout system, which measures the children and places them in a row.', what: 'Places the artwork, the words, the spacer and the button side by side, 12 points apart.', where: 'The root view returned by body.', when: 'Measured and placed again every time body produces a new description.', why: 'A now-playing row is read left to right: picture, song, action.' };
+const NOW_ART = { who: 'SwiftUI, which looks the name up in the SF Symbols library built into the system.', what: 'Shows the music.note symbol as the song\'s artwork.', where: 'The first child of the row, so it sits at the leading edge.', when: 'Drawn every time body runs; the symbol is a template image the system can recolor.', why: 'A symbol stands in for album artwork while the row is designed, with no image files to manage.' };
+const NOW_ART_FONT = { who: 'The font modifier, applied to the Image view directly above it.', what: 'Sets the artwork size with the title text style, so the note renders large enough to read as a picture.', where: 'Chained under the Image; modifiers apply to the view written before them.', when: 'Read while body builds the description, before layout measures the image.', why: 'SF Symbols are drawn like a font, so a text style sizes them, and the size follows the user\'s text-size setting.' };
+const NOW_TITLE_TOP = { who: 'Swift builds the string; SwiftUI draws it as a Text view.', what: 'Shows the song title, Blue Sky.', where: 'A child of the row, beside the artwork.', when: 'Rebuilt every time body runs, though the words never change.', why: 'The title is the first thing a listener looks for, so it leads the words in the row.' };
+const NOW_VSTACK = { who: 'SwiftUI\'s layout system, which measures the two lines and stacks them.', what: 'Stacks the title above the artist, leading-aligned, with 2 points between them.', where: 'A child of the row, between the artwork and the spacer.', when: 'Measured and placed again every time body produces a new description.', why: 'Grouping the two lines in a stack makes them one block that travels together inside the row.' };
+const NOW_TITLE = { who: 'Swift builds the string; SwiftUI draws it as a Text view.', what: 'Shows the song title, Blue Sky.', where: 'The first line of the small stack, above the artist.', when: 'Rebuilt every time body runs, though the words never change.', why: 'The title outranks the artist, so it sits on top and keeps the default primary color.' };
+const NOW_ARTIST = { who: 'Swift builds the string; SwiftUI draws it as a Text view.', what: 'Shows the artist\'s name, The Wanderers.', where: 'The second line of the small stack, under the title.', when: 'Rebuilt every time body runs, though the words never change.', why: 'The artist is the second fact a listener checks; it belongs with the title, not at the end of the row.' };
+const NOW_ARTIST_SEC = { who: 'The foregroundStyle modifier on the artist Text directly above it.', what: 'Colors the artist with the secondary style, a gray that steps back from the title.', where: 'Chained under the artist Text.', when: 'Applied while the description is built.', why: 'De-emphasizing the artist keeps the title first in the hierarchy without shrinking the text.' };
+const NOW_SPACER = { who: 'SwiftUI\'s layout system, which gives the spacer all the width nobody else claimed.', what: 'Pushes the status and the button to the trailing edge of the row.', where: 'Between the words and the status, inside the row.', when: 'Sized during layout, after every other child has reported its width.', why: 'Actions belong at the trailing edge, where a listener\'s thumb and eye expect them.' };
+const NOW_STATUS = { who: 'Swift builds one of the two strings from playing; SwiftUI draws it as a Text view.', what: 'Shows Playing when playing is true and Paused when it is false.', where: 'A child of the row, just before the button at the trailing edge.', when: 'Rebuilt after every change to playing, because it reads the state the button changes.', why: 'The listener gets confirmation that the tap worked, from the same single source of truth as the button.' };
+const NOW_BTN_EMPTY = { who: 'You declare it; the listener will trigger its action by tapping.', what: 'Creates the Play button with an empty action: it is placed, but it does nothing yet.', where: 'The last child of the row, at the trailing edge.', when: 'Its (empty) closure would run at the moment of a tap.', why: 'This frame is about placement: a row\'s action sits at the trailing edge, after the facts it acts on.' };
+const NOW_BTN_PLAY = { who: 'You declare it; the listener triggers its action by tapping.', what: 'Creates the Play button; its whole action sets playing to true.', where: 'The last child of the row, at the trailing edge.', when: 'The action runs at the moment of a tap, never while body is being built.', why: 'Changing the state is the whole action; SwiftUI notices and re-evaluates body by itself.' };
+const NOW_PAD = { who: 'The padding modifier, wrapping the whole row.', what: 'Adds standard spacing inside all four edges of the row.', where: 'The first modifier on the row itself, after its closing brace.', when: 'Applied before the modifiers that follow it in the chain.', why: 'Content that touches its container\'s edges looks broken; padding gives the row its breathing room.' };
+const NOW_BG = { who: 'The background modifier, wrapping everything written before it.', what: 'Paints a thin material behind the row, a translucent fill that adapts to light and dark screens.', where: 'Second in the modifier chain on the row.', when: 'Its size is decided by the view built so far, padding included.', why: 'A material background groups the row\'s contents into one card the eye can find in a list.' };
+const NOW_CLIP = { who: 'The clipShape modifier, the last one in the chain.', what: 'Clips the row, background included, to a rounded rectangle with 12-point corners.', where: 'After background, so the material\'s corners are the ones being rounded.', when: 'Applied to the finished row description on every redraw.', why: 'Rounded corners are the visual cue that separates a card from a plain colored block.' };
+const NOW_PREVIEW = { who: 'Xcode and this page, which render the row without running an app.', what: 'Creates one NowPlayingRow for the preview to display.', where: 'At file scope, after NowPlayingRow; preview code is not part of the shipped app.', when: 'Each time the preview refreshes.', why: 'Seeing the row while you build it is how the frames in this example were checked.' };
+const NOW_T_STATE = { who: 'You declare it; the line below changes it.', what: 'Models the player\'s state as a variable, starting paused (false).', where: 'Top-level code, the first line of the program.', when: 'First, before the status is printed.', why: 'A var, not a let: this program exists to change the value, like @State in the row.' };
+const NOW_T_SET = { who: 'Your code, standing in for the Play button\'s action.', what: 'Sets playing to true, exactly what tapping Play does in the row.', where: 'Top-level code, between the declaration and the print.', when: 'Second, modelling the moment of the tap.', why: 'Without this line the program prints Paused forever, which is the unwired button\'s bug.' };
+const NOW_T_PRINT = { who: 'The print function from the Swift standard library.', what: 'Prints the status word for the current value of playing, choosing with a ternary.', where: 'The last line of the program.', when: 'Last, after playing has its final value.', why: 'The printed word matches the status Text in the row, so the console proves what the row shows.' };
+
+const FIX_IMPORT = { who: 'The Swift compiler, which loads the SwiftUI framework for this file.', what: 'Makes View, Text, VStack, HStack, Image, Button and Toggle available in this file.', where: 'The first line of the file; an import covers only its own file.', when: 'At compile time, before any of the code below is checked.', why: 'SwiftUI is a separate framework, so every file that describes a screen imports it.' };
+const FIX_STRUCT = { who: 'You declare it; SwiftUI creates values of it wherever a lesson is listed.', what: 'Declares LessonRow, a struct that conforms to View and describes one lesson row.', where: 'At file scope, so the preview at the bottom can create it.', when: 'Compiled once; a fresh value is created whenever a parent asks for the row.', why: 'This row is the repair patient: the same code is judged at two sizes before it is changed.' };
+const FIX_STATE = { who: 'SwiftUI, which stores the value outside the struct, tied to this row on screen.', what: 'Declares captions, whether captions are on, starting false; @State makes SwiftUI keep and watch it.', where: 'Inside LessonRow, marked private because only this row changes it.', when: 'Created when the row first appears and kept across every redraw.', why: 'The Toggle below binds to this one value, and the status line reads it, so they can never disagree.' };
+const FIX_BODY = { who: 'SwiftUI calls this property; your code never calls body directly.', what: 'Returns the description of the row for the current data and the current conditions.', where: 'A computed property inside LessonRow.', when: 'When the row appears, and again whenever the device, text size or captions state changes.', why: 'The same body must serve every size, which is why the layout, not the content, is what gets repaired.' };
+const FIX_HSTACK12 = { who: 'SwiftUI\'s layout system, which measures the children and places them in a row.', what: 'Places the icon, the two texts, the spacer and the button side by side, 12 points apart.', where: 'The root view returned by body.', when: 'Measured and placed again every time body produces a new description.', why: 'One line is the compact arrangement every list wants, until the words outgrow it.' };
+const FIX_HSTACK4 = { who: 'SwiftUI\'s layout system, which measures the children and places them in a row.', what: 'Places the same four pieces side by side, now only 4 points apart.', where: 'The root view returned by body.', when: 'Measured and placed again every time body produces a new description.', why: 'Tighter spacing is the cheapest repair: it buys a few points without changing the arrangement.' };
+const FIX_ICON = { who: 'SwiftUI, which looks the name up in the SF Symbols library built into the system.', what: 'Shows the video symbol, marking this row as a video lesson.', where: 'The first child of the row, at the leading edge.', when: 'Drawn every time body runs; the symbol scales with the text around it.', why: 'An icon identifies the kind of lesson at a glance, before a single word is read.' };
+const FIX_TITLE = { who: 'Swift builds the string; SwiftUI draws it as a Text view.', what: 'Shows the lesson title, Lesson 4: Closures.', where: 'A child of the row, beside the icon.', when: 'Rebuilt every time body runs, and measured again at every text size.', why: 'The title is the reason the row exists; at large sizes it is also the first thing that runs out of room.' };
+const FIX_DETAIL = { who: 'Swift builds the string; SwiftUI draws it as a Text view.', what: 'Shows the lesson length, 12 minutes, as a second text on the same line.', where: 'A child of the row, after the title.', when: 'Rebuilt every time body runs, and measured again at every text size.', why: 'A second text on the same line doubles what the line must fit, which is the squeeze this example repairs.' };
+const FIX_SPACER = { who: 'SwiftUI\'s layout system, which gives the spacer all the width nobody else claimed.', what: 'Pushes the button to the trailing edge of the row.', where: 'Between the length and the button, inside the row.', when: 'Sized during layout, after every other child has reported its width.', why: 'At the default size the spacer is what makes the row look designed; at accessibility sizes it is width the words need.' };
+const FIX_BUTTON = { who: 'You declare it; the student will trigger its action by tapping.', what: 'Creates the Watch button with an empty action; watching the lesson is outside this example.', where: 'The last child of the arrangement, at the trailing edge or below the words.', when: 'Its (empty) closure would run at the moment of a tap.', why: 'The button is the row\'s one action, so the repair must keep it reachable and readable, not shrink it away.' };
+const FIX_VSTACK8 = { who: 'SwiftUI\'s layout system, which measures the children and stacks them.', what: 'Stacks the icon-and-title line, the length and the button vertically, leading-aligned, 8 points apart.', where: 'The root view returned by body, replacing the single row.', when: 'Measured and placed again every time body produces a new description.', why: 'Stacking spends height, which a scrolling list has, instead of width, which a small phone does not.' };
+const FIX_VSTACK12 = { who: 'SwiftUI\'s layout system, which measures the children and stacks them.', what: 'Stacks the icon-and-title line, the length, the button and the toggle vertically, leading-aligned, 12 points apart.', where: 'The root view returned by body.', when: 'Measured and placed again every time body produces a new description.', why: 'The wider 12-point rhythm separates the groups: identity, detail, action, setting.' };
+const FIX_INNER_HSTACK8 = { who: 'SwiftUI\'s layout system, which measures the icon and title and places them in a row.', what: 'Places the icon beside the title on their own shared line, 8 points apart.', where: 'The first child of the stack.', when: 'Measured and placed again every time body produces a new description.', why: 'Icon and title still belong together; only the length and the button had to leave the line.' };
+const FIX_INNER_HSTACK12 = { who: 'SwiftUI\'s layout system, which measures the icon and title and places them in a row.', what: 'Places the icon beside the title on their own shared line, 12 points apart.', where: 'The first child of the stack.', when: 'Measured and placed again every time body produces a new description.', why: 'The icon gets the same 12-point breathing room as the groups below it.' };
+const FIX_ICON_INNER = { who: 'SwiftUI, which looks the name up in the SF Symbols library built into the system.', what: 'Shows the video symbol, marking this row as a video lesson.', where: 'The first child of the small top line.', when: 'Drawn every time body runs; the symbol scales with the text around it.', why: 'The icon keeps its place beside the title, so the row still reads as one lesson.' };
+const FIX_TITLE_INNER = { who: 'Swift builds the string; SwiftUI draws it as a Text view.', what: 'Shows the lesson title, Lesson 4: Closures.', where: 'The second child of the small top line, beside the icon.', when: 'Rebuilt every time body runs, and measured again at every text size.', why: 'On its own line the title can grow, and even wrap, without pushing anything off the screen.' };
+const FIX_TITLE_FONT = { who: 'The font modifier on the title Text directly above it.', what: 'Makes the title a headline: semibold and sized to lead the stack.', where: 'Chained under the title Text, so only the title grows in weight.', when: 'Applied while the description is built, before the text is measured.', why: 'With the squeeze gone, hierarchy returns: title first, length second, actions last.' };
+const FIX_DETAIL_STACK = { who: 'Swift builds the string; SwiftUI draws it as a Text view.', what: 'Shows the lesson length, 12 minutes.', where: 'A child of the stack, on its own line under the title line.', when: 'Rebuilt every time body runs, and measured again at every text size.', why: 'On its own line the length can be as large as the reader needs without crowding the title.' };
+const FIX_DETAIL_SEC = { who: 'The foregroundStyle modifier on the length Text directly above it.', what: 'Colors the length with the secondary style, a gray that steps back from the title.', where: 'Chained under the length Text.', when: 'Applied while the description is built.', why: 'The length is supporting detail; secondary color keeps the title first in the hierarchy.' };
+const FIX_BUTTON_FRAME = { who: 'The frame modifier, applied to the Watch button directly above it.', what: 'Gives the button a minimum height of 44 points, the smallest comfortable touch target.', where: 'Chained under the button, inside the stack.', when: 'Measured while layout runs, every time body produces the button.', why: 'The repair is not finished when the words fit; the target must also be big enough to hit, which this module sets at 44 points.' };
+const FIX_TOGGLE = { who: 'You declare it; SwiftUI draws the switch and binds it to the state.', what: 'Creates the Captions toggle, a labeled switch that reads and writes the captions state.', where: 'A child of the stack, under the button.', when: 'Redrawn whenever captions changes; flips when the student taps it.', why: 'A system Toggle brings the standard switch, a label that scales with Dynamic Type, and VoiceOver support for free.' };
+const FIX_STATUS = { who: 'Swift builds one of the two strings from captions; SwiftUI draws it as a Text view.', what: 'Shows Captions on when captions is true and Captions off when it is false.', where: 'The last child of the stack, under the toggle.', when: 'Rebuilt after every change to captions, because it reads the state the toggle changes.', why: 'The student gets confirmation that the tap worked, from the same single source of truth as the switch.' };
+const FIX_PAD = { who: 'The padding modifier, wrapping the whole arrangement.', what: 'Adds standard spacing inside all four edges of the arrangement.', where: 'The first modifier on the root view, after its closing brace.', when: 'Measured during the same layout pass as the view it wraps.', why: 'Padding keeps the enlarged text off the edges of the small screen, at every size.' };
+const FIX_PREVIEW = { who: 'Xcode and this page, which render the row without running an app.', what: 'Creates one LessonRow for the preview to display.', where: 'At file scope, after LessonRow; preview code is not part of the shipped app.', when: 'Each time the preview refreshes.', why: 'The preview is where this row is tried at other devices and text sizes, frame by frame.' };
+const FIX_T_ICON = { who: 'You declare it; the total below reads it.', what: 'Stores the icon\'s width in points: 44.', where: 'Top-level code, the first line of the program.', when: 'First, before any total is computed.', why: 'A touch target is 44 points wide, so the icon column costs 44 points of the row.' };
+const FIX_T_TITLE = { who: 'You declare it; the total below reads it.', what: 'Stores the title\'s measured width at the accessibility text size: 180 points.', where: 'Top-level code, under the icon width.', when: 'Second, before the total is computed.', why: 'Text is the width that grows: at the default size this title is far narrower.' };
+const FIX_T_BUTTON = { who: 'You declare it; the total below reads it.', what: 'Stores the Watch button\'s width in points: 88.', where: 'Top-level code, under the title width.', when: 'Third, before the total is computed.', why: 'The button cannot shrink below a tappable size, so its width is a fixed cost too.' };
+const FIX_T_SPACING = { who: 'You declare it; the corrected total below reads it.', what: 'Stores the spacing the row puts between its pieces: two gaps of 12 points, 24 in total.', where: 'Top-level code, after the three piece widths.', when: 'After the widths exist and before the total uses them.', why: 'Spacing is real width: a row pays for its gaps as surely as for its words.' };
+const FIX_T_TOTAL = { who: 'Swift\'s integer arithmetic, which adds exactly.', what: 'Computes the row\'s width from the three pieces alone, forgetting the spacing between them.', where: 'Top-level code, after the three widths.', when: 'After the pieces exist; the spacing is never added.', why: 'This is the optimistic total that passes review and then squeezes on the real phone.' };
+const FIX_T_TOTAL2 = { who: 'Swift\'s integer arithmetic, which adds exactly.', what: 'Computes the row\'s true width: the three pieces plus the spacing between them.', where: 'Top-level code, after the spacing is declared.', when: 'After every cost exists, spacing included.', why: 'Only the honest total can be trusted to decide whether the row fits.' };
+const FIX_T_PRINT = { who: 'The print function from the Swift standard library.', what: 'Prints whether the row fits the 320 points an iPhone SE offers, or must be stacked instead.', where: 'The last line of the program.', when: 'Last, after the total is final.', why: 'The verdict is a layout decision in words: Row fits, or Stack the row.' };
+
+const VO_IMPORT = { who: 'The Swift compiler, which loads the SwiftUI framework for this file.', what: 'Makes View, Text, VStack, HStack, Image, Button and the accessibility modifiers available in this file.', where: 'The first line of the file; an import covers only its own file.', when: 'At compile time, before any of the code below is checked.', why: 'Accessibility in SwiftUI is not a separate framework; it is part of every view.' };
+const VO_STRUCT = { who: 'You declare it; SwiftUI creates values of it wherever a photo is shown.', what: 'Declares PhotoCard, a struct that conforms to View and describes one photo card.', where: 'At file scope, so the preview at the bottom can create it.', when: 'Compiled once; a fresh value is created whenever a parent asks for the card.', why: 'A photo card is where unlabeled icon buttons are most common, which is why it is the patient here.' };
+const VO_BODY = { who: 'SwiftUI calls this property; your code never calls body directly.', what: 'Returns the description of the card for the current data.', where: 'A computed property inside PhotoCard.', when: 'When the card appears, and again if anything it reads changes.', why: 'VoiceOver reads the accessibility tree this body builds, in the order the views are written.' };
+const VO_VSTACK = { who: 'SwiftUI\'s layout system, which measures the children and stacks them.', what: 'Stacks the photo, the title and the button row vertically, leading-aligned, 12 points apart.', where: 'The root view returned by body.', when: 'Measured and placed again every time body produces a new description.', why: 'Top-to-bottom in the stack is the order VoiceOver will visit: the layout is the reading order.' };
+const VO_IMAGE = { who: 'SwiftUI, which looks the name up in the SF Symbols library built into the system.', what: 'Shows the photo symbol, standing in for the card\'s photograph; it is decoration, not information.', where: 'The first child of the stack, at the top of the card.', when: 'Drawn every time body runs.', why: 'The picture opens the card visually, which is exactly why VoiceOver meets it first.' };
+const VO_IMAGE_HIDDEN = { who: 'SwiftUI, which looks the name up in the SF Symbols library, and the accessibility system, which honors the chained modifier.', what: 'Shows the photo symbol and hides it from accessibility tools with accessibilityHidden(true).', where: 'The first child of the stack, at the top of the card; the modifier is chained on the same line.', when: 'Drawn every time body runs; skipped by VoiceOver on every pass.', why: 'The picture is decorative, so hiding it removes a useless stop while the card looks exactly the same.' };
+const VO_TITLE = { who: 'Swift builds the string; SwiftUI draws it as a Text view.', what: 'Shows the photo\'s title, Harbor at sunset.', where: 'A child of the stack, under the photo.', when: 'Rebuilt every time body runs, though the words never change.', why: 'A Text view is readable by VoiceOver exactly as written: this stop needs no repair.' };
+const VO_HSTACK = { who: 'SwiftUI\'s layout system, which measures the two buttons and spaces them.', what: 'Places the two icon buttons side by side, 24 points apart.', where: 'A child of the stack, under the title.', when: 'Measured and placed again every time body produces a new description.', why: 'Left-to-right in this row is the order VoiceOver visits the buttons.' };
+const VO_BTN_HEART = { who: 'You declare it; the listener triggers its action by tapping or double-tapping.', what: 'Opens the Favorite button; the closure before label is empty here, and the label closure follows.', where: 'The first child of the button row.', when: 'Its action would run at the moment of activation.', why: 'A real Button gets the button trait and activation for free; only its name is missing.' };
+const VO_IMG_HEART = { who: 'SwiftUI, which looks the name up in the SF Symbols library built into the system.', what: 'Shows a heart symbol as the button\'s only content.', where: 'Inside the Favorite button\'s label closure, as its only content.', when: 'Drawn every time body runs.', why: 'A picture is all this button shows, so a listener who cannot see it gets nothing from the label closure.' };
+const VO_BTN_SHARE = { who: 'You declare it; the listener triggers its action by tapping or double-tapping.', what: 'Opens the Share button; the closure before label is empty here, and the label closure follows.', where: 'The second child of the button row, after the Favorite button.', when: 'Its action would run at the moment of activation.', why: 'Same shape as the first button, same missing piece: a name.' };
+const VO_IMG_SHARE = { who: 'SwiftUI, which looks the name up in the SF Symbols library built into the system.', what: 'Shows the share symbol, a box with an arrow rising from it, as the button\'s only content.', where: 'Inside the Share button\'s label closure, as its only content.', when: 'Drawn every time body runs.', why: 'Sighted users know this symbol means share; VoiceOver does not speak symbols, so the meaning must be supplied in words.' };
+const VO_LABEL_FAV = { who: 'The accessibilityLabel modifier on the Favorite button directly above it; VoiceOver and Voice Control read it.', what: 'Names the heart button Favorite, the word VoiceOver announces and Voice Control users can say.', where: 'Chained under the Favorite button, after its label closure.', when: 'Read whenever an assistive technology focuses or lists the button.', why: 'Without it VoiceOver can only guess from the picture, and Voice Control users have no name to say.' };
+const VO_LABEL_SHARE = { who: 'The accessibilityLabel modifier on the Share button directly above it; VoiceOver and Voice Control read it.', what: 'Names the share button Share Photo, in the words this module\'s Label lesson gave the same symbol.', where: 'Chained under the Share button, after its label closure.', when: 'Read whenever an assistive technology focuses or lists the button.', why: 'The label removes the guesswork: the button is named by the action it performs.' };
+const VO_PAD = { who: 'The padding modifier, wrapping the whole stack.', what: 'Adds standard spacing inside all four edges of the card.', where: 'The first modifier on the stack itself, after its closing brace.', when: 'Measured during the same layout pass as the stack it wraps.', why: 'Padding is part of the visual card; it has no effect on the reading order.' };
+const VO_PREVIEW = { who: 'Xcode and this page, which render the card without running an app.', what: 'Creates one PhotoCard for the preview to display.', where: 'At file scope, after PhotoCard; preview code is not part of the shipped app.', when: 'Each time the preview refreshes.', why: 'The preview shows the sighted card; the diagram beside each frame shows the card VoiceOver meets.' };
+const VO_T_ELEMENTS = { who: 'You declare it; the loop below reads it.', what: 'Stores the card\'s elements as (label, priority) pairs, in the order they were collected, not reading order.', where: 'Top-level code, the first line of the program.', when: 'First, before any printing happens.', why: 'Lower priority numbers are read first, so the stored order and the reading order are different things.' };
+const VO_T_LOOP_STORED = { who: 'Swift\'s for loop, walking the array exactly as stored.', what: 'Opens a loop over the elements in stored order, with no sorting applied.', where: 'Top-level code, after the elements are declared.', when: 'Second; the loop body runs once per element.', why: 'Printing in stored order is the bug: Share Photo comes first only because it was collected first.' };
+const VO_T_LOOP_SORTED = { who: 'Swift\'s sorted method, ordering the array with the closure you supply.', what: 'Opens a loop over the elements sorted by priority, lowest first: reading order.', where: 'Top-level code, after the elements are declared.', when: 'Second; the loop body runs once per element, in sorted order.', why: 'Sorting by the priority value is the whole repair: the labels were always there, only their order was wrong.' };
+const VO_T_PRINT = { who: 'The print function from the Swift standard library.', what: 'Prints one element\'s label on its own line.', where: 'Inside the loop, the only statement in its body.', when: 'Once per element, in whatever order the loop visits them.', why: 'One label per line makes the reading order visible at a glance, like the diagram\'s numbered stops.' };
+
 export default {
   id: 'design',
   number: 5,
@@ -6127,6 +6207,639 @@ export default {
               explain: '<p>A distinct shape plus a word carries the meaning without relying on color, and VoiceOver can read the word. A bigger or brighter dot is still only a color. Hover does not exist on a touch screen, so a tooltip would never appear on iPhone.</p>',
             },
           ],
+        },
+      ],
+    },
+    {
+      id: 'design-worked-examples',
+      title: 'Worked Examples',
+      steps: [
+        {
+          kind: 'example',
+          title: 'Assemble a now-playing row',
+          problem: '<p>Build a now-playing row for a music app: artwork, the song title and artist, and a Play button, finished as a padded card. Success: tapping Play shows the status Playing in the row.</p>',
+          adapter: 'phone',
+          check: { tap: 'Play', expectText: 'Playing' },
+          frames: [
+            {
+              caption: 'The row starts with two pieces: a music-note symbol standing in for album artwork, and the song title beside it in an HStack. Everything else in this example is added to this row.',
+              lines: [
+                ['import SwiftUI', NOW_IMPORT],
+                ['', null],
+                ['struct NowPlayingRow: View {', NOW_STRUCT],
+                ['    var body: some View {', NOW_BODY],
+                ['        HStack(spacing: 12) {', NOW_HSTACK],
+                ['            Image(systemName: "music.note")', NOW_ART],
+                ['                .font(.title)', NOW_ART_FONT],
+                ['            Text("Blue Sky")', NOW_TITLE_TOP],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { NowPlayingRow() }', NOW_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The single title becomes a small VStack: the title on top and the artist underneath in secondary gray. Related words now travel together as one block inside the row.',
+              lines: [
+                ['import SwiftUI', NOW_IMPORT],
+                ['', null],
+                ['struct NowPlayingRow: View {', NOW_STRUCT],
+                ['    var body: some View {', NOW_BODY],
+                ['        HStack(spacing: 12) {', NOW_HSTACK],
+                ['            Image(systemName: "music.note")', NOW_ART],
+                ['                .font(.title)', NOW_ART_FONT],
+                ['            VStack(alignment: .leading, spacing: 2) {', NOW_VSTACK],
+                ['                Text("Blue Sky")', NOW_TITLE],
+                ['                Text("The Wanderers")', NOW_ARTIST],
+                ['                    .foregroundStyle(.secondary)', NOW_ARTIST_SEC],
+                ['            }', null],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { NowPlayingRow() }', NOW_PREVIEW],
+              ],
+            },
+            {
+              caption: 'A Spacer claims the free width and pushes a Play button to the trailing edge, where a row\'s action belongs. The button does nothing yet; this frame is about placement, not behavior.',
+              lines: [
+                ['import SwiftUI', NOW_IMPORT],
+                ['', null],
+                ['struct NowPlayingRow: View {', NOW_STRUCT],
+                ['    var body: some View {', NOW_BODY],
+                ['        HStack(spacing: 12) {', NOW_HSTACK],
+                ['            Image(systemName: "music.note")', NOW_ART],
+                ['                .font(.title)', NOW_ART_FONT],
+                ['            VStack(alignment: .leading, spacing: 2) {', NOW_VSTACK],
+                ['                Text("Blue Sky")', NOW_TITLE],
+                ['                Text("The Wanderers")', NOW_ARTIST],
+                ['                    .foregroundStyle(.secondary)', NOW_ARTIST_SEC],
+                ['            }', null],
+                ['            Spacer()', NOW_SPACER],
+                ['            Button("Play") { }', NOW_BTN_EMPTY],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { NowPlayingRow() }', NOW_PREVIEW],
+              ],
+            },
+            {
+              caption: 'Padding wraps the whole row, so the artwork and button no longer touch the edges of their container. The space sits inside whatever background comes next, which is why padding comes first.',
+              lines: [
+                ['import SwiftUI', NOW_IMPORT],
+                ['', null],
+                ['struct NowPlayingRow: View {', NOW_STRUCT],
+                ['    var body: some View {', NOW_BODY],
+                ['        HStack(spacing: 12) {', NOW_HSTACK],
+                ['            Image(systemName: "music.note")', NOW_ART],
+                ['                .font(.title)', NOW_ART_FONT],
+                ['            VStack(alignment: .leading, spacing: 2) {', NOW_VSTACK],
+                ['                Text("Blue Sky")', NOW_TITLE],
+                ['                Text("The Wanderers")', NOW_ARTIST],
+                ['                    .foregroundStyle(.secondary)', NOW_ARTIST_SEC],
+                ['            }', null],
+                ['            Spacer()', NOW_SPACER],
+                ['            Button("Play") { }', NOW_BTN_EMPTY],
+                ['        }', null],
+                ['        .padding()', NOW_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { NowPlayingRow() }', NOW_PREVIEW],
+              ],
+            },
+            {
+              caption: 'A thin material background and rounded corners turn the padded row into a card. The clip shape comes last so the material itself is rounded, and the row can sit on any screen.',
+              lines: [
+                ['import SwiftUI', NOW_IMPORT],
+                ['', null],
+                ['struct NowPlayingRow: View {', NOW_STRUCT],
+                ['    var body: some View {', NOW_BODY],
+                ['        HStack(spacing: 12) {', NOW_HSTACK],
+                ['            Image(systemName: "music.note")', NOW_ART],
+                ['                .font(.title)', NOW_ART_FONT],
+                ['            VStack(alignment: .leading, spacing: 2) {', NOW_VSTACK],
+                ['                Text("Blue Sky")', NOW_TITLE],
+                ['                Text("The Wanderers")', NOW_ARTIST],
+                ['                    .foregroundStyle(.secondary)', NOW_ARTIST_SEC],
+                ['            }', null],
+                ['            Spacer()', NOW_SPACER],
+                ['            Button("Play") { }', NOW_BTN_EMPTY],
+                ['        }', null],
+                ['        .padding()', NOW_PAD],
+                ['        .background(.thinMaterial)', NOW_BG],
+                ['        .clipShape(RoundedRectangle(cornerRadius: 12))', NOW_CLIP],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { NowPlayingRow() }', NOW_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The row gains @State for whether the song is playing, and a status word that reads it: Paused for now. Nothing changes the state yet, so the status cannot move; that wiring is next.',
+              lines: [
+                ['import SwiftUI', NOW_IMPORT],
+                ['', null],
+                ['struct NowPlayingRow: View {', NOW_STRUCT],
+                ['    @State private var playing = false', NOW_STATE],
+                ['    var body: some View {', NOW_BODY],
+                ['        HStack(spacing: 12) {', NOW_HSTACK],
+                ['            Image(systemName: "music.note")', NOW_ART],
+                ['                .font(.title)', NOW_ART_FONT],
+                ['            VStack(alignment: .leading, spacing: 2) {', NOW_VSTACK],
+                ['                Text("Blue Sky")', NOW_TITLE],
+                ['                Text("The Wanderers")', NOW_ARTIST],
+                ['                    .foregroundStyle(.secondary)', NOW_ARTIST_SEC],
+                ['            }', null],
+                ['            Spacer()', NOW_SPACER],
+                ['            Text(playing ? "Playing" : "Paused")', NOW_STATUS],
+                ['            Button("Play") { }', NOW_BTN_EMPTY],
+                ['        }', null],
+                ['        .padding()', NOW_PAD],
+                ['        .background(.thinMaterial)', NOW_BG],
+                ['        .clipShape(RoundedRectangle(cornerRadius: 12))', NOW_CLIP],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { NowPlayingRow() }', NOW_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The Play button now sets playing to true. SwiftUI reruns body, and the status word becomes Playing. Run the check: before the tap the row says Paused, and Playing appears only after it.',
+              lines: [
+                ['import SwiftUI', NOW_IMPORT],
+                ['', null],
+                ['struct NowPlayingRow: View {', NOW_STRUCT],
+                ['    @State private var playing = false', NOW_STATE],
+                ['    var body: some View {', NOW_BODY],
+                ['        HStack(spacing: 12) {', NOW_HSTACK],
+                ['            Image(systemName: "music.note")', NOW_ART],
+                ['                .font(.title)', NOW_ART_FONT],
+                ['            VStack(alignment: .leading, spacing: 2) {', NOW_VSTACK],
+                ['                Text("Blue Sky")', NOW_TITLE],
+                ['                Text("The Wanderers")', NOW_ARTIST],
+                ['                    .foregroundStyle(.secondary)', NOW_ARTIST_SEC],
+                ['            }', null],
+                ['            Spacer()', NOW_SPACER],
+                ['            Text(playing ? "Playing" : "Paused")', NOW_STATUS],
+                ['            Button("Play") { playing = true }', NOW_BTN_PLAY],
+                ['        }', null],
+                ['        .padding()', NOW_PAD],
+                ['        .background(.thinMaterial)', NOW_BG],
+                ['        .clipShape(RoundedRectangle(cornerRadius: 12))', NOW_CLIP],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { NowPlayingRow() }', NOW_PREVIEW],
+              ],
+            },
+          ],
+          tryIt: {
+            task: '<p>The starter models a player whose Play action was never wired: it prints the status while playing is still false. Add the line the button performs, setting playing to true before the status is printed.</p>',
+            lines: [
+              ['var playing = false', NOW_T_STATE],
+              ['print(playing ? "Playing" : "Paused")', NOW_T_PRINT],
+            ],
+            solution: [
+              ['var playing = false', NOW_T_STATE],
+              ['playing = true', NOW_T_SET],
+              ['print(playing ? "Playing" : "Paused")', NOW_T_PRINT],
+            ],
+            expect: 'Playing',
+          },
+        },
+        {
+          kind: 'example',
+          title: 'Repair a cramped row for large text and a small phone',
+          problem: '<p>A lesson row looks fine at the default size but squeezes at accessibility text sizes on the smallest phone. Repair the same row so every word stays readable there. Success: on iPhone SE at accessibility size 1, the Captions toggle shows Captions on.</p>',
+          adapter: 'phone',
+          check: { tap: 'Captions', expectText: 'Captions on' },
+          frames: [
+            {
+              caption: 'At the default size on a regular phone, the row looks fine: icon, title, length and button on one line. This is the version that passes review and ships, because nothing looks broken yet.',
+              lines: [
+                ['import SwiftUI', FIX_IMPORT],
+                ['', null],
+                ['struct LessonRow: View {', FIX_STRUCT],
+                ['    var body: some View {', FIX_BODY],
+                ['        HStack(spacing: 12) {', FIX_HSTACK12],
+                ['            Image(systemName: "video")', FIX_ICON],
+                ['            Text("Lesson 4: Closures")', FIX_TITLE],
+                ['            Text("12 minutes")', FIX_DETAIL],
+                ['            Spacer()', FIX_SPACER],
+                ['            Button("Watch") { }', FIX_BUTTON],
+                ['        }', null],
+                ['        .padding()', FIX_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LessonRow() }', FIX_PREVIEW],
+              ],
+            },
+            {
+              caption: 'Same code, harder conditions: an iPhone SE with Dynamic Type at accessibility 1. The title and length now fight the button for one line, and the words start to squeeze.',
+              device: 'iphone-se',
+              dynamicType: 7,
+              lines: [
+                ['import SwiftUI', FIX_IMPORT],
+                ['', null],
+                ['struct LessonRow: View {', FIX_STRUCT],
+                ['    var body: some View {', FIX_BODY],
+                ['        HStack(spacing: 12) {', FIX_HSTACK12],
+                ['            Image(systemName: "video")', FIX_ICON],
+                ['            Text("Lesson 4: Closures")', FIX_TITLE],
+                ['            Text("12 minutes")', FIX_DETAIL],
+                ['            Spacer()', FIX_SPACER],
+                ['            Button("Watch") { }', FIX_BUTTON],
+                ['        }', null],
+                ['        .padding()', FIX_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LessonRow() }', FIX_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The first repair is the cheap one: tighter spacing and no Spacer, so the pieces stop pushing each other. It gains a little room, but at this text size one line is still not enough.',
+              device: 'iphone-se',
+              dynamicType: 7,
+              lines: [
+                ['import SwiftUI', FIX_IMPORT],
+                ['', null],
+                ['struct LessonRow: View {', FIX_STRUCT],
+                ['    var body: some View {', FIX_BODY],
+                ['        HStack(spacing: 4) {', FIX_HSTACK4],
+                ['            Image(systemName: "video")', FIX_ICON],
+                ['            Text("Lesson 4: Closures")', FIX_TITLE],
+                ['            Text("12 minutes")', FIX_DETAIL],
+                ['            Button("Watch") { }', FIX_BUTTON],
+                ['        }', null],
+                ['        .padding()', FIX_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LessonRow() }', FIX_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The real repair changes the arrangement: a VStack gives the title its own line, the length sits underneath in secondary gray, and the button drops below. Nothing can squeeze, because nothing shares a line.',
+              device: 'iphone-se',
+              dynamicType: 7,
+              lines: [
+                ['import SwiftUI', FIX_IMPORT],
+                ['', null],
+                ['struct LessonRow: View {', FIX_STRUCT],
+                ['    var body: some View {', FIX_BODY],
+                ['        VStack(alignment: .leading, spacing: 8) {', FIX_VSTACK8],
+                ['            HStack(spacing: 8) {', FIX_INNER_HSTACK8],
+                ['                Image(systemName: "video")', FIX_ICON_INNER],
+                ['                Text("Lesson 4: Closures")', FIX_TITLE_INNER],
+                ['            }', null],
+                ['            Text("12 minutes")', FIX_DETAIL_STACK],
+                ['                .foregroundStyle(.secondary)', FIX_DETAIL_SEC],
+                ['            Button("Watch") { }', FIX_BUTTON],
+                ['        }', null],
+                ['        .padding()', FIX_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LessonRow() }', FIX_PREVIEW],
+              ],
+            },
+            {
+              caption: 'Spacing scales up to 12 points between groups, the title becomes a headline, and the button grows to a 44-point tall target. The layout now spends the small phone\'s height instead of its width.',
+              device: 'iphone-se',
+              dynamicType: 7,
+              lines: [
+                ['import SwiftUI', FIX_IMPORT],
+                ['', null],
+                ['struct LessonRow: View {', FIX_STRUCT],
+                ['    var body: some View {', FIX_BODY],
+                ['        VStack(alignment: .leading, spacing: 12) {', FIX_VSTACK12],
+                ['            HStack(spacing: 12) {', FIX_INNER_HSTACK12],
+                ['                Image(systemName: "video")', FIX_ICON_INNER],
+                ['                Text("Lesson 4: Closures")', FIX_TITLE_INNER],
+                ['                    .font(.headline)', FIX_TITLE_FONT],
+                ['            }', null],
+                ['            Text("12 minutes")', FIX_DETAIL_STACK],
+                ['                .foregroundStyle(.secondary)', FIX_DETAIL_SEC],
+                ['            Button("Watch") { }', FIX_BUTTON],
+                ['                .frame(minHeight: 44)', FIX_BUTTON_FRAME],
+                ['        }', null],
+                ['        .padding()', FIX_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LessonRow() }', FIX_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The finished row adds a Captions toggle with a status line that reads the same state. Run the check at this size and device: tapping Captions turns the status to Captions on.',
+              device: 'iphone-se',
+              dynamicType: 7,
+              lines: [
+                ['import SwiftUI', FIX_IMPORT],
+                ['', null],
+                ['struct LessonRow: View {', FIX_STRUCT],
+                ['    @State private var captions = false', FIX_STATE],
+                ['    var body: some View {', FIX_BODY],
+                ['        VStack(alignment: .leading, spacing: 12) {', FIX_VSTACK12],
+                ['            HStack(spacing: 12) {', FIX_INNER_HSTACK12],
+                ['                Image(systemName: "video")', FIX_ICON_INNER],
+                ['                Text("Lesson 4: Closures")', FIX_TITLE_INNER],
+                ['                    .font(.headline)', FIX_TITLE_FONT],
+                ['            }', null],
+                ['            Text("12 minutes")', FIX_DETAIL_STACK],
+                ['                .foregroundStyle(.secondary)', FIX_DETAIL_SEC],
+                ['            Button("Watch") { }', FIX_BUTTON],
+                ['                .frame(minHeight: 44)', FIX_BUTTON_FRAME],
+                ['            Toggle("Captions", isOn: $captions)', FIX_TOGGLE],
+                ['            Text(captions ? "Captions on" : "Captions off")', FIX_STATUS],
+                ['        }', null],
+                ['        .padding()', FIX_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LessonRow() }', FIX_PREVIEW],
+              ],
+            },
+          ],
+          tryIt: {
+            task: '<p>A row fits if its total width is at most the 320 points an iPhone SE offers. The starter totals the three pieces and declares the row fits. Find the missing cost, add it to the total, and print the honest verdict.</p>',
+            lines: [
+              ['let iconWidth = 44', FIX_T_ICON],
+              ['let titleWidth = 180', FIX_T_TITLE],
+              ['let buttonWidth = 88', FIX_T_BUTTON],
+              ['let totalWidth = iconWidth + titleWidth + buttonWidth', FIX_T_TOTAL],
+              ['print(totalWidth <= 320 ? "Row fits" : "Stack the row")', FIX_T_PRINT],
+            ],
+            solution: [
+              ['let iconWidth = 44', FIX_T_ICON],
+              ['let titleWidth = 180', FIX_T_TITLE],
+              ['let buttonWidth = 88', FIX_T_BUTTON],
+              ['let spacingWidth = 24', FIX_T_SPACING],
+              ['let totalWidth = iconWidth + titleWidth + buttonWidth + spacingWidth', FIX_T_TOTAL2],
+              ['print(totalWidth <= 320 ? "Row fits" : "Stack the row")', FIX_T_PRINT],
+            ],
+            expect: 'Stack the row',
+          },
+        },
+        {
+          kind: 'example',
+          title: 'Walk the VoiceOver reading order, then repair it',
+          problem: '<p>VoiceOver reads a photo card in the order views appear. Walk that order, find the stops that say nothing useful, and repair them with the accessibility modifiers from this lesson. Success: every stop has a meaningful label and the decorative image is skipped.</p>',
+          adapter: 'diagram',
+          diagram: 'voiceover',
+          simulation: true,
+          frames: [
+            {
+              caption: 'VoiceOver visits the card in the order the views are written: image first, then title, then buttons. The first stop is the decorative photo, which VoiceOver reads aloud even though it adds nothing.',
+              static: true,
+              lines: [
+                ['import SwiftUI', VO_IMPORT],
+                ['', null],
+                ['struct PhotoCard: View {', VO_STRUCT],
+                ['    var body: some View {', VO_BODY],
+                ['        VStack(alignment: .leading, spacing: 12) {', VO_VSTACK],
+                ['            Image(systemName: "photo")', VO_IMAGE],
+                ['            Text("Harbor at sunset")', VO_TITLE],
+                ['            HStack(spacing: 24) {', VO_HSTACK],
+                ['                Button { } label: {', VO_BTN_HEART],
+                ['                    Image(systemName: "heart")', VO_IMG_HEART],
+                ['                }', null],
+                ['                Button { } label: {', VO_BTN_SHARE],
+                ['                    Image(systemName: "square.and.arrow.up")', VO_IMG_SHARE],
+                ['                }', null],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', VO_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { PhotoCard() }', VO_PREVIEW],
+              ],
+              diagram: { items: [{ label: 'Image', note: 'decorative photo, read aloud' }, { label: 'Harbor at sunset' }, { label: 'Button', note: 'no label' }, { label: 'Button', note: 'no label' }], focus: 0, note: 'Reading order: image, title, then the two buttons.' },
+            },
+            {
+              caption: 'The second stop is the title, Harbor at sunset, and it is the only stop so far that tells the listener something useful. A good reading order is built from stops like this one.',
+              static: true,
+              lines: [
+                ['import SwiftUI', VO_IMPORT],
+                ['', null],
+                ['struct PhotoCard: View {', VO_STRUCT],
+                ['    var body: some View {', VO_BODY],
+                ['        VStack(alignment: .leading, spacing: 12) {', VO_VSTACK],
+                ['            Image(systemName: "photo")', VO_IMAGE],
+                ['            Text("Harbor at sunset")', VO_TITLE],
+                ['            HStack(spacing: 24) {', VO_HSTACK],
+                ['                Button { } label: {', VO_BTN_HEART],
+                ['                    Image(systemName: "heart")', VO_IMG_HEART],
+                ['                }', null],
+                ['                Button { } label: {', VO_BTN_SHARE],
+                ['                    Image(systemName: "square.and.arrow.up")', VO_IMG_SHARE],
+                ['                }', null],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', VO_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { PhotoCard() }', VO_PREVIEW],
+              ],
+              diagram: { items: [{ label: 'Image', note: 'decorative photo, read aloud' }, { label: 'Harbor at sunset' }, { label: 'Button', note: 'no label' }, { label: 'Button', note: 'no label' }], focus: 1, note: 'The title is the one stop that already says something useful.' },
+            },
+            {
+              caption: 'The third stop is the heart button. It has no accessibility label, so VoiceOver can only announce Button: the listener hears that something can be tapped, but not what it does.',
+              static: true,
+              lines: [
+                ['import SwiftUI', VO_IMPORT],
+                ['', null],
+                ['struct PhotoCard: View {', VO_STRUCT],
+                ['    var body: some View {', VO_BODY],
+                ['        VStack(alignment: .leading, spacing: 12) {', VO_VSTACK],
+                ['            Image(systemName: "photo")', VO_IMAGE],
+                ['            Text("Harbor at sunset")', VO_TITLE],
+                ['            HStack(spacing: 24) {', VO_HSTACK],
+                ['                Button { } label: {', VO_BTN_HEART],
+                ['                    Image(systemName: "heart")', VO_IMG_HEART],
+                ['                }', null],
+                ['                Button { } label: {', VO_BTN_SHARE],
+                ['                    Image(systemName: "square.and.arrow.up")', VO_IMG_SHARE],
+                ['                }', null],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', VO_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { PhotoCard() }', VO_PREVIEW],
+              ],
+              diagram: { items: [{ label: 'Image', note: 'decorative photo, read aloud' }, { label: 'Harbor at sunset' }, { label: 'Button', note: 'no label' }, { label: 'Button', note: 'no label' }], focus: 2, note: 'A heart picture with no words: VoiceOver can only call it Button.' },
+            },
+            {
+              caption: 'The fourth stop is the share button, and it fails the same way: Button, with no label. Two of the card\'s four stops are dead ends, so the card needs repair, not polish.',
+              static: true,
+              lines: [
+                ['import SwiftUI', VO_IMPORT],
+                ['', null],
+                ['struct PhotoCard: View {', VO_STRUCT],
+                ['    var body: some View {', VO_BODY],
+                ['        VStack(alignment: .leading, spacing: 12) {', VO_VSTACK],
+                ['            Image(systemName: "photo")', VO_IMAGE],
+                ['            Text("Harbor at sunset")', VO_TITLE],
+                ['            HStack(spacing: 24) {', VO_HSTACK],
+                ['                Button { } label: {', VO_BTN_HEART],
+                ['                    Image(systemName: "heart")', VO_IMG_HEART],
+                ['                }', null],
+                ['                Button { } label: {', VO_BTN_SHARE],
+                ['                    Image(systemName: "square.and.arrow.up")', VO_IMG_SHARE],
+                ['                }', null],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', VO_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { PhotoCard() }', VO_PREVIEW],
+              ],
+              diagram: { items: [{ label: 'Image', note: 'decorative photo, read aloud' }, { label: 'Harbor at sunset' }, { label: 'Button', note: 'no label' }, { label: 'Button', note: 'no label' }], focus: 3, note: 'The share picture is the same dead end: Button, and nothing more.' },
+            },
+            {
+              caption: 'The first repair hides the decorative image with accessibilityHidden(true), the modifier this module used for the fork-and-knife picture. The image still shows on screen; VoiceOver now skips it and starts at the title.',
+              static: true,
+              lines: [
+                ['import SwiftUI', VO_IMPORT],
+                ['', null],
+                ['struct PhotoCard: View {', VO_STRUCT],
+                ['    var body: some View {', VO_BODY],
+                ['        VStack(alignment: .leading, spacing: 12) {', VO_VSTACK],
+                ['            Image(systemName: "photo").accessibilityHidden(true)', VO_IMAGE_HIDDEN],
+                ['            Text("Harbor at sunset")', VO_TITLE],
+                ['            HStack(spacing: 24) {', VO_HSTACK],
+                ['                Button { } label: {', VO_BTN_HEART],
+                ['                    Image(systemName: "heart")', VO_IMG_HEART],
+                ['                }', null],
+                ['                Button { } label: {', VO_BTN_SHARE],
+                ['                    Image(systemName: "square.and.arrow.up")', VO_IMG_SHARE],
+                ['                }', null],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', VO_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { PhotoCard() }', VO_PREVIEW],
+              ],
+              diagram: { items: [{ label: 'Harbor at sunset' }, { label: 'Button', note: 'no label' }, { label: 'Button', note: 'no label' }], focus: 0, note: 'The decorative image is hidden, so reading starts at the title.' },
+            },
+            {
+              caption: 'The second repair names the heart button: accessibilityLabel("Favorite") goes on the button, after its label closure. VoiceOver now announces Favorite, button, and Voice Control users can say the name.',
+              static: true,
+              lines: [
+                ['import SwiftUI', VO_IMPORT],
+                ['', null],
+                ['struct PhotoCard: View {', VO_STRUCT],
+                ['    var body: some View {', VO_BODY],
+                ['        VStack(alignment: .leading, spacing: 12) {', VO_VSTACK],
+                ['            Image(systemName: "photo").accessibilityHidden(true)', VO_IMAGE_HIDDEN],
+                ['            Text("Harbor at sunset")', VO_TITLE],
+                ['            HStack(spacing: 24) {', VO_HSTACK],
+                ['                Button { } label: {', VO_BTN_HEART],
+                ['                    Image(systemName: "heart")', VO_IMG_HEART],
+                ['                }', null],
+                ['                .accessibilityLabel("Favorite")', VO_LABEL_FAV],
+                ['                Button { } label: {', VO_BTN_SHARE],
+                ['                    Image(systemName: "square.and.arrow.up")', VO_IMG_SHARE],
+                ['                }', null],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', VO_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { PhotoCard() }', VO_PREVIEW],
+              ],
+              diagram: { items: [{ label: 'Harbor at sunset' }, { label: 'Favorite' }, { label: 'Button', note: 'no label' }], focus: 1, note: 'The heart button now announces Favorite.' },
+            },
+            {
+              caption: 'The third repair names the share button Share Photo, matching the words this module gave the same symbol in its Label lesson. Now every remaining stop in the diagram has a meaningful label.',
+              static: true,
+              lines: [
+                ['import SwiftUI', VO_IMPORT],
+                ['', null],
+                ['struct PhotoCard: View {', VO_STRUCT],
+                ['    var body: some View {', VO_BODY],
+                ['        VStack(alignment: .leading, spacing: 12) {', VO_VSTACK],
+                ['            Image(systemName: "photo").accessibilityHidden(true)', VO_IMAGE_HIDDEN],
+                ['            Text("Harbor at sunset")', VO_TITLE],
+                ['            HStack(spacing: 24) {', VO_HSTACK],
+                ['                Button { } label: {', VO_BTN_HEART],
+                ['                    Image(systemName: "heart")', VO_IMG_HEART],
+                ['                }', null],
+                ['                .accessibilityLabel("Favorite")', VO_LABEL_FAV],
+                ['                Button { } label: {', VO_BTN_SHARE],
+                ['                    Image(systemName: "square.and.arrow.up")', VO_IMG_SHARE],
+                ['                }', null],
+                ['                .accessibilityLabel("Share Photo")', VO_LABEL_SHARE],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', VO_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { PhotoCard() }', VO_PREVIEW],
+              ],
+              diagram: { items: [{ label: 'Harbor at sunset' }, { label: 'Favorite' }, { label: 'Share Photo' }], focus: 2, note: 'Every stop now has words: title, Favorite, Share Photo.' },
+            },
+            {
+              caption: 'Walk the repaired card once more: title, Favorite, Share Photo, three stops and every one of them meaningful. The code did not move; only the accessibility modifiers changed what VoiceOver meets.',
+              static: true,
+              lines: [
+                ['import SwiftUI', VO_IMPORT],
+                ['', null],
+                ['struct PhotoCard: View {', VO_STRUCT],
+                ['    var body: some View {', VO_BODY],
+                ['        VStack(alignment: .leading, spacing: 12) {', VO_VSTACK],
+                ['            Image(systemName: "photo").accessibilityHidden(true)', VO_IMAGE_HIDDEN],
+                ['            Text("Harbor at sunset")', VO_TITLE],
+                ['            HStack(spacing: 24) {', VO_HSTACK],
+                ['                Button { } label: {', VO_BTN_HEART],
+                ['                    Image(systemName: "heart")', VO_IMG_HEART],
+                ['                }', null],
+                ['                .accessibilityLabel("Favorite")', VO_LABEL_FAV],
+                ['                Button { } label: {', VO_BTN_SHARE],
+                ['                    Image(systemName: "square.and.arrow.up")', VO_IMG_SHARE],
+                ['                }', null],
+                ['                .accessibilityLabel("Share Photo")', VO_LABEL_SHARE],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', VO_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { PhotoCard() }', VO_PREVIEW],
+              ],
+              diagram: { items: [{ label: 'Harbor at sunset' }, { label: 'Favorite' }, { label: 'Share Photo' }], focus: 0, note: 'Repaired order: Harbor at sunset, Favorite, Share Photo.' },
+            },
+          ],
+          tryIt: {
+            task: '<p>Elements carry a reading priority: lower numbers are read first. The starter prints the card\'s elements in the order they were stored, which is wrong. Sort them by priority and print one label per line, in reading order.</p>',
+            lines: [
+              ['let elements = [("Share Photo", 3), ("Harbor at sunset", 1), ("Favorite", 2)]', VO_T_ELEMENTS],
+              ['for element in elements {', VO_T_LOOP_STORED],
+              ['    print(element.0)', VO_T_PRINT],
+              ['}', null],
+            ],
+            solution: [
+              ['let elements = [("Share Photo", 3), ("Harbor at sunset", 1), ("Favorite", 2)]', VO_T_ELEMENTS],
+              ['for element in elements.sorted(by: { $0.1 < $1.1 }) {', VO_T_LOOP_SORTED],
+              ['    print(element.0)', VO_T_PRINT],
+              ['}', null],
+            ],
+            expect: 'Harbor at sunset\nFavorite\nShare Photo',
+          },
         },
       ],
     },

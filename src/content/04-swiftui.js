@@ -2,6 +2,87 @@
 // Nine lessons that build from "describe the screen" to state, observable models,
 // lists, navigation, forms, motion and Liquid Glass. Most code steps run in the
 // live iPhone preview (run: 'swiftui').
+
+// Five-part notes shared by the worked example at the end of this module:
+// the same line appears in many frames, so its note is written once here.
+const PC_IMPORT = { who: 'The Swift compiler, which loads the SwiftUI framework for this file.', what: 'Makes View, Text, VStack, Image, Button and @State available in this file.', where: 'The first line of the file; an import covers only its own file.', when: 'At compile time, before any of the code below is checked.', why: 'SwiftUI is a separate framework, so every file that describes a screen imports it.' };
+const PC_STRUCT = { who: 'You declare it; SwiftUI creates values of it whenever the card is shown.', what: 'Declares ProductCard, a struct that conforms to View and describes the product card.', where: 'At file scope, so the preview at the bottom (and later, other screens) can create it.', when: 'Compiled once; a fresh value is created whenever a parent asks for the card.', why: 'A screen in SwiftUI is a value that describes an interface, not a controller that runs it.' };
+const PC_STATE = { who: 'SwiftUI, which stores the value outside the struct, tied to this card on screen.', what: 'Declares bag, the number of pairs added, starting at 0; @State makes SwiftUI keep and watch it.', where: 'Inside ProductCard, marked private because only this view changes it.', when: 'Created when the card first appears and kept across every redraw.', why: 'The count text below is computed from bag, so the button and the text can never disagree.' };
+const PC_BODY = { who: 'SwiftUI calls this property; your code never calls body directly.', what: 'Returns the description of the card for the current state.', where: 'A computed property inside ProductCard.', when: 'When the card appears, and again after every change to bag.', why: 'Describing the screen as a function of the data is the whole SwiftUI model.' };
+const PC_VSTACK = { who: 'SwiftUI\u2019s layout system, which measures the children and stacks them.', what: 'Stacks the picture, name, price and button vertically, leading-aligned, with 6 points between children.', where: 'The root view returned by body.', when: 'Measured and placed again every time body produces a new description.', why: 'A stack states the arrangement once instead of giving every view its own coordinates.' };
+const PC_IMAGE = { who: 'SwiftUI, which looks the name up in the SF Symbols library built into the system.', what: 'Shows the figure.run symbol, a runner, as the product picture.', where: 'The first child of the stack, so it sits at the top of the card.', when: 'Drawn every time body runs; the symbol is a template image the system can recolor.', why: 'A symbol stands in for product photography while the card is designed, with no image files to manage.' };
+const PC_FONT_LG = { who: 'The font modifier, applied to the Image view directly above it.', what: 'Sets the image size with the largeTitle text style, so the runner renders big.', where: 'Chained under the Image; modifiers apply to the view written before them.', when: 'Read while body builds the description, before layout measures the image.', why: 'SF Symbols are drawn like a font, so a text style sizes them, and the size follows the user\u2019s text-size setting.' };
+const PC_NAME = { who: 'Swift, which builds the string; SwiftUI, which draws it as a Text view.', what: 'Shows the product name, Trail Shoes.', where: 'A child of the stack, under the picture.', when: 'Rebuilt every time body runs, though the text itself never changes.', why: 'The name is the first thing a shopper reads, so it leads the text part of the card.' };
+const PC_FONT_HEAD = { who: 'The font modifier on the Text view directly above it.', what: 'Makes the name a headline: semibold and sized to stand out from the price below.', where: 'Chained under the name Text.', when: 'Applied while the description is built, before the text is measured.', why: 'One clear hierarchy level tells the shopper which line matters most.' };
+const PC_PRICE = { who: 'Swift builds the string; SwiftUI draws it as a Text view.', what: 'Shows the price, $89.00, exactly as written.', where: 'A child of the stack, under the name.', when: 'Rebuilt every time body runs.', why: 'Price is the second fact a shopper looks for; it sits with the name, not in the button.' };
+const PC_FG_SEC = { who: 'The foregroundStyle modifier on the price Text directly above it.', what: 'Colors the price with the secondary style, a gray that steps back from the name.', where: 'Chained under the price Text.', when: 'Applied while the description is built.', why: 'De-emphasizing the price keeps the name first in the reading order without shrinking the text.' };
+const PC_PAD = { who: 'The padding modifier, wrapping the whole stack.', what: 'Adds standard spacing inside all four edges of the stack.', where: 'The first modifier on the stack itself, after its closing brace.', when: 'Applied before the modifiers that follow it in the chain.', why: 'Content that touches its container\u2019s edges looks broken; padding gives the card its breathing room.' };
+const PC_BG = { who: 'The background modifier, wrapping everything written before it.', what: 'Paints yellow behind the view it is applied to.', where: 'Second in the modifier chain on the stack.', when: 'Its size is decided by the view built so far, padding included or not.', why: 'A colored block groups the card\u2019s contents into one object the eye can find on a busy screen.' };
+const PC_CLIP = { who: 'The clipShape modifier, the last one in the chain.', what: 'Clips the card, background included, to a rounded rectangle with 12-point corners.', where: 'After background, so the yellow corners are the ones being rounded.', when: 'Applied to the finished stack description on every redraw.', why: 'Rounded corners are the visual cue that separates a card from a plain colored rectangle.' };
+const PC_BUTTON = { who: 'You declare it; the shopper triggers its action by tapping.', what: 'Creates the Add to Bag button; the closure after the label is its action.', where: 'A child of the stack, under the price.', when: 'The closure runs at the moment of a tap, never while body is being built.', why: 'Buying is the card\u2019s job; the button is placed with the facts it acts on.' };
+const PC_BAGADD = { who: 'The button\u2019s action closure, running on the main thread.', what: 'Adds one to bag, the @State count of pairs.', where: 'Inside the button\u2019s action, in ProductCard.', when: 'Once per tap, at the moment of the tap.', why: 'Changing the state is the whole action; SwiftUI notices and re-evaluates body by itself.' };
+const PC_BAGTEXT = { who: 'Swift builds the string from bag; SwiftUI draws it.', what: 'Shows how many pairs are in the bag, using interpolation to read the current count.', where: 'The last child of the stack, under the button.', when: 'Rebuilt after every tap, because it reads the state the tap changed.', why: 'The shopper gets confirmation that the tap worked, from the same single source of truth.' };
+const PC_PREVIEW = { who: 'Xcode and this page, which render the card without running an app.', what: 'Starts a preview block that shows ProductCard while you work on it.', where: 'At the bottom of the file, outside the struct.', when: 'Whenever the file is opened or edited; previews are not part of the shipped app.', why: 'Seeing the card while you build it is how the frames in this example were checked.' };
+const PC_CALL = { who: 'The preview renderer, which creates the view value.', what: 'Creates one ProductCard for the preview to display.', where: 'The only line inside the preview block.', when: 'Each time the preview refreshes.', why: 'The preview needs a value to render; this is the same creation a real screen would do.' };
+const TRY_PRICE = { who: 'You declare it; the program reads it below.', what: 'Stores the price of one pair in cents: 8995 cents is $89.95.', where: 'Top-level code, the first line of the program.', when: 'First, before any arithmetic uses it.', why: 'Money in whole cents avoids the rounding surprises of decimal fractions in binary.' };
+const TRY_PAIRS = { who: 'You declare it; the total below reads it.', what: 'Stores how many pairs the shopper buys: 2.', where: 'Top-level code, under the price.', when: 'Second, before the total is computed.', why: 'Naming the quantity makes the total formula read like the receipt it models.' };
+const TRY_TOTAL = { who: 'Swift\u2019s integer arithmetic, which multiplies exactly.', what: 'Computes the total in cents by multiplying the price by the number of pairs.', where: 'Top-level code, after both inputs exist.', when: 'Third, once price and pairs are set.', why: 'One multiplication in cents stays exact; converting to dollars happens only for display.' };
+const TRY_DISC = { who: 'Swift\u2019s integer arithmetic; dividing whole cents truncates toward zero.', what: 'Computes the discounted price of one pair: 80% of 8995 cents is exactly 7196 cents.', where: 'Top-level code, between the price and the total.', when: 'After the price exists and before the total uses it.', why: 'Applying the discount per pair matches how the shop prices each item on the receipt.' };
+const TRY_TOTAL2 = { who: 'Swift\u2019s integer arithmetic, which multiplies exactly.', what: 'Computes the total in cents from the discounted price of one pair.', where: 'Top-level code, after the discounted price.', when: 'Third, once the discount has been applied.', why: 'The total must be built from the discounted price, not the shelf price.' };
+const TRY_PRINT = { who: 'The print function from the Swift standard library.', what: 'Prints the total as dollars and cents by dividing and taking the remainder, joined by interpolation.', where: 'The last line of the program.', when: 'Last, after the total is final.', why: 'Splitting cents into dollars and remainder formats money without floating-point values.' };
+
+// Five-part notes shared by the lamp worked example below: the same line
+// appears in many frames, so its note is written once here.
+const LAMP_IMPORT = { who: 'The Swift compiler, which loads the SwiftUI framework for this file.', what: 'Makes View, Text, VStack, Circle, Button and @State available in this file.', where: 'The first line of the file; an import covers only its own file.', when: 'At compile time, before any of the code below is checked.', why: 'SwiftUI is a separate framework, so every file that describes a screen imports it.' };
+const LAMP_STRUCT = { who: 'You declare it; SwiftUI creates values of it whenever the lamp is shown.', what: 'Declares LampView, a struct that conforms to View and describes the lamp screen.', where: 'At file scope, so the preview at the bottom can create it.', when: 'Compiled once; a fresh value is created whenever a parent asks for the lamp.', why: 'A screen in SwiftUI is a value that describes an interface, not an object that runs it.' };
+const LAMP_LET = { who: 'You declare it; nothing can ever reassign it.', what: 'Stores isOn as a constant, false, baked into every LampView value.', where: 'Inside LampView, as a stored property of the struct value.', when: 'Set once when a LampView value is created, and never again.', why: 'This frame tests the simplest idea: draw the lamp from a stored value, before learning why a constant cannot change.' };
+const LAMP_STATE = { who: 'SwiftUI, which stores the value outside the struct, tied to this lamp on screen.', what: 'Declares isOn, whether the lamp is lit, starting false; @State makes SwiftUI keep and watch it.', where: 'Inside LampView, marked private because only this view changes it.', when: 'Created when the lamp first appears and kept across every redraw.', why: 'The circle and the status below are both computed from isOn, so they can never disagree.' };
+const LAMP_BODY = { who: 'SwiftUI calls this property; your code never calls body directly.', what: 'Returns the description of the lamp screen for the current data.', where: 'A computed property inside LampView.', when: 'When the lamp appears, and again after every change to isOn.', why: 'Describing the screen as a function of the data is the whole SwiftUI model.' };
+const LAMP_VSTACK = { who: 'SwiftUI\'s layout system, which measures the children and stacks them.', what: 'Stacks the circle, the status and any button vertically, 16 points apart.', where: 'The root view returned by body.', when: 'Measured and placed again every time body produces a new description.', why: 'A stack states the arrangement once instead of giving every view its own coordinates.' };
+const LAMP_CIRCLE = { who: 'SwiftUI, which draws the shape at the size its modifiers give it.', what: 'Creates a circle shape, the lamp bulb itself.', where: 'The first child of the stack, so it sits at the top of the screen.', when: 'Drawn every time body runs, with the fill decided by the modifier below.', why: 'A plain circle is the simplest honest picture of a round lamp.' };
+const LAMP_FILL_GRAY = { who: 'The fill modifier, applied to the Circle directly above it.', what: 'Paints the inside of the circle gray, the color of an unlit lamp.', where: 'Chained under the Circle; it colors only that shape.', when: 'Read while body builds the description, before the circle is drawn.', why: 'The color is written directly here in this frame, which is exactly the habit the next frame replaces.' };
+const LAMP_FILL_STATE = { who: 'The fill modifier, applied to the Circle directly above it.', what: 'Paints the circle yellow when isOn is true and gray when it is false.', where: 'Chained under the Circle; it colors only that shape.', when: 'Recalculated every time body runs, from the current value of isOn.', why: 'One rule covers both states of the lamp, so the picture can never claim the lamp is on when it is off.' };
+const LAMP_FRAME80 = { who: 'The frame modifier, applied to the filled Circle above it.', what: 'Fixes the circle at 80 points wide and 80 points tall.', where: 'Chained under the fill, so it sizes the painted circle.', when: 'Measured while layout runs, every time body produces the circle.', why: 'A shape fills whatever space it is offered; the frame is what gives the lamp its size.' };
+const LAMP_FRAME100 = { who: 'The frame modifier, applied to the filled Circle above it.', what: 'Fixes the circle at 100 points wide and 100 points tall.', where: 'Chained under the fill, so it sizes the painted circle.', when: 'Measured while layout runs, every time body produces the circle.', why: 'A bigger lamp makes the result of a tap unmissable from across the room.' };
+const LAMP_TEXT_OFF = { who: 'Swift builds the string; SwiftUI draws it as a Text view.', what: 'Shows the status words, The lamp is off, written out in full.', where: 'A child of the stack, under the circle.', when: 'Rebuilt every time body runs, though the words never change in this frame.', why: 'The status line is the promise the rest of the example must keep honest.' };
+const LAMP_TEXT_STATE = { who: 'Swift builds one of the two strings; SwiftUI draws it as a Text view.', what: 'Shows The lamp is on when isOn is true and The lamp is off when it is false.', where: 'A child of the stack, under the circle.', when: 'Rebuilt after every change to isOn, because it reads the same value the fill reads.', why: 'Words and color tell the same story because both are computed from one source of truth.' };
+const LAMP_FONT_HEAD = { who: 'The font modifier on the status Text directly above it.', what: 'Makes the status a headline: semibold and sized to stand out on the screen.', where: 'Chained under the status Text, so only the status grows.', when: 'Applied while the description is built, before the text is measured.', why: 'The status carries the result of the tap, so it earns the emphasis.' };
+const LAMP_BUTTON = { who: 'You declare it; the person using the app triggers its action by tapping.', what: 'Creates the Turn On button; the closure after the label is its action.', where: 'A child of the stack, under the status line.', when: 'The closure runs at the moment of a tap, never while body is being built.', why: 'The button sits with the lamp it controls, so cause and effect are on one screen.' };
+const LAMP_TOGGLE = { who: 'The button\'s action closure, running on the main thread.', what: 'Toggles isOn: true becomes false, false becomes true.', where: 'Inside the button\'s action, in LampView.', when: 'Once per tap, at the moment of the tap.', why: 'Changing the state is the whole action; SwiftUI notices and re-evaluates body by itself.' };
+const LAMP_PAD = { who: 'SwiftUI\'s layout system, which adds the platform\'s standard margin around the stack.', what: 'Adds standard spacing inside all four edges of the stack.', where: 'The first modifier on the stack itself, after its closing brace.', when: 'Measured during the same layout pass as the stack it wraps.', why: 'Content that touches the edges of its container looks broken; padding gives the lamp room.' };
+const LAMP_PREVIEW = { who: 'Xcode and this page, which render the lamp without running an app.', what: 'Creates one LampView for the preview to display.', where: 'At file scope, after LampView; preview code is not part of the shipped app.', when: 'Each time the preview refreshes.', why: 'The preview needs a value to render; this is the same creation a real screen would do.' };
+const LAMP_T_START = { who: 'You declare it; the toggles below change it.', what: 'Models the lamp state as a variable, starting off (false).', where: 'Top-level code, the first line of the program.', when: 'First, before any toggle runs.', why: 'A var, not a let: this program exists to change the value, like @State in the screen.' };
+const LAMP_T_TOGGLE = { who: 'Swift\'s Bool type, which provides the toggle method.', what: 'Flips isOn: off becomes on, on becomes off.', where: 'Top-level code, one statement per tap being modelled.', when: 'Once per line, in the order the lines are written.', why: 'Each toggle stands for one tap of the Turn On button in the screen above.' };
+const LAMP_T_PRINT = { who: 'The print function from the Swift standard library.', what: 'Prints the status line for the final value of isOn, choosing the words with a ternary.', where: 'The last line of the program.', when: 'Last, after every toggle has run.', why: 'The printed words match the status Text on the lamp screen, so the console proves what the screen shows.' };
+
+// Five-part notes shared by the @Binding worked example below.
+const BIND_IMPORT = { who: 'The Swift compiler, which loads the SwiftUI framework for this file.', what: 'Makes View, Text, VStack, Button, @State and @Binding available in this file.', where: 'The first line of the file; an import covers only its own file.', when: 'At compile time, before any of the code below is checked.', why: 'One import serves every view declared in the same file.' };
+const BIND_CSTRUCT = { who: 'You declare it; the parent view creates values of it.', what: 'Declares MinuteAdjuster, a reusable child view that shows and changes the focus length.', where: 'At file scope, above the parent that creates it.', when: 'Compiled once; a fresh value is created whenever the parent body runs.', why: 'Extracting the adjuster into its own view is what raises the ownership question this example answers.' };
+const BIND_CSTATE = { who: 'SwiftUI, which stores the value outside the struct, tied to this adjuster on screen.', what: 'Declares the adjuster its own minutes, starting at 25; this is a second, private copy of the length.', where: 'Inside MinuteAdjuster, marked private because only this view was meant to change it.', when: 'Created when the adjuster first appears and kept across its redraws.', why: 'It looks like the right move and is the bug: the parent has its own minutes too, and two copies can disagree.' };
+const BIND_CBINDING = { who: 'The parent supplies it; SwiftUI routes reads and writes through it to the parent storage.', what: 'Declares minutes as a binding: a two-way connection to an Int stored in the parent, holding nothing itself.', where: 'Inside MinuteAdjuster, where its own @State stood before.', when: 'Connected at the moment the parent creates the adjuster with $minutes.', why: 'The child can finally change the one shared value instead of a copy, so both views always agree.' };
+const BIND_CBODY = { who: 'SwiftUI calls this property; your code never calls body directly.', what: 'Returns the description of the adjuster for the current minutes.', where: 'A computed property inside MinuteAdjuster.', when: 'When the adjuster appears, and again after every change to minutes.', why: 'The adjuster describes itself from the value it is given, wherever that value lives.' };
+const BIND_CVSTACK = { who: 'SwiftUI\'s layout system, which measures the children and stacks them.', what: 'Stacks the readout above the button, 8 points apart.', where: 'The root view returned by the child\'s body.', when: 'Measured and placed again every time body produces a new description.', why: 'The control and its readout stay together as one reusable piece.' };
+const BIND_CTEXT = { who: 'Swift builds the string from minutes; SwiftUI draws it as a Text view.', what: 'Shows the length as the adjuster sees it, such as Adjuster sees 25 min.', where: 'The first child of the child stack, above the button.', when: 'Rebuilt every time body runs, with the minutes the child currently reads.', why: 'Seeing the child readout next to the parent display is how the disagreement, and later the agreement, becomes visible.' };
+const BIND_CBUTTON = { who: 'You declare it; the person using the app triggers it by tapping.', what: 'Creates the Add a minute button, whose whole action adds one to minutes.', where: 'A child of the child stack, under the readout.', when: 'The action runs at the moment of a tap, never while body is being built.', why: 'One line is the whole action: which minutes it changes is decided entirely by how minutes is declared above.' };
+const BIND_PSTRUCT = { who: 'You declare it; the preview creates values of it.', what: 'Declares FocusTimerView, the parent screen that owns the focus length.', where: 'At file scope, below the child it creates.', when: 'Compiled once; created by the preview and, in an app, by whatever shows the timer.', why: 'The parent is the highest view that needs the length, so it is the natural owner of the state.' };
+const BIND_PSTATE = { who: 'SwiftUI, which stores the value outside the struct, tied to this screen on display.', what: 'Declares minutes, the focus length in minutes, starting at 25; this is the single source of truth.', where: 'Inside FocusTimerView, marked private because this view owns it.', when: 'Created when the timer first appears and kept across every redraw.', why: 'Exactly one view owns each value; every other view borrows it or receives it.' };
+const BIND_PBODY = { who: 'SwiftUI calls this property; your code never calls body directly.', what: 'Returns the description of the timer screen for the current minutes.', where: 'A computed property inside FocusTimerView.', when: 'When the screen appears, and again after every change to minutes, whoever made it.', why: 'Because the display is computed from state, a change made by the child shows up here without any copying code.' };
+const BIND_PVSTACK = { who: 'SwiftUI\'s layout system, which measures the children and stacks them.', what: 'Stacks the displays and the adjuster vertically, 16 points apart.', where: 'The root view returned by the parent\'s body.', when: 'Measured and placed again every time body produces a new description.', why: 'One column keeps the owner display and the borrowed control in reading order.' };
+const BIND_PTEXT = { who: 'Swift builds the string from minutes; SwiftUI draws it as a Text view.', what: 'Shows the focus length from the parent state, such as Focus length: 25 min.', where: 'A child of the parent stack.', when: 'Rebuilt after every change to minutes, including changes the child makes.', why: 'This line is the test of the whole example: if the child truly shares the value, this number moves.' };
+const BIND_DUPTEXT = { who: 'Swift builds the string from minutes; SwiftUI draws it as a Text view.', what: 'Shows the length again, worded as the adjuster will word it: Adjuster sees 25 min.', where: 'The second child of the parent stack, under the first display.', when: 'Rebuilt every time body runs, reading the same parent state.', why: 'Writing the same readout twice in one view works, but the duplicated code is the smell that extraction should remove.' };
+const BIND_CALL_PLAIN = { who: 'The parent, FocusTimerView, creating the child view.', what: 'Creates one MinuteAdjuster with no inputs at all.', where: 'A child of the parent stack, under the length display.', when: 'A new child value is created every time the parent body runs.', why: 'The empty parentheses are the warning sign: the child is connected to nothing the parent owns.' };
+const BIND_CALL_BIND = { who: 'The parent, FocusTimerView, creating the child view and handing it the connection.', what: 'Creates one MinuteAdjuster and passes $minutes: a binding to the parent state, not a copy of the number.', where: 'A child of the parent stack, under the length display.', when: 'A new child value is created every time the parent body runs, bound to the same storage.', why: 'The dollar sign is the whole fix: it passes read-and-write access, so the child and parent share one value.' };
+const BIND_RESET = { who: 'You declare it; the person using the app triggers it by tapping.', what: 'Creates a Reset button whose action writes 25 back into the parent minutes.', where: 'A child of the parent stack, under the adjuster.', when: 'The action runs at the moment of a tap.', why: 'A write from the parent side proves the traffic is two-way: the child readout follows without being touched.' };
+const BIND_TITLE = { who: 'Swift builds the string; SwiftUI draws it and applies the chained font.', what: 'Shows the screen title, Focus Timer, as a headline.', where: 'The first child of the parent stack, above the length display.', when: 'Rebuilt every time body runs, though the words never change.', why: 'A named screen orients the reader before the numbers start changing.' };
+const BIND_PREVIEW = { who: 'Xcode and this page, which render the timer without running an app.', what: 'Creates one FocusTimerView for the preview, which in turn creates the adjuster.', where: 'At file scope, after FocusTimerView; preview code is not part of the shipped app.', when: 'Each time the preview refreshes.', why: 'Previewing the parent shows both views working together, which is the point of the example.' };
+const BIND_T_PVAR = { who: 'You declare it; nothing below writes to it.', what: 'Stores the parent copy of the length, starting at 25.', where: 'Top-level code, the first line of the program.', when: 'First, before the child copy is made.', why: 'Two variables for one fact is the console version of the duplicated state in the broken frame.' };
+const BIND_T_CVAR = { who: 'You declare it; the line below changes only this copy.', what: 'Stores the child copy of the length, copied from the parent value.', where: 'Top-level code, under the parent copy.', when: 'Second, at the moment the copies are made; they start equal.', why: 'Copying a number copies the value, not a connection, so the two can drift apart from here on.' };
+const BIND_T_CADD = { who: 'Swift\'s integer arithmetic, acting on the child copy only.', what: 'Adds one to childMinutes, the child copy.', where: 'Top-level code, after both copies exist.', when: 'Third, modelling one tap of the child button.', why: 'This is the tap that moves the child display and leaves the parent display behind.' };
+const BIND_T_PRINT_STALE = { who: 'The print function from the Swift standard library.', what: 'Prints the parent length, which is still 25 because the child changed only its own copy.', where: 'The last line of the program.', when: 'Last, after the child copy has changed.', why: 'The output is the bug in one line: the parent still reports the old length.' };
+const BIND_T_VAR = { who: 'You declare it; the line below changes it.', what: 'Stores the one shared length, starting at 25.', where: 'Top-level code, the first line of the program.', when: 'First, before the step is applied.', why: 'One variable for one fact: the console version of owning state in exactly one place.' };
+const BIND_T_ADD = { who: 'Swift\'s integer arithmetic, acting on the shared variable.', what: 'Adds one to minutes, the shared length.', where: 'Top-level code, after the variable exists.', when: 'Second, modelling one tap of the child button writing through the binding.', why: 'Because there is only one variable, this single write is the write every display reads.' };
+const BIND_T_PRINT_ONE = { who: 'The print function from the Swift standard library.', what: 'Prints the shared length, now 26, in the same words the parent screen uses.', where: 'The last line of the program.', when: 'Last, after the step has been applied.', why: 'The output matches the parent display after a tap: Focus length: 26 min.' };
+
 export default {
   id: 'swiftui',
   number: 4,
@@ -5044,6 +5125,551 @@ export default {
               explain: '<p>Liquid Glass forms a functional layer for controls and navigation that float above content. Putting it on everything in the name of consistency blurs that layering and makes content harder to read. SwiftUI supports it directly with <code>glassEffect</code> and the glass button styles.</p>',
             },
           ],
+        },
+      ],
+    },
+    {
+      id: 'swiftui-worked-examples',
+      title: 'Worked Examples',
+      steps: [
+        {
+          kind: 'example',
+          title: 'Build a product card, modifier by modifier',
+          problem: '<p>Build a product card for a pair of trail shoes: name, price and a picture, styled as a card with a soft background and rounded corners, plus an Add to Bag button that counts how many pairs the shopper added. Success: the card looks finished and the count rises when the button is tapped.</p>',
+          adapter: 'phone',
+          check: { tap: 'Add to Bag', expectText: 'In your bag: 1' },
+          frames: [
+            {
+              caption: 'The card starts as a single line of text: the product name. A Text view is the simplest thing SwiftUI can draw, and every later frame adds exactly one idea to this same view.',
+              lines: [
+                ['import SwiftUI', PC_IMPORT],
+                ['', null],
+                ['struct ProductCard: View {', PC_STRUCT],
+                ['    var body: some View {', PC_BODY],
+                ['        Text("Trail Shoes")', PC_NAME],
+                ['    }', null],
+                ['}', null],
+                ['#Preview {', PC_PREVIEW],
+                ['    ProductCard()', PC_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'A VStack stacks the name above the price, leading-aligned so both start at the same left edge. The body now describes two pieces of information instead of one, in the order a shopper reads them.',
+              lines: [
+                ['import SwiftUI', PC_IMPORT],
+                ['', null],
+                ['struct ProductCard: View {', PC_STRUCT],
+                ['    var body: some View {', PC_BODY],
+                ['        VStack(alignment: .leading, spacing: 6) {', PC_VSTACK],
+                ['            Text("Trail Shoes")', PC_NAME],
+                ['            Text("$89.00")', PC_PRICE],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['#Preview {', PC_PREVIEW],
+                ['    ProductCard()', PC_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'An Image view joins the top of the stack, showing the running figure from SF Symbols. The stack grows to fit it; nothing else moves, because layout comes from the description, not from stored positions.',
+              lines: [
+                ['import SwiftUI', PC_IMPORT],
+                ['', null],
+                ['struct ProductCard: View {', PC_STRUCT],
+                ['    var body: some View {', PC_BODY],
+                ['        VStack(alignment: .leading, spacing: 6) {', PC_VSTACK],
+                ['            Image(systemName: "figure.run")', PC_IMAGE],
+                ['            Text("Trail Shoes")', PC_NAME],
+                ['            Text("$89.00")', PC_PRICE],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['#Preview {', PC_PREVIEW],
+                ['    ProductCard()', PC_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'Type styles arrive: the picture grows with largeTitle, the name becomes a headline, and the price turns secondary gray. Modifiers wrap the view they follow, so each one is written under its own view.',
+              lines: [
+                ['import SwiftUI', PC_IMPORT],
+                ['', null],
+                ['struct ProductCard: View {', PC_STRUCT],
+                ['    var body: some View {', PC_BODY],
+                ['        VStack(alignment: .leading, spacing: 6) {', PC_VSTACK],
+                ['            Image(systemName: "figure.run")', PC_IMAGE],
+                ['                .font(.largeTitle)', PC_FONT_LG],
+                ['            Text("Trail Shoes")', PC_NAME],
+                ['                .font(.headline)', PC_FONT_HEAD],
+                ['            Text("$89.00")', PC_PRICE],
+                ['                .foregroundStyle(.secondary)', PC_FG_SEC],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['#Preview {', PC_PREVIEW],
+                ['    ProductCard()', PC_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'Padding first, then background: the padding becomes part of the view, so the yellow covers the text and the breathing room around it. This is the card shape we want; compare it with the next frame.',
+              lines: [
+                ['import SwiftUI', PC_IMPORT],
+                ['', null],
+                ['struct ProductCard: View {', PC_STRUCT],
+                ['    var body: some View {', PC_BODY],
+                ['        VStack(alignment: .leading, spacing: 6) {', PC_VSTACK],
+                ['            Image(systemName: "figure.run")', PC_IMAGE],
+                ['                .font(.largeTitle)', PC_FONT_LG],
+                ['            Text("Trail Shoes")', PC_NAME],
+                ['                .font(.headline)', PC_FONT_HEAD],
+                ['            Text("$89.00")', PC_PRICE],
+                ['                .foregroundStyle(.secondary)', PC_FG_SEC],
+                ['        }', null],
+                ['        .padding()', PC_PAD],
+                ['        .background(.yellow)', PC_BG],
+                ['    }', null],
+                ['}', null],
+                ['#Preview {', PC_PREVIEW],
+                ['    ProductCard()', PC_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'The same two modifiers in the opposite order: background first paints only the tight stack, and the padding then adds clear space outside the color. Modifier order is not style; it changes the result.',
+              lines: [
+                ['import SwiftUI', PC_IMPORT],
+                ['', null],
+                ['struct ProductCard: View {', PC_STRUCT],
+                ['    var body: some View {', PC_BODY],
+                ['        VStack(alignment: .leading, spacing: 6) {', PC_VSTACK],
+                ['            Image(systemName: "figure.run")', PC_IMAGE],
+                ['                .font(.largeTitle)', PC_FONT_LG],
+                ['            Text("Trail Shoes")', PC_NAME],
+                ['                .font(.headline)', PC_FONT_HEAD],
+                ['            Text("$89.00")', PC_PRICE],
+                ['                .foregroundStyle(.secondary)', PC_FG_SEC],
+                ['        }', null],
+                ['        .background(.yellow)', PC_BG],
+                ['        .padding()', PC_PAD],
+                ['    }', null],
+                ['}', null],
+                ['#Preview {', PC_PREVIEW],
+                ['    ProductCard()', PC_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'Back to padding first, and a clip shape rounds the yellow block\u2019s corners. The card now reads as one object instead of a colored rectangle, ready for its interactive part.',
+              lines: [
+                ['import SwiftUI', PC_IMPORT],
+                ['', null],
+                ['struct ProductCard: View {', PC_STRUCT],
+                ['    var body: some View {', PC_BODY],
+                ['        VStack(alignment: .leading, spacing: 6) {', PC_VSTACK],
+                ['            Image(systemName: "figure.run")', PC_IMAGE],
+                ['                .font(.largeTitle)', PC_FONT_LG],
+                ['            Text("Trail Shoes")', PC_NAME],
+                ['                .font(.headline)', PC_FONT_HEAD],
+                ['            Text("$89.00")', PC_PRICE],
+                ['                .foregroundStyle(.secondary)', PC_FG_SEC],
+                ['        }', null],
+                ['        .padding()', PC_PAD],
+                ['        .background(.yellow)', PC_BG],
+                ['        .clipShape(RoundedRectangle(cornerRadius: 12))', PC_CLIP],
+                ['    }', null],
+                ['}', null],
+                ['#Preview {', PC_PREVIEW],
+                ['    ProductCard()', PC_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'The button writes to @State, and the bag count below it is computed from that same state. Run the check: tapping Add to Bag re-evaluates body and the count becomes In your bag: 1.',
+              lines: [
+                ['import SwiftUI', PC_IMPORT],
+                ['', null],
+                ['struct ProductCard: View {', PC_STRUCT],
+                ['    @State private var bag = 0', PC_STATE],
+                ['    var body: some View {', PC_BODY],
+                ['        VStack(alignment: .leading, spacing: 6) {', PC_VSTACK],
+                ['            Image(systemName: "figure.run")', PC_IMAGE],
+                ['                .font(.largeTitle)', PC_FONT_LG],
+                ['            Text("Trail Shoes")', PC_NAME],
+                ['                .font(.headline)', PC_FONT_HEAD],
+                ['            Text("$89.00")', PC_PRICE],
+                ['                .foregroundStyle(.secondary)', PC_FG_SEC],
+                ['            Button("Add to Bag") {', PC_BUTTON],
+                ['                bag += 1', PC_BAGADD],
+                ['            }', null],
+                ['            Text("In your bag: \\(bag)")', PC_BAGTEXT],
+                ['        }', null],
+                ['        .padding()', PC_PAD],
+                ['        .background(.yellow)', PC_BG],
+                ['        .clipShape(RoundedRectangle(cornerRadius: 12))', PC_CLIP],
+                ['    }', null],
+                ['}', null],
+                ['#Preview {', PC_PREVIEW],
+                ['    ProductCard()', PC_CALL],
+                ['}', null],
+              ],
+            },
+          ],
+          tryIt: {
+            task: '<p>The shop runs a 20% discount on the trail shoes. The starter prints the total for two pairs at full price. Change the program so it applies the discount to each pair first, still working in whole cents, and prints the discounted total for two pairs.</p>',
+            lines: [
+              ['let priceCents = 8995', TRY_PRICE],
+              ['let pairs = 2', TRY_PAIRS],
+              ['let totalCents = priceCents * pairs', TRY_TOTAL],
+              ['print("Total: $\\(totalCents / 100).\\(totalCents % 100)")', TRY_PRINT],
+            ],
+            solution: [
+              ['let priceCents = 8995', TRY_PRICE],
+              ['let pairs = 2', TRY_PAIRS],
+              ['let discountedCents = priceCents * 80 / 100', TRY_DISC],
+              ['let totalCents = discountedCents * pairs', TRY_TOTAL2],
+              ['print("Total: $\\(totalCents / 100).\\(totalCents % 100)")', TRY_PRINT],
+            ],
+            expect: 'Total: $143.92',
+          },
+        },
+        {
+          kind: 'example',
+          title: '@State: the lamp that can finally change',
+          problem: '<p>A desk lamp screen shows a lamp that is off and a status line. Build it so a Turn On button switches the lamp on: the circle lights up and the status line agrees. Success: tapping Turn On shows the lamp on.</p>',
+          adapter: 'phone',
+          check: { tap: 'Turn On', expectText: 'The lamp is on' },
+          frames: [
+            {
+              caption: 'The lamp is drawn from fixed words and a fixed gray fill: a circle and a status line that always says off. Nothing here can change, because nothing here is allowed to change.',
+              lines: [
+                ['import SwiftUI', LAMP_IMPORT],
+                ['', null],
+                ['struct LampView: View {', LAMP_STRUCT],
+                ['    var body: some View {', LAMP_BODY],
+                ['        VStack(spacing: 16) {', LAMP_VSTACK],
+                ['            Circle()', LAMP_CIRCLE],
+                ['                .fill(.gray)', LAMP_FILL_GRAY],
+                ['                .frame(width: 80, height: 80)', LAMP_FRAME80],
+                ['            Text("The lamp is off")', LAMP_TEXT_OFF],
+                ['        }', null],
+                ['        .padding()', LAMP_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LampView() }', LAMP_PREVIEW],
+              ],
+            },
+            {
+              caption: 'Both the fill and the status now read one constant, isOn, so they can never disagree. But isOn is a let inside a struct value: once the value is created, nothing can assign to it.',
+              lines: [
+                ['import SwiftUI', LAMP_IMPORT],
+                ['', null],
+                ['struct LampView: View {', LAMP_STRUCT],
+                ['    let isOn = false', LAMP_LET],
+                ['    var body: some View {', LAMP_BODY],
+                ['        VStack(spacing: 16) {', LAMP_VSTACK],
+                ['            Circle()', LAMP_CIRCLE],
+                ['                .fill(isOn ? .yellow : .gray)', LAMP_FILL_STATE],
+                ['                .frame(width: 80, height: 80)', LAMP_FRAME80],
+                ['            Text(isOn ? "The lamp is on" : "The lamp is off")', LAMP_TEXT_STATE],
+                ['        }', null],
+                ['        .padding()', LAMP_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LampView() }', LAMP_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The let becomes @State. SwiftUI stores that value outside the struct and watches it, so this view is finally allowed to change its lamp, and body will run again when it does.',
+              lines: [
+                ['import SwiftUI', LAMP_IMPORT],
+                ['', null],
+                ['struct LampView: View {', LAMP_STRUCT],
+                ['    @State private var isOn = false', LAMP_STATE],
+                ['    var body: some View {', LAMP_BODY],
+                ['        VStack(spacing: 16) {', LAMP_VSTACK],
+                ['            Circle()', LAMP_CIRCLE],
+                ['                .fill(isOn ? .yellow : .gray)', LAMP_FILL_STATE],
+                ['                .frame(width: 80, height: 80)', LAMP_FRAME80],
+                ['            Text(isOn ? "The lamp is on" : "The lamp is off")', LAMP_TEXT_STATE],
+                ['        }', null],
+                ['        .padding()', LAMP_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LampView() }', LAMP_PREVIEW],
+              ],
+            },
+            {
+              caption: 'A Button joins the stack under the status. Its action toggles isOn; SwiftUI notices the state change, runs body again, and the circle and status redraw together from the new value.',
+              lines: [
+                ['import SwiftUI', LAMP_IMPORT],
+                ['', null],
+                ['struct LampView: View {', LAMP_STRUCT],
+                ['    @State private var isOn = false', LAMP_STATE],
+                ['    var body: some View {', LAMP_BODY],
+                ['        VStack(spacing: 16) {', LAMP_VSTACK],
+                ['            Circle()', LAMP_CIRCLE],
+                ['                .fill(isOn ? .yellow : .gray)', LAMP_FILL_STATE],
+                ['                .frame(width: 80, height: 80)', LAMP_FRAME80],
+                ['            Text(isOn ? "The lamp is on" : "The lamp is off")', LAMP_TEXT_STATE],
+                ['            Button("Turn On") {', LAMP_BUTTON],
+                ['                isOn.toggle()', LAMP_TOGGLE],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', LAMP_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LampView() }', LAMP_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The status line becomes a headline, because it carries the result of the tap. The lamp itself is unchanged: same state, same button, same fill rule; only the emphasis moves.',
+              lines: [
+                ['import SwiftUI', LAMP_IMPORT],
+                ['', null],
+                ['struct LampView: View {', LAMP_STRUCT],
+                ['    @State private var isOn = false', LAMP_STATE],
+                ['    var body: some View {', LAMP_BODY],
+                ['        VStack(spacing: 16) {', LAMP_VSTACK],
+                ['            Circle()', LAMP_CIRCLE],
+                ['                .fill(isOn ? .yellow : .gray)', LAMP_FILL_STATE],
+                ['                .frame(width: 80, height: 80)', LAMP_FRAME80],
+                ['            Text(isOn ? "The lamp is on" : "The lamp is off")', LAMP_TEXT_STATE],
+                ['                .font(.headline)', LAMP_FONT_HEAD],
+                ['            Button("Turn On") {', LAMP_BUTTON],
+                ['                isOn.toggle()', LAMP_TOGGLE],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', LAMP_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LampView() }', LAMP_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The circle grows to 100 points so the lit lamp dominates the screen. Nothing about the logic changes in this frame; run the check and Turn On still ends with The lamp is on.',
+              lines: [
+                ['import SwiftUI', LAMP_IMPORT],
+                ['', null],
+                ['struct LampView: View {', LAMP_STRUCT],
+                ['    @State private var isOn = false', LAMP_STATE],
+                ['    var body: some View {', LAMP_BODY],
+                ['        VStack(spacing: 16) {', LAMP_VSTACK],
+                ['            Circle()', LAMP_CIRCLE],
+                ['                .fill(isOn ? .yellow : .gray)', LAMP_FILL_STATE],
+                ['                .frame(width: 100, height: 100)', LAMP_FRAME100],
+                ['            Text(isOn ? "The lamp is on" : "The lamp is off")', LAMP_TEXT_STATE],
+                ['                .font(.headline)', LAMP_FONT_HEAD],
+                ['            Button("Turn On") {', LAMP_BUTTON],
+                ['                isOn.toggle()', LAMP_TOGGLE],
+                ['            }', null],
+                ['        }', null],
+                ['        .padding()', LAMP_PAD],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { LampView() }', LAMP_PREVIEW],
+              ],
+            },
+          ],
+          tryIt: {
+            task: '<p>The starter models a lamp that is toggled twice, so it ends off again. Change the program so the lamp is toggled three times instead, and print the final status exactly as the lamp screen shows it.</p>',
+            lines: [
+              ['var isOn = false', LAMP_T_START],
+              ['isOn.toggle()', LAMP_T_TOGGLE],
+              ['isOn.toggle()', LAMP_T_TOGGLE],
+              ['print(isOn ? "The lamp is on" : "The lamp is off")', LAMP_T_PRINT],
+            ],
+            solution: [
+              ['var isOn = false', LAMP_T_START],
+              ['isOn.toggle()', LAMP_T_TOGGLE],
+              ['isOn.toggle()', LAMP_T_TOGGLE],
+              ['isOn.toggle()', LAMP_T_TOGGLE],
+              ['print(isOn ? "The lamp is on" : "The lamp is off")', LAMP_T_PRINT],
+            ],
+            expect: 'The lamp is on',
+          },
+        },
+        {
+          kind: 'example',
+          title: 'Parent and child editing through a @Binding',
+          problem: '<p>A focus timer shows its length in the parent view, and a child adjuster must change that same length. Build both views so stepping the child updates the parent display too. Success: tapping Add a minute shows Focus length: 26 min.</p>',
+          adapter: 'phone',
+          check: { tap: 'Add a minute', expectText: 'Focus length: 26 min' },
+          frames: [
+            {
+              caption: 'The parent owns the focus length as @State and shows it once. This is the whole screen so far: one view, one value, and a display that is computed straight from that value.',
+              lines: [
+                ['import SwiftUI', BIND_IMPORT],
+                ['', null],
+                ['struct FocusTimerView: View {', BIND_PSTRUCT],
+                ['    @State private var minutes = 25', BIND_PSTATE],
+                ['    var body: some View {', BIND_PBODY],
+                ['        VStack(spacing: 16) {', BIND_PVSTACK],
+                ['            Text("Focus length: \\(minutes) min")', BIND_PTEXT],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { FocusTimerView() }', BIND_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The adjuster wording is written a second time inside the same view, reading the same state. It works here, but the display code is now duplicated, and duplication is what extraction should remove.',
+              lines: [
+                ['import SwiftUI', BIND_IMPORT],
+                ['', null],
+                ['struct FocusTimerView: View {', BIND_PSTRUCT],
+                ['    @State private var minutes = 25', BIND_PSTATE],
+                ['    var body: some View {', BIND_PBODY],
+                ['        VStack(spacing: 16) {', BIND_PVSTACK],
+                ['            Text("Focus length: \\(minutes) min")', BIND_PTEXT],
+                ['            Text("Adjuster sees \\(minutes) min")', BIND_DUPTEXT],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { FocusTimerView() }', BIND_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The adjuster is extracted into its own view, but it declares its own @State minutes. Tapping Add a minute raises only the child\'s copy; the parent still shows 25, so the two displays disagree.',
+              lines: [
+                ['import SwiftUI', BIND_IMPORT],
+                ['', null],
+                ['struct MinuteAdjuster: View {', BIND_CSTRUCT],
+                ['    @State private var minutes = 25', BIND_CSTATE],
+                ['    var body: some View {', BIND_CBODY],
+                ['        VStack(spacing: 8) {', BIND_CVSTACK],
+                ['            Text("Adjuster sees \\(minutes) min")', BIND_CTEXT],
+                ['            Button("Add a minute") { minutes += 1 }', BIND_CBUTTON],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['struct FocusTimerView: View {', BIND_PSTRUCT],
+                ['    @State private var minutes = 25', BIND_PSTATE],
+                ['    var body: some View {', BIND_PBODY],
+                ['        VStack(spacing: 16) {', BIND_PVSTACK],
+                ['            Text("Focus length: \\(minutes) min")', BIND_PTEXT],
+                ['            MinuteAdjuster()', BIND_CALL_PLAIN],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { FocusTimerView() }', BIND_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The child now declares @Binding var minutes, and the parent passes $minutes, a connection to its own state. The child stores nothing; its button writes straight into the parent\'s one value.',
+              lines: [
+                ['import SwiftUI', BIND_IMPORT],
+                ['', null],
+                ['struct MinuteAdjuster: View {', BIND_CSTRUCT],
+                ['    @Binding var minutes: Int', BIND_CBINDING],
+                ['    var body: some View {', BIND_CBODY],
+                ['        VStack(spacing: 8) {', BIND_CVSTACK],
+                ['            Text("Adjuster sees \\(minutes) min")', BIND_CTEXT],
+                ['            Button("Add a minute") { minutes += 1 }', BIND_CBUTTON],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['struct FocusTimerView: View {', BIND_PSTRUCT],
+                ['    @State private var minutes = 25', BIND_PSTATE],
+                ['    var body: some View {', BIND_PBODY],
+                ['        VStack(spacing: 16) {', BIND_PVSTACK],
+                ['            Text("Focus length: \\(minutes) min")', BIND_PTEXT],
+                ['            MinuteAdjuster(minutes: $minutes)', BIND_CALL_BIND],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { FocusTimerView() }', BIND_PREVIEW],
+              ],
+            },
+            {
+              caption: 'The parent gains a Reset button that writes the same state from its side. Because the child reads through the binding, it follows the parent\'s write immediately: one value, two writers, no copies.',
+              lines: [
+                ['import SwiftUI', BIND_IMPORT],
+                ['', null],
+                ['struct MinuteAdjuster: View {', BIND_CSTRUCT],
+                ['    @Binding var minutes: Int', BIND_CBINDING],
+                ['    var body: some View {', BIND_CBODY],
+                ['        VStack(spacing: 8) {', BIND_CVSTACK],
+                ['            Text("Adjuster sees \\(minutes) min")', BIND_CTEXT],
+                ['            Button("Add a minute") { minutes += 1 }', BIND_CBUTTON],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['struct FocusTimerView: View {', BIND_PSTRUCT],
+                ['    @State private var minutes = 25', BIND_PSTATE],
+                ['    var body: some View {', BIND_PBODY],
+                ['        VStack(spacing: 16) {', BIND_PVSTACK],
+                ['            Text("Focus length: \\(minutes) min")', BIND_PTEXT],
+                ['            MinuteAdjuster(minutes: $minutes)', BIND_CALL_BIND],
+                ['            Button("Reset") { minutes = 25 }', BIND_RESET],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { FocusTimerView() }', BIND_PREVIEW],
+              ],
+            },
+            {
+              caption: 'A headline names the screen, and the build is finished. Run the check: Add a minute writes through the binding, and the parent\'s own display rises to Focus length: 26 min.',
+              lines: [
+                ['import SwiftUI', BIND_IMPORT],
+                ['', null],
+                ['struct MinuteAdjuster: View {', BIND_CSTRUCT],
+                ['    @Binding var minutes: Int', BIND_CBINDING],
+                ['    var body: some View {', BIND_CBODY],
+                ['        VStack(spacing: 8) {', BIND_CVSTACK],
+                ['            Text("Adjuster sees \\(minutes) min")', BIND_CTEXT],
+                ['            Button("Add a minute") { minutes += 1 }', BIND_CBUTTON],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['struct FocusTimerView: View {', BIND_PSTRUCT],
+                ['    @State private var minutes = 25', BIND_PSTATE],
+                ['    var body: some View {', BIND_PBODY],
+                ['        VStack(spacing: 16) {', BIND_PVSTACK],
+                ['            Text("Focus Timer").font(.headline)', BIND_TITLE],
+                ['            Text("Focus length: \\(minutes) min")', BIND_PTEXT],
+                ['            MinuteAdjuster(minutes: $minutes)', BIND_CALL_BIND],
+                ['            Button("Reset") { minutes = 25 }', BIND_RESET],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview { FocusTimerView() }', BIND_PREVIEW],
+              ],
+            },
+          ],
+          tryIt: {
+            task: '<p>The starter models the broken frame: a parent copy and a child copy of the length, where the child step changes only its own copy. Rewrite it with one shared variable, apply the step to it, and print the parent display.</p>',
+            lines: [
+              ['var parentMinutes = 25', BIND_T_PVAR],
+              ['var childMinutes = parentMinutes', BIND_T_CVAR],
+              ['childMinutes += 1', BIND_T_CADD],
+              ['print("Focus length: \\(parentMinutes) min")', BIND_T_PRINT_STALE],
+            ],
+            solution: [
+              ['var minutes = 25', BIND_T_VAR],
+              ['minutes += 1', BIND_T_ADD],
+              ['print("Focus length: \\(minutes) min")', BIND_T_PRINT_ONE],
+            ],
+            expect: 'Focus length: 26 min',
+          },
         },
       ],
     },

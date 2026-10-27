@@ -3957,6 +3957,651 @@ const L8 = {
 };
 
 
+// ---------------------------------------------------------------------------
+// Lesson 9: Worked Examples
+// ---------------------------------------------------------------------------
+// Five-part notes shared by the worked examples in this lesson: the same line
+// appears in many frames, so its note is written once here.
+const WX_IMPORT = n('The Swift compiler, resolving the Foundation module for this program.', 'Makes JSONDecoder, JSONEncoder and Data available.', 'At the top of the program.', 'At compile time, before any decoding happens.', 'The JSON coders live in Foundation, not in the core language.');
+const WX_STRUCT = n('Your code, declaring the type the JSON must fit.', 'Declares WeatherReading, the Codable struct the reading decodes into; it grows field by field across frames.', 'A value type in this program.', 'Compiled once; the decoder uses it on every decode call.', 'The struct is the contract: the JSON must provide what the struct requires.');
+const WX_CITY = n('Your struct, declaring the property the decoder fills.', 'Declares a city property of type String, filled from the city key.', 'A stored property of the struct being defined.', 'Filled during decoding, when JSONDecoder reads the city key.', 'Every reading names the place it was taken, so city is the first field.');
+const WX_TEMP = n('Your struct, declaring the property the decoder fills.', 'Declares a temperature property of type Double, filled from the temperature key.', 'A stored property of the struct being defined.', 'Filled during decoding, when JSONDecoder reads the temperature key.', 'A temperature can have a fractional part, so Double, not Int, is the honest type.');
+const WX_COND = n('Your struct, declaring the property the decoder fills.', 'Declares a condition property of type String, filled from the condition key.', 'A stored property of the struct being defined.', 'Filled during decoding, when JSONDecoder reads the condition key.', 'Conditions arrive as words such as Sunny, so a String holds them as sent.');
+const WX_JSON1 = n('Your top-level code, writing the sample response as a String literal.', 'Holds the JSON text for one reading: a city and nothing else yet.', 'A constant in top-level code, standing in for bytes from the weather service.', 'Created when the program starts, before the decode call below it.', 'A literal stands in for network bytes so the example is fully deterministic.');
+const WX_JSON2 = n('Your top-level code, writing the sample response as a String literal.', 'Holds the JSON text for one reading: a city and a numeric temperature.', 'A constant in top-level code, standing in for bytes from the weather service.', 'Created when the program starts, before the decode call below it.', 'The temperature is written without quotes, because JSON numbers carry no quotes.');
+const WX_JSON3 = n('Your top-level code, writing the sample response as a String literal.', 'Holds the complete JSON reading: city, numeric temperature and condition.', 'A constant in top-level code, standing in for bytes from the weather service.', 'Created when the program starts, before the decode call below it.', 'This is the shape the service really sends, and the struct now matches it key for key.');
+const WX_JSON_BAD = n('Your top-level code, writing the faulty sample response as a String literal.', 'Holds a reading whose temperature is in quotes: text where a number belongs.', 'A constant in top-level code, standing in for bytes from the weather service.', 'Created when the program starts, before the decode call below it.', 'Real services change shape without asking; this frame rehearses that surprise.');
+const WX_DECODE = n('JSONDecoder, running the Codable code generated for WeatherReading.', 'Decodes the JSON bytes into a WeatherReading value.', 'A constant in top-level code, in memory.', 'When this line runs, after the json constant exists.', 'Data(json.utf8) supplies the bytes the decoder expects; try marks that decoding can throw.');
+const WX_PRINT_CITY = n('Your top-level code, calling print with the decoded property.', 'Prints the city line, proving the city key arrived in the struct.', 'Standard output, one line.', 'After decoding succeeds.', 'Printing each field as it is added proves that field really decoded.');
+const WX_PRINT_TEMP = n('Your top-level code, calling print with the decoded property.', 'Prints the temperature line, proving the numeric key arrived as a Double.', 'Standard output, one line.', 'After decoding succeeds, below the city line.', 'A separate line per field keeps each new property visible as the struct grows.');
+const WX_PRINT_COND = n('Your top-level code, calling print with the decoded property.', 'Prints the condition line, proving the condition key arrived in the struct.', 'Standard output, one line.', 'After decoding succeeds, below the temperature line.', 'With this line, every key in the JSON has been seen in the output.');
+const WX_PRINT_SUMMARY = n('Swift string interpolation, reading three properties of reading, then print.', 'Prints the one-line summary of the whole reading.', 'Standard output, the single line this program prints.', 'After decoding succeeds.', 'One summary line is what a screen would show; the separate prints were scaffolding.');
+const WX_FLEX_STRUCT = n('Your code, declaring the tolerant replacement type.', 'Declares FlexibleReading, a Codable struct that expects temperature as text.', 'A value type in this program.', 'Compiled once; used by the decode call below it.', 'When a service sends the wrong type, decode what it actually sends, then convert.');
+const WX_TEMPTEXT = n('Your FlexibleReading struct, declaring the property the decoder fills.', 'Declares temperatureText, a String filled from the temperature key via CodingKeys below.', 'A stored property of FlexibleReading.', 'Filled during decoding, when JSONDecoder reads the temperature key.', 'The text form is kept only long enough to convert it into a real Double.');
+const WX_KEYS = n('The compiler, which looks for an enum with exactly this name.', 'Declares the list of keys used to decode FlexibleReading.', 'Nested inside FlexibleReading, where the compiler looks for it.', 'Read at compile time while the Codable code is generated.', 'When CodingKeys exists it replaces the default mapping, so it must list every property.');
+const WX_KEYS_SAME = n('The CodingKeys enum you wrote, listing two cases without raw values.', 'Maps city and condition to JSON keys with the same spelling.', 'Cases of the CodingKeys enum.', 'Used during decoding of FlexibleReading.', 'A case without a raw value uses its own name as the key.');
+const WX_KEYS_MAP = n('The CodingKeys enum you wrote, giving one case an explicit raw value.', 'Maps the temperatureText property to the JSON key temperature.', 'A case of the CodingKeys enum, with a String raw value.', 'Used during decoding of FlexibleReading.', 'The raw value is the exact JSON key; the Swift name stays honest about the type.');
+const WX_FLEX_DECODE = n('JSONDecoder, running the Codable code generated for FlexibleReading.', 'Decodes the faulty reading into a FlexibleReading, temperature still as text.', 'A constant in top-level code, in memory.', 'When this line runs, after the json constant exists.', 'This decode succeeds because the struct finally matches what the service sent.');
+const WX_CONVERT = n('Swift, converting the decoded text with the Double initializer and ??.', 'Converts temperatureText to a Double, using 0 if the text is not a number.', 'A constant in top-level code, in memory.', 'Right after the flexible decode succeeds.', 'Conversion is a separate, visible step: text in, number out, with a stated fallback.');
+const WX_FLEX_PRINT = n('Swift string interpolation, reading the flexible value and the converted number, then print.', 'Prints the same one-line summary the strict program printed.', 'Standard output, the single line this program prints.', 'After decoding and conversion succeed.', 'The output format never changed; only the decoding path did.');
+const WX_DECODER = n('Foundation’s JSONDecoder class, created once here and reused below.', 'Creates one decoder for both readings in this program.', 'A constant in top-level code.', 'Once, before either decode call.', 'Reusing a configured decoder avoids repeating its setup.');
+const WX_JSON_FIRST = n('Your top-level code, writing the first faulty reading as a String literal.', 'Holds the Venice reading, with its temperature sent as text.', 'A constant in top-level code, standing in for bytes from the weather service.', 'Created when the program starts.', 'The repaired decoder now faces the same faulty shape that broke the strict one.');
+const WX_JSON_SECOND = n('Your top-level code, writing the second faulty reading as a String literal.', 'Holds the Oslo reading, also with its temperature sent as text.', 'A constant in top-level code, standing in for bytes from the weather service.', 'Created when the program starts, next to the first reading.', 'A repair that works once could be luck; a second reading proves it is a path.');
+const WX_DECODE_A = n('JSONDecoder, running the Codable code generated for FlexibleReading.', 'Decodes the first reading into a FlexibleReading value.', 'A constant in top-level code, in memory.', 'When this line runs, using the shared decoder.', 'The first of two decodes through the repaired path.');
+const WX_DECODE_B = n('JSONDecoder, running the Codable code generated for FlexibleReading.', 'Decodes the second reading into a FlexibleReading value.', 'A constant in top-level code, in memory.', 'When this line runs, after the first reading has printed.', 'The same decoder and struct handle a different city with no new code.');
+const WX_PRINT_A = n('Swift string interpolation and the Double conversion, then print.', 'Prints the Venice summary, converting the text temperature inline.', 'Standard output, the first of two lines.', 'After the first decode succeeds.', 'The summary shape matches the strict program’s, so callers cannot tell which path ran.');
+const WX_PRINT_B = n('Swift string interpolation and the Double conversion, then print.', 'Prints the Oslo summary, converting the text temperature inline.', 'Standard output, the second of two lines.', 'After the second decode succeeds.', 'Two readings, one repaired path: the fix is the program now, not a workaround.');
+const WX_T_STRUCT = n('Your code, declaring the type the JSON must fit.', 'Declares Reading, a Codable struct for the second service’s readings.', 'A value type in this program.', 'Compiled once; the decoder uses it on the decode call.', 'The starter requires a condition the service never sends, which is the bug to fix.');
+const WX_T_JSON = n('Your top-level code, writing the sample response as a String literal.', 'Holds a Miami reading with a numeric temperature and no condition key at all.', 'A constant in top-level code, standing in for bytes from the second service.', 'Created when the program starts, before the decode call below it.', 'The missing key is the whole problem: nothing in this JSON is malformed.');
+const WX_T_DECODE = n('JSONDecoder, running the Codable code generated for Reading.', 'Decodes the JSON bytes into a Reading value.', 'A constant in top-level code, in memory.', 'When this line runs, after the json constant exists.', 'With a required condition this call throws keyNotFound; the fix makes it succeed.');
+const WX_T_PRINT = n('Swift string interpolation, reading three properties of reading, then print.', 'Prints the summary line using the condition property directly.', 'Standard output, the single line this program prints.', 'After decoding succeeds.', 'In the solution this line gains a fallback for the missing condition.');
+const WX_T_COND_OPT = n('Your Reading struct, declaring the property the decoder fills.', 'Declares condition as an optional String, so a missing key decodes as nil.', 'A stored property of Reading.', 'Filled during decoding, or set to nil when the key is absent.', 'Optional is the honest model for data a service may leave out.');
+const WX_T_PRINT2 = n('Swift string interpolation with the ?? operator, then print.', 'Prints the summary, showing Unknown when the condition decoded as nil.', 'Standard output, the single line this program prints.', 'After decoding succeeds.', 'The fallback lives at the point of use, so the stored value stays honestly optional.');
+
+const SD_IMPORT = n('The Swift compiler, resolving the SwiftData module for this models file.', 'Makes the @Model macro and @Relationship available.', 'At the top of the file.', 'At compile time, before any model class is compiled.', 'Only files that define SwiftData models need this import.');
+const SD_MODEL = n('SwiftData’s @Model macro, expanded by the compiler.', 'Generates the code that lets SwiftData store, load and track changes to the class below.', 'Attached to the class declaration on the next line.', 'At compile time, when the macro expands into the class’s persistence code.', 'The macro writes the persistence code for you, so the class stays plain Swift.');
+const SD_CLASS_AUTHOR = n('You, declaring the Author class that SwiftData will store.', 'Declares the model for one author, the one end of the relationship.', 'A class in your app module.', 'Instances are created when a user adds an author, or when SwiftData loads one.', 'Models are classes because SwiftData must track each object’s identity and changes.');
+const SD_NAME = n('Your model, declaring the property SwiftData persists.', 'Declares a name property of type String.', 'A stored property of the model, saved in the database.', 'Set when the object is created and saved with the context.', 'An ordinary attribute: plain var properties are persisted automatically.');
+const SD_REL = n('The SwiftData @Relationship attribute, written by you.', 'Sets the delete rule to cascade and names Book.author as the inverse of this relationship.', 'Attached to the books property on the next line.', 'Applied when objects are linked, and again when an author is deleted.', 'Naming the inverse explicitly removes any guesswork about which properties describe the same link.');
+const SD_BOOKS = n('Your model, declaring the to-many end of the relationship.', 'Declares a books array holding every book linked to this author, starting empty.', 'A relationship property of the author model.', 'Changes whenever a book joins or leaves the author.', 'An array is the natural shape for the many end of a one-to-many link.');
+const SD_INIT_AUTHOR = n('Author’s initializer, written by you.', 'Declares how to create a new author from a name.', 'An initializer of Author.', 'Whenever your code creates an author.', 'Classes get no memberwise initializer, so models need one written out.');
+const SD_SELF_NAME = n('Author’s initializer, copying its parameter into the property.', 'Stores the given name in the new object.', 'In the new Author object.', 'During initialization, before the object can be inserted anywhere.', 'self. separates the property from the parameter with the same name.');
+const SD_CLASS_BOOK = n('You, declaring the Book class that SwiftData will store.', 'Declares the model for one book, the many end of the relationship.', 'A class in your app module.', 'Instances are created when a user adds a book, or when SwiftData loads one.', 'Both ends of a relationship are models in their own right.');
+const SD_TITLE = n('Your model, declaring the property SwiftData persists.', 'Declares a title property of type String.', 'A stored property of the book model, saved in the database.', 'Set when the book is created.', 'An ordinary attribute, stored next to the relationship below it.');
+const SD_AUTHORPROP = n('Your model, declaring the to-one end of the relationship.', 'Declares an optional author: the author this book belongs to, or nil.', 'A relationship property of the book model.', 'Changes when the book is assigned, moved or unassigned.', 'Optional, because a book can exist before anyone assigns it to an author.');
+const SD_INIT_BOOK = n('Book’s initializer, written by you.', 'Declares how to create a book, with the author optional and defaulting to nil.', 'An initializer of Book.', 'Whenever your code creates a book.', 'The default lets a book be created first and assigned to an author later.');
+const SD_SELF_TITLE = n('Book’s initializer, copying its parameter into the property.', 'Stores the given title in the new object.', 'In the new Book object.', 'During initialization, before the object can be inserted anywhere.', 'Every stored property needs a value before initialization ends.');
+const SD_SELF_AUTHOR = n('Book’s initializer, copying its parameter into the property.', 'Stores the author link, or nil when none was passed.', 'In the new Book object.', 'During initialization, whether the caller passed an author or not.', 'Once both objects are in a context, SwiftData mirrors this link into author.books.');
+const SD_M_CLASS_AUTHOR = n('You, declaring a plain Swift class for the mirror program.', 'Declares Author with the same properties as the @Model version, but no macro.', 'A class in this program, standing in for the SwiftData model.', 'Instances are created when the mirror code runs.', 'The mirror keeps the shape and drops the framework, so the engine can run it.');
+const SD_M_INIT_AUTHOR = n('Author’s initializer, written by you.', 'Creates a new author and stores the given name, all on one line.', 'An initializer of the mirror Author class.', 'Whenever the mirror code creates an author.', 'A one-line initializer keeps the mirror short enough to grow across frames.');
+const SD_M_CLASS_BOOK = n('You, declaring a plain Swift class for the mirror program.', 'Declares the mirror Book class, with no @Model macro.', 'A class in this program, standing in for the SwiftData model.', 'Instances are created when the mirror code runs.', 'Same idea as the real model: a class whose instances can be linked and stored.');
+const SD_M_INIT_BOOK = n('Book’s initializer, written by you.', 'Creates a new book, storing both the title and the author on one line.', 'An initializer of the mirror Book class.', 'Whenever the mirror code creates a book.', 'Passing the author at creation links the book from the to-one end immediately.');
+const SD_RECORDS = n('Your mirror program, declaring the array that plays the store.', 'Creates an empty records array: the in-memory stand-in for the SwiftData store.', 'A variable in top-level code, in memory only.', 'Created when the program starts, before any object exists.', 'An array cannot persist anything, which is exactly what the saved flag will dramatize.');
+const SD_MAKE_AUTHOR = n('Your mirror program, calling Author’s initializer.', 'Creates the author Octavia Butler in memory; nothing has stored her yet.', 'A constant in top-level code.', 'When this line runs, after the classes exist.', 'Creating an object and storing it are separate steps, in the mirror and in SwiftData alike.');
+const SD_APPEND_AUTHOR = n('Your mirror program, appending a description to the records array.', 'Records the author as the store’s first entry, as a readable string.', 'In the records array, in memory.', 'Immediately after the author is created.', 'This append mirrors context.insert: the moment the object joins the store’s world.');
+const SD_PRINT_RECORDS = n('Your mirror program, looping over the records array with print inside.', 'Prints every record currently in the mirror store, one per line.', 'Standard output, one line per record.', 'At the end of the program, after all appends.', 'Printing the store makes its contents provable instead of assumed.');
+const SD_MAKE_KINDRED = n('Your mirror program, calling Book’s initializer with the author.', 'Creates the book Kindred, already pointing at Octavia Butler.', 'A constant in top-level code, in memory.', 'When this line runs, after the author exists.', 'The book knows its author from birth; the author’s list is updated on the next line.');
+const SD_LINK_KINDRED = n('Your mirror program, appending to the author’s books array.', 'Links Kindred from the to-many end, mirroring how SwiftData maintains the inverse.', 'On the author object, in memory.', 'Immediately after Kindred is created.', 'In SwiftData, setting either end updates the other; the mirror does that second step by hand.');
+const SD_APPEND_KINDRED = n('Your mirror program, appending a description to the records array.', 'Records Kindred as the store’s second entry.', 'In the records array, in memory.', 'Immediately after the book is linked.', 'Each stored object gets one record line, so the printout counts the store.');
+const SD_MAKE_FLEDGLING = n('Your mirror program, calling Book’s initializer with the author.', 'Creates the second book, Fledgling, also pointing at Octavia Butler.', 'A constant in top-level code, in memory.', 'When this line runs, after Kindred exists.', 'A one-to-many link earns its name only when the many side has more than one member.');
+const SD_LINK_FLEDGLING = n('Your mirror program, appending to the author’s books array.', 'Links Fledgling from the to-many end, next to Kindred.', 'On the author object, in memory.', 'Immediately after Fledgling is created.', 'The author’s array now holds both books, in the order they were linked.');
+const SD_APPEND_FLEDGLING = n('Your mirror program, appending a description to the records array.', 'Records Fledgling as the store’s third entry.', 'In the records array, in memory.', 'Immediately after the book is linked.', 'Three records now exist, and every one of them is still only in memory.');
+const SD_SAVED_FLAG = n('Your mirror program, declaring the flag that plays the save state.', 'Sets saved to true, marking the moment the mirror store is written out.', 'A constant in top-level code.', 'After all three records exist, before the saved line prints.', 'A Bool cannot hold records; it only stands in for the save having happened.');
+const SD_PRINT_SAVED = n('Your mirror program, calling print with the record count interpolated.', 'Prints how many records the save covered: all three.', 'Standard output, one line.', 'Right after the saved flag is set.', 'The count in the output must match the records the diagram lists as saved.');
+const SD_PRINT_WROTE = n('Your mirror program, looping over the author’s books and printing inside.', 'Prints one line per book, read back through the author’s side of the relationship.', 'Standard output, one line per book.', 'At the end of the program, after the save.', 'Reading the link from the other side proves both ends describe the same relationship.');
+const SD_T_INIT_BOOK = n('Book’s initializer, written by you.', 'Creates a new book and stores the given title, all on one line.', 'An initializer of the mirror Book class.', 'Whenever the code creates a book.', 'This mirror’s Book has no author property; the link lives only in the author’s array.');
+const SD_T_AUTHOR = n('Your program, calling Author’s initializer.', 'Creates the author Ursula Le Guin in memory.', 'A constant in top-level code.', 'When this line runs, after the classes exist.', 'The author starts with an empty books array, whatever happens next.');
+const SD_T_BOOK = n('Your program, calling Book’s initializer.', 'Creates the book A Wizard of Earthsea in memory, linked to nobody yet.', 'A constant in top-level code.', 'When this line runs, after the author exists.', 'Creating a book does not file it; the starter’s missing step is exactly that filing.');
+const SD_T_APPEND = n('Your program, appending to the author’s books array.', 'Files the book under its author, the step the starter forgot.', 'On the author object, in memory.', 'After both objects exist, before the count prints.', 'The count reads the array, so the append is the whole fix.');
+const SD_T_PRINT = n('Swift string interpolation, reading the author’s name and book count, then print.', 'Prints how many books the author’s array holds.', 'Standard output, the single line this program prints.', 'At the end of the program.', 'The number in this line is the test: 0 means unfiled, 1 means linked.');
+
+const ST_IMPORT = n('The Swift compiler, resolving the Foundation module for this program.', 'Makes JSONDecoder, JSONEncoder and Data available.', 'At the top of the program.', 'At compile time, before any loading or saving happens.', 'Loading and saving settings as JSON is Foundation work.');
+const ST_STRUCT = n('Your code, declaring the type the saved JSON must fit.', 'Declares Settings, a Codable struct holding the whole settings screen’s state.', 'A value type in this program.', 'Compiled once; used by every decode and encode call below.', 'One struct for the whole file keeps save and load in perfect agreement.');
+const ST_VOLUME = n('Your Settings struct, declaring the property the coders fill.', 'Declares a volume property of type Int, the one setting this screen keeps.', 'A stored property of Settings, saved in the JSON.', 'Filled during decoding and read during encoding.', 'A single number keeps the example focused on the save, not the settings.');
+const ST_DISK = n('Your top-level code, writing the saved JSON as a String literal.', 'Creates the disk: a string holding the settings exactly as a file would.', 'A variable in top-level code, standing in for a file on the device.', 'Created when the program starts, holding volume 5.', 'A var string can be rewritten by the save step, just like a real file can.');
+const ST_LOAD = n('JSONDecoder, running the Codable code generated for Settings.', 'Decodes the disk string into a Settings value.', 'A constant in top-level code, in memory.', 'When this line runs, at the start of the program.', 'Loading is just decoding whatever the disk currently holds.');
+const ST_LOAD_VAR = n('JSONDecoder, running the Codable code generated for Settings.', 'Decodes the disk string into a Settings value the program may edit.', 'A variable in top-level code, in memory.', 'When this line runs, at the start of the program.', 'var, not let: the next frames change this copy, which is where the trouble starts.');
+const ST_PRINT_LOADED = n('Swift string interpolation, reading the loaded value, then print.', 'Prints the volume that loading produced.', 'Standard output, one line.', 'Right after the load.', 'This line is the baseline every later print is compared against.');
+const ST_EDIT = n('Your top-level code, assigning to the in-memory copy.', 'Changes the volume to 8 in memory only; the disk string is untouched.', 'On the settings variable, in memory.', 'After the load, before any save exists in this program.', 'Editing a value and saving it are two different events; this frame has only the first.');
+const ST_PRINT_MEMORY = n('Swift string interpolation, reading the edited value, then print.', 'Prints the volume as memory currently sees it: 8.', 'Standard output, one line.', 'Right after the edit.', 'The screen would show this value, which is why the bug in the next frame surprises people.');
+const ST_RELOAD = n('JSONDecoder, running the Codable code generated for Settings.', 'Decodes the disk string again into a fresh Settings value.', 'A constant in top-level code, in memory.', 'After the edit, reading the same disk string as the load did.', 'Reloading always answers from the disk, never from the edited copy.');
+const ST_PRINT_RELOADED = n('Swift string interpolation, reading the reloaded value, then print.', 'Prints the volume the reload produced.', 'Standard output, one line.', 'Right after the reload.', 'Compare this number with the in-memory print: they agree only if a save happened between them.');
+const ST_ENCODE = n('Foundation’s JSONEncoder, running the Codable code generated for Settings.', 'Encodes the edited settings into JSON bytes.', 'A constant in top-level code, in memory.', 'After the edit, as the first half of the save.', 'Encoding is the save’s first half; nothing is stored until the bytes reach the disk.');
+const ST_WRITE_DISK = n('Your top-level code, converting bytes to text and assigning to disk.', 'Replaces the disk string with the freshly encoded JSON, completing the save.', 'The disk variable, standing in for the settings file.', 'Immediately after encoding.', 'From this line on, the disk and memory agree; ?? "" only guards a conversion that cannot fail for JSON bytes.');
+const ST_PRINT_DISK = n('Your top-level code, calling print with the disk string itself.', 'Prints the exact contents of the disk after the save.', 'Standard output, one line.', 'Right after the save.', 'Showing the stored bytes proves the save wrote the new value, not the old one.');
+const ST_COPY = n('Your top-level code, copying the reloaded struct value.', 'Copies the reloaded settings into a new variable for the second edit.', 'A variable in top-level code, in memory.', 'After the first reload has proved the save worked.', 'Structs are values, so this copy can be edited without touching the reloaded original.');
+const ST_EDIT10 = n('Your top-level code, assigning to the copied settings.', 'Changes the copied volume to 10, again in memory only for now.', 'On the again variable, in memory.', 'After the copy, before the second encode.', 'The second cycle repeats the pattern deliberately: edit first, then save, then reload.');
+const ST_ENCODE2 = n('Foundation’s JSONEncoder, running the Codable code generated for Settings.', 'Encodes the second edit into JSON bytes.', 'A constant in top-level code, in memory.', 'After the second edit, as the first half of the second save.', 'Same encoder call as the first save; the pattern, not the code, is what changed.');
+const ST_WRITE2 = n('Your top-level code, converting bytes to text and assigning to disk.', 'Replaces the disk string with the second edit’s JSON, completing the second save.', 'The disk variable, standing in for the settings file.', 'Immediately after the second encode.', 'The disk now holds volume 10; the final reload has something new to find.');
+const ST_LOAD_CHECK = n('JSONDecoder, running the Codable code generated for Settings.', 'Decodes the disk string one last time into a fresh Settings value.', 'A constant in top-level code, in memory.', 'After the second save, as the program’s final read of the disk.', 'A reload is the only honest test of a save, so the program ends with one.');
+const ST_PRINT_SECOND = n('Swift string interpolation, reading the final reloaded value, then print.', 'Prints the volume the second reload produced: 10.', 'Standard output, the last line this program prints.', 'Right after the final reload.', 'The second cycle persisting proves the first save was a habit forming, not luck.');
+const ST_T_DISK = n('Your top-level code, writing the saved JSON as a String literal.', 'Creates the disk holding the saved settings: volume 3.', 'A variable in top-level code, standing in for a file on the device.', 'Created when the program starts.', 'The saved value is 3; everything after this line tests whether an edit survives.');
+const ST_T_EDIT = n('Your top-level code, assigning to the in-memory copy.', 'Changes the volume to 7 in memory; the disk still holds 3.', 'On the settings variable, in memory.', 'After the load, before the reload.', 'The starter stops here, which is precisely the forgotten-save bug.');
+const ST_T_PRINT = n('Swift string interpolation, reading the reloaded value, then print.', 'Prints the volume after the reload, whichever value the disk held.', 'Standard output, the single line this program prints.', 'At the end of the program, after the reload.', 'This one line grades the fix: 3 means the edit was lost, 7 means it was saved.');
+
+const L9 = {
+  id: 'data-worked-examples',
+  title: 'Worked Examples',
+  steps: [
+    {
+      kind: 'example',
+      title: 'Decode a weather reading, field by field',
+      problem: '<p>A weather service sends one reading as JSON text. Decode it into a <code>Codable</code> struct, growing the struct field by field, survive a reading whose temperature arrives as text, and print one summary line per reading.</p>',
+      adapter: 'trace',
+      expect: 'Venice: 28.5 degrees, Sunny\nOslo: 4.5 degrees, Clear',
+      frames: [
+        {
+          caption: 'The smallest useful reading: a struct with one String field decodes a one-key JSON object, and the print proves the city arrived. Every later frame grows this same program.',
+          lines: [
+            ['import Foundation', WX_IMPORT],
+            ['', null],
+            ['struct WeatherReading: Codable {', WX_STRUCT],
+            ['    var city: String', WX_CITY],
+            ['}', null],
+            [r`let json = "{\"city\": \"Venice\"}"`, WX_JSON1],
+            ['let reading = try JSONDecoder().decode(WeatherReading.self, from: Data(json.utf8))', WX_DECODE],
+            [r`print("City: \(reading.city)")`, WX_PRINT_CITY],
+          ],
+          expect: 'City: Venice',
+        },
+        {
+          caption: 'A Double field joins the struct and the JSON gains a matching number. The decoder fills both fields in one call, and two prints show each value landed in its own property.',
+          lines: [
+            ['import Foundation', WX_IMPORT],
+            ['', null],
+            ['struct WeatherReading: Codable {', WX_STRUCT],
+            ['    var city: String', WX_CITY],
+            ['    var temperature: Double', WX_TEMP],
+            ['}', null],
+            [r`let json = "{\"city\": \"Venice\", \"temperature\": 28.5}"`, WX_JSON2],
+            ['let reading = try JSONDecoder().decode(WeatherReading.self, from: Data(json.utf8))', WX_DECODE],
+            [r`print("City: \(reading.city)")`, WX_PRINT_CITY],
+            [r`print("Temperature: \(reading.temperature)")`, WX_PRINT_TEMP],
+          ],
+          expect: 'City: Venice\nTemperature: 28.5',
+        },
+        {
+          caption: 'A third String field, condition, completes the reading the service sends. The struct now matches the JSON key for key, so one decode call fills all three properties at once.',
+          lines: [
+            ['import Foundation', WX_IMPORT],
+            ['', null],
+            ['struct WeatherReading: Codable {', WX_STRUCT],
+            ['    var city: String', WX_CITY],
+            ['    var temperature: Double', WX_TEMP],
+            ['    var condition: String', WX_COND],
+            ['}', null],
+            [r`let json = "{\"city\": \"Venice\", \"temperature\": 28.5, \"condition\": \"Sunny\"}"`, WX_JSON3],
+            ['let reading = try JSONDecoder().decode(WeatherReading.self, from: Data(json.utf8))', WX_DECODE],
+            [r`print("City: \(reading.city)")`, WX_PRINT_CITY],
+            [r`print("Temperature: \(reading.temperature)")`, WX_PRINT_TEMP],
+            [r`print("Condition: \(reading.condition)")`, WX_PRINT_COND],
+          ],
+          expect: 'City: Venice\nTemperature: 28.5\nCondition: Sunny',
+        },
+        {
+          caption: 'The three separate prints become one summary line built by interpolation. This exact line is the goal output; the next frame keeps the code and breaks only the incoming JSON.',
+          lines: [
+            ['import Foundation', WX_IMPORT],
+            ['', null],
+            ['struct WeatherReading: Codable {', WX_STRUCT],
+            ['    var city: String', WX_CITY],
+            ['    var temperature: Double', WX_TEMP],
+            ['    var condition: String', WX_COND],
+            ['}', null],
+            [r`let json = "{\"city\": \"Venice\", \"temperature\": 28.5, \"condition\": \"Sunny\"}"`, WX_JSON3],
+            ['let reading = try JSONDecoder().decode(WeatherReading.self, from: Data(json.utf8))', WX_DECODE],
+            [r`print("\(reading.city): \(reading.temperature) degrees, \(reading.condition)")`, WX_PRINT_SUMMARY],
+          ],
+          expect: 'Venice: 28.5 degrees, Sunny',
+        },
+        {
+          caption: 'The same program, one changed input: temperature now arrives in quotes, as text. A Double cannot be built from a string, so decode throws and nothing prints at all.',
+          lines: [
+            ['import Foundation', WX_IMPORT],
+            ['', null],
+            ['struct WeatherReading: Codable {', WX_STRUCT],
+            ['    var city: String', WX_CITY],
+            ['    var temperature: Double', WX_TEMP],
+            ['    var condition: String', WX_COND],
+            ['}', null],
+            [r`let json = "{\"city\": \"Venice\", \"temperature\": \"28.5\", \"condition\": \"Sunny\"}"`, WX_JSON_BAD],
+            ['let reading = try JSONDecoder().decode(WeatherReading.self, from: Data(json.utf8))', WX_DECODE],
+            [r`print("\(reading.city): \(reading.temperature) degrees, \(reading.condition)")`, WX_PRINT_SUMMARY],
+          ],
+          partial: true,
+          reason: 'The JSON sends temperature as a string, so decoding a Double throws a type mismatch before any print runs.',
+          expectError: 'Expected to decode Double but found a string instead',
+        },
+        {
+          caption: 'The repair decodes temperature as the String it really is, mapped by CodingKeys onto temperatureText, then converts that text to a Double. The summary line prints exactly as before.',
+          lines: [
+            ['import Foundation', WX_IMPORT],
+            ['', null],
+            ['struct FlexibleReading: Codable {', WX_FLEX_STRUCT],
+            ['    var city: String', WX_CITY],
+            ['    var temperatureText: String', WX_TEMPTEXT],
+            ['    var condition: String', WX_COND],
+            ['    enum CodingKeys: String, CodingKey {', WX_KEYS],
+            ['        case city, condition', WX_KEYS_SAME],
+            ['        case temperatureText = "temperature"', WX_KEYS_MAP],
+            ['    }', null],
+            ['}', null],
+            [r`let json = "{\"city\": \"Venice\", \"temperature\": \"28.5\", \"condition\": \"Sunny\"}"`, WX_JSON_BAD],
+            ['let flex = try JSONDecoder().decode(FlexibleReading.self, from: Data(json.utf8))', WX_FLEX_DECODE],
+            ['let temperature = Double(flex.temperatureText) ?? 0', WX_CONVERT],
+            [r`print("\(flex.city): \(temperature) degrees, \(flex.condition)")`, WX_FLEX_PRINT],
+          ],
+          expect: 'Venice: 28.5 degrees, Sunny',
+        },
+        {
+          caption: 'The repaired decoder is now the program: one shared decoder reads two readings in the service’s text format, converts each temperature, and prints the same summary shape for both.',
+          lines: [
+            ['import Foundation', WX_IMPORT],
+            ['', null],
+            ['struct FlexibleReading: Codable {', WX_FLEX_STRUCT],
+            ['    var city: String', WX_CITY],
+            ['    var temperatureText: String', WX_TEMPTEXT],
+            ['    var condition: String', WX_COND],
+            ['    enum CodingKeys: String, CodingKey {', WX_KEYS],
+            ['        case city, condition', WX_KEYS_SAME],
+            ['        case temperatureText = "temperature"', WX_KEYS_MAP],
+            ['    }', null],
+            ['}', null],
+            [r`let first = "{\"city\": \"Venice\", \"temperature\": \"28.5\", \"condition\": \"Sunny\"}"`, WX_JSON_FIRST],
+            [r`let second = "{\"city\": \"Oslo\", \"temperature\": \"4.5\", \"condition\": \"Clear\"}"`, WX_JSON_SECOND],
+            ['let decoder = JSONDecoder()', WX_DECODER],
+            ['let flexA = try decoder.decode(FlexibleReading.self, from: Data(first.utf8))', WX_DECODE_A],
+            [r`print("\(flexA.city): \(Double(flexA.temperatureText) ?? 0) degrees, \(flexA.condition)")`, WX_PRINT_A],
+            ['let flexB = try decoder.decode(FlexibleReading.self, from: Data(second.utf8))', WX_DECODE_B],
+            [r`print("\(flexB.city): \(Double(flexB.temperatureText) ?? 0) degrees, \(flexB.condition)")`, WX_PRINT_B],
+          ],
+          expect: 'Venice: 28.5 degrees, Sunny\nOslo: 4.5 degrees, Clear',
+        },
+      ],
+      tryIt: {
+        task: '<p>A second service sends readings with a city and a numeric temperature, but no condition. The starter requires a condition, so decoding throws. Make the condition optional and print the summary with <code>Unknown</code> when it is missing.</p>',
+        lines: [
+          ['import Foundation', WX_IMPORT],
+          ['', null],
+          ['struct Reading: Codable {', WX_T_STRUCT],
+          ['    var city: String', WX_CITY],
+          ['    var temperature: Double', WX_TEMP],
+          ['    var condition: String', WX_COND],
+          ['}', null],
+          [r`let json = "{\"city\": \"Miami\", \"temperature\": 30.0}"`, WX_T_JSON],
+          ['let reading = try JSONDecoder().decode(Reading.self, from: Data(json.utf8))', WX_T_DECODE],
+          [r`print("\(reading.city): \(reading.temperature) degrees, \(reading.condition)")`, WX_T_PRINT],
+        ],
+        solution: [
+          ['import Foundation', WX_IMPORT],
+          ['', null],
+          ['struct Reading: Codable {', WX_T_STRUCT],
+          ['    var city: String', WX_CITY],
+          ['    var temperature: Double', WX_TEMP],
+          ['    var condition: String?', WX_T_COND_OPT],
+          ['}', null],
+          [r`let json = "{\"city\": \"Miami\", \"temperature\": 30.0}"`, WX_T_JSON],
+          ['let reading = try JSONDecoder().decode(Reading.self, from: Data(json.utf8))', WX_T_DECODE],
+          [r`print("\(reading.city): \(reading.temperature) degrees, \(reading.condition ?? "Unknown")")`, WX_T_PRINT2],
+        ],
+        expect: 'Miami: 30.0 degrees, Unknown',
+      },
+    },
+    {
+      kind: 'example',
+      title: 'Create and save related models: authors and books',
+      problem: '<p>An author writes many books, and each book belongs to one author. Model that relationship, create one author with two books, save them, and read the relationship back from the author side.</p>',
+      adapter: 'diagram',
+      diagram: 'swiftdata',
+      simulation: true,
+      frames: [
+        {
+          caption: 'The running code in this example models SwiftData in plain Swift; this frame is the real thing, read along: an @Model class for Author with one stored property, its name.',
+          static: true,
+          lines: [
+            ['import SwiftData', SD_IMPORT],
+            ['', null],
+            ['@Model', SD_MODEL],
+            ['final class Author {', SD_CLASS_AUTHOR],
+            ['    var name: String', SD_NAME],
+            ['    init(name: String) {', SD_INIT_AUTHOR],
+            ['        self.name = name', SD_SELF_NAME],
+            ['    }', null],
+            ['}', null],
+          ],
+          diagram: { leftTitle: 'Author', left: ['var name: String'], rightTitle: 'Book', right: ['(not defined yet)'], link: 'books', records: [], saved: false, note: 'Only the Author model exists so far.' },
+        },
+        {
+          caption: 'Book joins as a second @Model class. Its author property is the to-one end of the link: optional, because a book can exist before it is assigned to an author.',
+          static: true,
+          lines: [
+            ['import SwiftData', SD_IMPORT],
+            ['', null],
+            ['@Model', SD_MODEL],
+            ['final class Author {', SD_CLASS_AUTHOR],
+            ['    var name: String', SD_NAME],
+            ['    init(name: String) {', SD_INIT_AUTHOR],
+            ['        self.name = name', SD_SELF_NAME],
+            ['    }', null],
+            ['}', null],
+            ['', null],
+            ['@Model', SD_MODEL],
+            ['final class Book {', SD_CLASS_BOOK],
+            ['    var title: String', SD_TITLE],
+            ['    var author: Author?', SD_AUTHORPROP],
+            ['    init(title: String, author: Author? = nil) {', SD_INIT_BOOK],
+            ['        self.title = title', SD_SELF_TITLE],
+            ['        self.author = author', SD_SELF_AUTHOR],
+            ['    }', null],
+            ['}', null],
+          ],
+          diagram: { leftTitle: 'Author', left: ['var name: String'], rightTitle: 'Book', right: ['var title: String', 'var author: Author?'], link: 'author', records: [], saved: false, note: 'Two models exist; the link is only declared on the Book side so far.' },
+        },
+        {
+          caption: 'Author gains the to-many end: a books array with @Relationship naming Book.author as its inverse and a cascade delete rule. SwiftData will keep both ends in step automatically.',
+          static: true,
+          lines: [
+            ['import SwiftData', SD_IMPORT],
+            ['', null],
+            ['@Model', SD_MODEL],
+            ['final class Author {', SD_CLASS_AUTHOR],
+            ['    var name: String', SD_NAME],
+            [r`    @Relationship(deleteRule: .cascade, inverse: \Book.author)`, SD_REL],
+            ['    var books: [Book] = []', SD_BOOKS],
+            ['    init(name: String) {', SD_INIT_AUTHOR],
+            ['        self.name = name', SD_SELF_NAME],
+            ['    }', null],
+            ['}', null],
+            ['', null],
+            ['@Model', SD_MODEL],
+            ['final class Book {', SD_CLASS_BOOK],
+            ['    var title: String', SD_TITLE],
+            ['    var author: Author?', SD_AUTHORPROP],
+            ['    init(title: String, author: Author? = nil) {', SD_INIT_BOOK],
+            ['        self.title = title', SD_SELF_TITLE],
+            ['        self.author = author', SD_SELF_AUTHOR],
+            ['    }', null],
+            ['}', null],
+          ],
+          diagram: { leftTitle: 'Author', left: ['var name: String', 'var books: [Book]'], rightTitle: 'Book', right: ['var title: String', 'var author: Author?'], link: 'books / author', records: [], saved: false, note: 'The relationship is declared on both ends; no objects exist yet.' },
+        },
+        {
+          caption: 'The mirror begins: plain Swift classes with the same properties, no @Model macro, and an array standing in for the store. One author is created and listed as a record, unsaved.',
+          lines: [
+            ['final class Author {', SD_M_CLASS_AUTHOR],
+            ['    var name: String', SD_NAME],
+            ['    var books: [Book] = []', SD_BOOKS],
+            ['    init(name: String) { self.name = name }', SD_M_INIT_AUTHOR],
+            ['}', null],
+            ['final class Book {', SD_M_CLASS_BOOK],
+            ['    var title: String', SD_TITLE],
+            ['    var author: Author?', SD_AUTHORPROP],
+            ['    init(title: String, author: Author?) { self.title = title; self.author = author }', SD_M_INIT_BOOK],
+            ['}', null],
+            ['var records: [String] = []', SD_RECORDS],
+            ['let author = Author(name: "Octavia Butler")', SD_MAKE_AUTHOR],
+            [r`records.append("Author: \(author.name)")`, SD_APPEND_AUTHOR],
+            ['for record in records { print(record) }', SD_PRINT_RECORDS],
+          ],
+          claims: ['Author: Octavia Butler'],
+          diagram: { leftTitle: 'Author', left: ['var name: String', 'var books: [Book]'], rightTitle: 'Book', right: ['var title: String', 'var author: Author?'], link: 'books / author', records: ['Author: Octavia Butler'], saved: false, note: 'Mirror store: one record, in memory only.' },
+        },
+        {
+          caption: 'Two books are created already pointing at the author, then appended to the author’s books array, mirroring how SwiftData maintains the inverse. All three records exist only in memory.',
+          lines: [
+            ['final class Author {', SD_M_CLASS_AUTHOR],
+            ['    var name: String', SD_NAME],
+            ['    var books: [Book] = []', SD_BOOKS],
+            ['    init(name: String) { self.name = name }', SD_M_INIT_AUTHOR],
+            ['}', null],
+            ['final class Book {', SD_M_CLASS_BOOK],
+            ['    var title: String', SD_TITLE],
+            ['    var author: Author?', SD_AUTHORPROP],
+            ['    init(title: String, author: Author?) { self.title = title; self.author = author }', SD_M_INIT_BOOK],
+            ['}', null],
+            ['var records: [String] = []', SD_RECORDS],
+            ['let author = Author(name: "Octavia Butler")', SD_MAKE_AUTHOR],
+            [r`records.append("Author: \(author.name)")`, SD_APPEND_AUTHOR],
+            ['let kindred = Book(title: "Kindred", author: author)', SD_MAKE_KINDRED],
+            ['author.books.append(kindred)', SD_LINK_KINDRED],
+            [r`records.append("Book: \(kindred.title)")`, SD_APPEND_KINDRED],
+            ['let fledgling = Book(title: "Fledgling", author: author)', SD_MAKE_FLEDGLING],
+            ['author.books.append(fledgling)', SD_LINK_FLEDGLING],
+            [r`records.append("Book: \(fledgling.title)")`, SD_APPEND_FLEDGLING],
+            ['for record in records { print(record) }', SD_PRINT_RECORDS],
+          ],
+          claims: ['Author: Octavia Butler', 'Book: Kindred', 'Book: Fledgling'],
+          diagram: { leftTitle: 'Author', left: ['var name: String', 'var books: [Book]'], rightTitle: 'Book', right: ['var title: String', 'var author: Author?'], link: 'books / author', records: ['Author: Octavia Butler', 'Book: Kindred', 'Book: Fledgling'], saved: false, note: 'Mirror store: three records, still in memory only.' },
+        },
+        {
+          caption: 'A save step flips the mirror’s saved flag, standing in for the ModelContext save that writes SwiftData records to disk. The diagram now reports the three records as saved.',
+          lines: [
+            ['final class Author {', SD_M_CLASS_AUTHOR],
+            ['    var name: String', SD_NAME],
+            ['    var books: [Book] = []', SD_BOOKS],
+            ['    init(name: String) { self.name = name }', SD_M_INIT_AUTHOR],
+            ['}', null],
+            ['final class Book {', SD_M_CLASS_BOOK],
+            ['    var title: String', SD_TITLE],
+            ['    var author: Author?', SD_AUTHORPROP],
+            ['    init(title: String, author: Author?) { self.title = title; self.author = author }', SD_M_INIT_BOOK],
+            ['}', null],
+            ['var records: [String] = []', SD_RECORDS],
+            ['let author = Author(name: "Octavia Butler")', SD_MAKE_AUTHOR],
+            [r`records.append("Author: \(author.name)")`, SD_APPEND_AUTHOR],
+            ['let kindred = Book(title: "Kindred", author: author)', SD_MAKE_KINDRED],
+            ['author.books.append(kindred)', SD_LINK_KINDRED],
+            [r`records.append("Book: \(kindred.title)")`, SD_APPEND_KINDRED],
+            ['let fledgling = Book(title: "Fledgling", author: author)', SD_MAKE_FLEDGLING],
+            ['author.books.append(fledgling)', SD_LINK_FLEDGLING],
+            [r`records.append("Book: \(fledgling.title)")`, SD_APPEND_FLEDGLING],
+            ['let saved = true', SD_SAVED_FLAG],
+            [r`print("Store saved: \(records.count) records")`, SD_PRINT_SAVED],
+            ['for record in records { print(record) }', SD_PRINT_RECORDS],
+          ],
+          claims: ['Store saved: 3 records', 'Author: Octavia Butler', 'Book: Kindred', 'Book: Fledgling'],
+          diagram: { leftTitle: 'Author', left: ['var name: String', 'var books: [Book]'], rightTitle: 'Book', right: ['var title: String', 'var author: Author?'], link: 'books / author', records: ['Author: Octavia Butler', 'Book: Kindred', 'Book: Fledgling'], saved: true, note: 'Mirror store: the save step has run.' },
+        },
+        {
+          caption: 'Reading the relationship from the other side: looping over the author’s books prints both titles, proving the links survived the save. In SwiftData this same loop needs no store code at all.',
+          lines: [
+            ['final class Author {', SD_M_CLASS_AUTHOR],
+            ['    var name: String', SD_NAME],
+            ['    var books: [Book] = []', SD_BOOKS],
+            ['    init(name: String) { self.name = name }', SD_M_INIT_AUTHOR],
+            ['}', null],
+            ['final class Book {', SD_M_CLASS_BOOK],
+            ['    var title: String', SD_TITLE],
+            ['    var author: Author?', SD_AUTHORPROP],
+            ['    init(title: String, author: Author?) { self.title = title; self.author = author }', SD_M_INIT_BOOK],
+            ['}', null],
+            ['var records: [String] = []', SD_RECORDS],
+            ['let author = Author(name: "Octavia Butler")', SD_MAKE_AUTHOR],
+            [r`records.append("Author: \(author.name)")`, SD_APPEND_AUTHOR],
+            ['let kindred = Book(title: "Kindred", author: author)', SD_MAKE_KINDRED],
+            ['author.books.append(kindred)', SD_LINK_KINDRED],
+            [r`records.append("Book: \(kindred.title)")`, SD_APPEND_KINDRED],
+            ['let fledgling = Book(title: "Fledgling", author: author)', SD_MAKE_FLEDGLING],
+            ['author.books.append(fledgling)', SD_LINK_FLEDGLING],
+            [r`records.append("Book: \(fledgling.title)")`, SD_APPEND_FLEDGLING],
+            ['let saved = true', SD_SAVED_FLAG],
+            [r`print("Store saved: \(records.count) records")`, SD_PRINT_SAVED],
+            ['for record in records { print(record) }', SD_PRINT_RECORDS],
+            [r`for book in author.books { print("\(author.name) wrote \(book.title)") }`, SD_PRINT_WROTE],
+          ],
+          claims: ['Octavia Butler wrote Kindred', 'Octavia Butler wrote Fledgling'],
+          diagram: { leftTitle: 'Author', left: ['var name: String', 'var books: [Book]'], rightTitle: 'Book', right: ['var title: String', 'var author: Author?'], link: 'books / author', records: ['Author: Octavia Butler', 'Book: Kindred', 'Book: Fledgling'], saved: true, note: 'Saved, and the relationship reads back from the Author side.' },
+        },
+      ],
+      tryIt: {
+        task: '<p>The starter creates an author and a book but never files the book, so the author’s count prints 0. Add the missing link so the count prints 1.</p>',
+        lines: [
+          ['final class Author {', SD_M_CLASS_AUTHOR],
+          ['    var name: String', SD_NAME],
+          ['    var books: [Book] = []', SD_BOOKS],
+          ['    init(name: String) { self.name = name }', SD_M_INIT_AUTHOR],
+          ['}', null],
+          ['final class Book {', SD_M_CLASS_BOOK],
+          ['    var title: String', SD_TITLE],
+          ['    init(title: String) { self.title = title }', SD_T_INIT_BOOK],
+          ['}', null],
+          ['let author = Author(name: "Ursula Le Guin")', SD_T_AUTHOR],
+          ['let book = Book(title: "A Wizard of Earthsea")', SD_T_BOOK],
+          [r`print("Books by \(author.name): \(author.books.count)")`, SD_T_PRINT],
+        ],
+        solution: [
+          ['final class Author {', SD_M_CLASS_AUTHOR],
+          ['    var name: String', SD_NAME],
+          ['    var books: [Book] = []', SD_BOOKS],
+          ['    init(name: String) { self.name = name }', SD_M_INIT_AUTHOR],
+          ['}', null],
+          ['final class Book {', SD_M_CLASS_BOOK],
+          ['    var title: String', SD_TITLE],
+          ['    init(title: String) { self.title = title }', SD_T_INIT_BOOK],
+          ['}', null],
+          ['let author = Author(name: "Ursula Le Guin")', SD_T_AUTHOR],
+          ['let book = Book(title: "A Wizard of Earthsea")', SD_T_BOOK],
+          ['author.books.append(book)', SD_T_APPEND],
+          [r`print("Books by \(author.name): \(author.books.count)")`, SD_T_PRINT],
+        ],
+        expect: 'Books by Ursula Le Guin: 1',
+      },
+    },
+    {
+      kind: 'example',
+      title: 'Load, edit, save, reload — and the save somebody forgot',
+      problem: '<p>A settings screen keeps one number, the volume. Load it from its saved JSON, change it, and prove which changes survive a reload: one edit is lost, one is kept.</p>',
+      adapter: 'trace',
+      expect: 'Loaded volume: 5\nOn disk: {"volume":8}\nAfter reload volume: 8\nSecond reload volume: 10',
+      frames: [
+        {
+          caption: 'A JSON string plays the role of the disk. Decoding it loads the saved settings, and the print proves the stored volume, 5, is what the program starts with.',
+          lines: [
+            ['import Foundation', ST_IMPORT],
+            ['', null],
+            ['struct Settings: Codable {', ST_STRUCT],
+            ['    var volume: Int', ST_VOLUME],
+            ['}', null],
+            [r`var disk = "{\"volume\": 5}"`, ST_DISK],
+            ['let settings = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_LOAD],
+            [r`print("Loaded volume: \(settings.volume)")`, ST_PRINT_LOADED],
+          ],
+          expect: 'Loaded volume: 5',
+        },
+        {
+          caption: 'The loaded value becomes a var and is edited to 8 in memory. Nothing has touched the disk string yet, so this new value exists only while the program runs.',
+          lines: [
+            ['import Foundation', ST_IMPORT],
+            ['', null],
+            ['struct Settings: Codable {', ST_STRUCT],
+            ['    var volume: Int', ST_VOLUME],
+            ['}', null],
+            [r`var disk = "{\"volume\": 5}"`, ST_DISK],
+            ['var settings = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_LOAD_VAR],
+            [r`print("Loaded volume: \(settings.volume)")`, ST_PRINT_LOADED],
+            ['settings.volume = 8', ST_EDIT],
+            [r`print("In memory volume: \(settings.volume)")`, ST_PRINT_MEMORY],
+          ],
+          expect: 'Loaded volume: 5\nIn memory volume: 8',
+        },
+        {
+          caption: 'Reloading decodes the disk string again, and the old value, 5, comes back. The edit was never saved: this is the classic forgotten-save bug, proven by the output alone.',
+          lines: [
+            ['import Foundation', ST_IMPORT],
+            ['', null],
+            ['struct Settings: Codable {', ST_STRUCT],
+            ['    var volume: Int', ST_VOLUME],
+            ['}', null],
+            [r`var disk = "{\"volume\": 5}"`, ST_DISK],
+            ['var settings = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_LOAD_VAR],
+            [r`print("Loaded volume: \(settings.volume)")`, ST_PRINT_LOADED],
+            ['settings.volume = 8', ST_EDIT],
+            [r`print("In memory volume: \(settings.volume)")`, ST_PRINT_MEMORY],
+            ['let reloaded = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_RELOAD],
+            [r`print("After reload volume: \(reloaded.volume)")`, ST_PRINT_RELOADED],
+          ],
+          expect: 'Loaded volume: 5\nIn memory volume: 8\nAfter reload volume: 5',
+        },
+        {
+          caption: 'This time the edit is encoded back into the disk string before anything reloads. Printing the disk shows the new JSON, with volume 8, so the save really happened.',
+          lines: [
+            ['import Foundation', ST_IMPORT],
+            ['', null],
+            ['struct Settings: Codable {', ST_STRUCT],
+            ['    var volume: Int', ST_VOLUME],
+            ['}', null],
+            [r`var disk = "{\"volume\": 5}"`, ST_DISK],
+            ['var settings = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_LOAD_VAR],
+            [r`print("Loaded volume: \(settings.volume)")`, ST_PRINT_LOADED],
+            ['settings.volume = 8', ST_EDIT],
+            ['let data = try JSONEncoder().encode(settings)', ST_ENCODE],
+            ['disk = String(data: data, encoding: .utf8) ?? ""', ST_WRITE_DISK],
+            [r`print("On disk: \(disk)")`, ST_PRINT_DISK],
+          ],
+          expect: 'Loaded volume: 5\nOn disk: {"volume":8}',
+        },
+        {
+          caption: 'Reloading now decodes the updated disk string, and 8 survives. Same reload code as the buggy frame; the only difference is that the save happened first this time.',
+          lines: [
+            ['import Foundation', ST_IMPORT],
+            ['', null],
+            ['struct Settings: Codable {', ST_STRUCT],
+            ['    var volume: Int', ST_VOLUME],
+            ['}', null],
+            [r`var disk = "{\"volume\": 5}"`, ST_DISK],
+            ['var settings = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_LOAD_VAR],
+            [r`print("Loaded volume: \(settings.volume)")`, ST_PRINT_LOADED],
+            ['settings.volume = 8', ST_EDIT],
+            ['let data = try JSONEncoder().encode(settings)', ST_ENCODE],
+            ['disk = String(data: data, encoding: .utf8) ?? ""', ST_WRITE_DISK],
+            [r`print("On disk: \(disk)")`, ST_PRINT_DISK],
+            ['let reloaded = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_RELOAD],
+            [r`print("After reload volume: \(reloaded.volume)")`, ST_PRINT_RELOADED],
+          ],
+          expect: 'Loaded volume: 5\nOn disk: {"volume":8}\nAfter reload volume: 8',
+        },
+        {
+          caption: 'One more full cycle at volume 10: copy, edit, encode, save, reload. The second reload also returns the new value, so the load-edit-save pattern is now the habit.',
+          lines: [
+            ['import Foundation', ST_IMPORT],
+            ['', null],
+            ['struct Settings: Codable {', ST_STRUCT],
+            ['    var volume: Int', ST_VOLUME],
+            ['}', null],
+            [r`var disk = "{\"volume\": 5}"`, ST_DISK],
+            ['var settings = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_LOAD_VAR],
+            [r`print("Loaded volume: \(settings.volume)")`, ST_PRINT_LOADED],
+            ['settings.volume = 8', ST_EDIT],
+            ['let data = try JSONEncoder().encode(settings)', ST_ENCODE],
+            ['disk = String(data: data, encoding: .utf8) ?? ""', ST_WRITE_DISK],
+            [r`print("On disk: \(disk)")`, ST_PRINT_DISK],
+            ['let reloaded = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_RELOAD],
+            [r`print("After reload volume: \(reloaded.volume)")`, ST_PRINT_RELOADED],
+            ['var again = reloaded', ST_COPY],
+            ['again.volume = 10', ST_EDIT10],
+            ['let data2 = try JSONEncoder().encode(again)', ST_ENCODE2],
+            ['disk = String(data: data2, encoding: .utf8) ?? ""', ST_WRITE2],
+            ['let check = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_LOAD_CHECK],
+            [r`print("Second reload volume: \(check.volume)")`, ST_PRINT_SECOND],
+          ],
+          expect: 'Loaded volume: 5\nOn disk: {"volume":8}\nAfter reload volume: 8\nSecond reload volume: 10',
+        },
+      ],
+      tryIt: {
+        task: '<p>The starter loads volume 3, edits it to 7, and reloads — but never saves, so the reload prints the old value. Add the save between the edit and the reload so the final print shows 7.</p>',
+        lines: [
+          ['import Foundation', ST_IMPORT],
+          ['', null],
+          ['struct Settings: Codable {', ST_STRUCT],
+          ['    var volume: Int', ST_VOLUME],
+          ['}', null],
+          [r`var disk = "{\"volume\": 3}"`, ST_T_DISK],
+          ['var settings = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_LOAD_VAR],
+          ['settings.volume = 7', ST_T_EDIT],
+          ['let reloaded = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_RELOAD],
+          [r`print("Volume after reload: \(reloaded.volume)")`, ST_T_PRINT],
+        ],
+        solution: [
+          ['import Foundation', ST_IMPORT],
+          ['', null],
+          ['struct Settings: Codable {', ST_STRUCT],
+          ['    var volume: Int', ST_VOLUME],
+          ['}', null],
+          [r`var disk = "{\"volume\": 3}"`, ST_T_DISK],
+          ['var settings = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_LOAD_VAR],
+          ['settings.volume = 7', ST_T_EDIT],
+          ['let data = try JSONEncoder().encode(settings)', ST_ENCODE],
+          ['disk = String(data: data, encoding: .utf8) ?? ""', ST_WRITE_DISK],
+          ['let reloaded = try JSONDecoder().decode(Settings.self, from: Data(disk.utf8))', ST_RELOAD],
+          [r`print("Volume after reload: \(reloaded.volume)")`, ST_T_PRINT],
+        ],
+        expect: 'Volume after reload: 7',
+      },
+    },
+  ],
+};
+
+
 export default {
   id: 'data',
   number: 6,
@@ -3965,5 +4610,5 @@ export default {
   summary: 'Choose where each piece of app data belongs, then store it: settings with @AppStorage, documents with Codable and FileManager, records with SwiftData, secrets in the Keychain, and shared data in iCloud with CloudKit.',
   objectives: ['CLO4', 'CLO5'],
   outcomes: ['SLO1', 'SLO3'],
-  lessons: [L1, L2, L3, L4, L5, L6, L7, L8],
+  lessons: [L1, L2, L3, L4, L5, L6, L7, L8, L9],
 };

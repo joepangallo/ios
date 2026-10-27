@@ -26,6 +26,7 @@ for (const f of files) {
       const add = (lines, label) => units.push({ id: `${path.basename(f)} ${lesson.id} step ${i + 1} ${label}`, code: lines.map((l) => l[0]).join('\n') + '\n' });
       if (s.kind === 'code' && s.run === 'swiftui') add(s.lines, `"${s.title}"`);
       if (s.kind === 'compare') for (const side of ['left', 'right']) if (s[side] && s[side].run === 'swiftui') add(s[side].lines, `"${s.title}" [${side}]`);
+      if (s.kind === 'example' && s.adapter === 'phone') s.frames.forEach((fr, fi) => add(fr.lines, `"${s.title}" [example frame ${fi + 1}]`));
     });
   }
 }

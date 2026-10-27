@@ -4,6 +4,87 @@
 const n = (who, what, where, when, why) => ({ who, what, where, when, why });
 const r = String.raw;
 
+// Five-part notes shared by the worked examples at the end of this module:
+// the same line appears in many frames, so its note is written once here.
+const RC_PILOT_CLASS = n("You declare it; ARC manages every instance.", "Declares the Pilot class, one half of the pair in this example.", "At file scope, above the Ship class it refers to.", "Compiled once; an instance is created near the bottom.", "Classes are reference types, so ARC counts the references to each instance.");
+const RC_PILOT_SHIP = n("Each Pilot instance, holding its ship strongly.", "Stores an optional strong reference from the pilot to its ship.", "A stored property inside Pilot, on the heap with the instance.", "Set after both objects exist, when the link is made.", "A plain var property is strong: it keeps the ship alive.");
+const RC_PILOT_DEINIT = n("ARC, at the moment the last strong reference goes.", "Prints a line when a Pilot instance is destroyed.", "Inside Pilot; a class can have at most one deinit.", "Exactly when the pilot strong reference count reaches zero.", "A print in deinit is the leak detector used in the debugging lesson.");
+const RC_SHIP_CLASS = n("You declare it; ARC manages every instance.", "Declares the Ship class, the other half of the pair.", "At file scope, below the Pilot class it refers to.", "Compiled once; an instance is created near the bottom.", "Two classes that can point at each other are all a cycle needs.");
+const RC_SHIP_PILOT_STRONG = n("Each Ship instance, holding its pilot strongly.", "Stores an optional strong reference from the ship back to its pilot.", "A stored property inside Ship, on the heap with the instance.", "Set after both objects exist, when the cycle closes.", "This strong arrow back is the one that will close the loop.");
+const RC_SHIP_DEINIT = n("ARC, at the moment the last strong reference goes.", "Prints a line when a Ship instance is destroyed.", "Inside Ship; a class can have at most one deinit.", "Exactly when the ship strong reference count reaches zero.", "Watching for this line, or its absence, is the whole experiment.");
+const RC_VAR_PILOT = n("Top-level code, playing the screen that owns the pilot.", "Creates a Pilot and holds it in an optional variable.", "Top-level code below both class declarations.", "When the program reaches this line, before any linking.", "Optional variables can later be set to nil to release the object.");
+const RC_VAR_SHIP = n("Top-level code, playing the screen that owns the ship.", "Creates a Ship and holds it in an optional variable.", "Top-level code, right after the pilot variable.", "When the program reaches this line, before any linking.", "Each object starts with exactly one strong reference: its variable.");
+const RC_PRINT_CREATED = n("The print function from the Swift standard library.", "Prints the marker that both objects now exist.", "Top-level code, after both variables are created.", "After creation, before any links are made.", "A marker line makes the output order easy to follow.");
+const RC_LINK1 = n("Top-level code, wiring the first direction.", "Stores the ship in the pilot property, creating the first strong arrow.", "Top-level code, after both objects exist.", "After creation, as the first link between the pair.", "One direction of reference is normal ownership and leaks nothing.");
+const RC_PRINT_HOLDS = n("The print function from the Swift standard library.", "Prints the marker that the first link is in place.", "Top-level code, right after the first link line.", "After the first link, before the second direction exists.", "The marker separates the one-way stage from the cycle stage.");
+const RC_LINK2 = n("Top-level code, wiring the second direction.", "Stores the pilot in the ship property, closing the reference loop.", "Top-level code, after the first link is in place.", "After the first link, as the moment the cycle forms.", "Now each object holds the other strongly: the cycle is complete.");
+const RC_PRINT_CYCLE = n("The print function from the Swift standard library.", "Prints the marker that both directions of reference now exist.", "Top-level code, right after the second link line.", "After the second link, before any release is tried.", "From here, releasing the variables is the test that matters.");
+const RC_NIL_PILOT = n("Top-level code, releasing its pilot reference.", "Drops the outside strong reference to the pilot object.", "Top-level code, in the release section of the program.", "After the links are made, as the first release step.", "Whether anything is freed now depends entirely on the links.");
+const RC_NIL_SHIP = n("Top-level code, releasing its ship reference.", "Drops the outside strong reference to the ship object.", "Top-level code, right after the pilot release.", "After the pilot release, as the second release step.", "After this line no outside reference to either object remains.");
+const RC_PRINT_AFTER = n("The print function from the Swift standard library.", "Prints the marker that both releases have happened.", "The last line of the program, after both nil assignments.", "Last, after every release step has run.", "Any freed lines before this marker prove the release worked.");
+const RC_SHIP_PILOT_WEAK = n("Each Ship instance, referring without owning.", "Stores an optional weak reference from the ship back to its pilot.", "A stored property inside Ship, replacing the strong version.", "Set after both objects exist, when the link is made.", "weak does not add to the count, so this arrow cannot keep the pilot alive.");
+const RC_TRY_DRIVER_CLASS = n("You declare it; ARC manages every instance.", "Declares the Driver class for the practice cycle.", "At file scope, above the Car class it refers to.", "Compiled once; an instance is created near the bottom.", "The practice pair mirrors the pilot and ship pair.");
+const RC_TRY_DRIVER_CAR = n("Each Driver instance, holding its car strongly.", "Stores an optional strong reference from the driver to the car.", "A stored property inside Driver, on the heap.", "Set after both objects exist, when the link is made.", "This strong arrow is ordinary ownership and stays strong.");
+const RC_TRY_DRIVER_DEINIT = n("ARC, at the moment the last strong reference goes.", "Prints a line when a Driver instance is destroyed.", "Inside Driver; a class can have at most one deinit.", "Exactly when the driver strong count reaches zero.", "This line is the success signal the practice asks for.");
+const RC_TRY_CAR_CLASS = n("You declare it; ARC manages every instance.", "Declares the Car class for the practice cycle.", "At file scope, below the Driver class it refers to.", "Compiled once; an instance is created near the bottom.", "The car pointing back at its driver is what can close a loop.");
+const RC_TRY_CAR_DRIVER_STRONG = n("Each Car instance, holding its driver strongly.", "Stores an optional strong reference from the car back to its driver.", "A stored property inside Car, on the heap.", "Set after both objects exist, when the cycle closes.", "In the starter this strong arrow back is the bug to fix.");
+const RC_TRY_CAR_DEINIT = n("ARC, at the moment the last strong reference goes.", "Prints a line when a Car instance is destroyed.", "Inside Car; a class can have at most one deinit.", "Exactly when the car strong count reaches zero.", "This line should follow the driver line in a fixed program.");
+const RC_TRY_VAR_DRIVER = n("Top-level code, holding the driver for the practice run.", "Creates a Driver and holds it in an optional variable.", "Top-level code below both class declarations.", "When the program reaches this line, before linking.", "The optional variable is the outside reference to release later.");
+const RC_TRY_VAR_CAR = n("Top-level code, holding the car for the practice run.", "Creates a Car and holds it in an optional variable.", "Top-level code, right after the driver variable.", "When the program reaches this line, before linking.", "Each practice object starts with one outside strong reference.");
+const RC_TRY_LINK1 = n("Top-level code, wiring the first direction.", "Stores the car in the driver property, the first strong arrow.", "Top-level code, after both objects exist.", "After creation, as the first practice link.", "Driver to car stays strong in both starter and solution.");
+const RC_TRY_LINK2 = n("Top-level code, wiring the second direction.", "Stores the driver in the car property, closing the loop.", "Top-level code, after the first link is in place.", "After the first link, as the moment the cycle forms.", "Whether this arrow owns or merely refers decides the outcome.");
+const RC_TRY_NIL_DRIVER = n("Top-level code, releasing its driver reference.", "Drops the outside strong reference to the driver object.", "Top-level code, in the release section.", "After the links are made, as the first release step.", "In the fixed version this is the line that frees the driver.");
+const RC_TRY_NIL_CAR = n("Top-level code, releasing its car reference.", "Drops the outside strong reference to the car object.", "Top-level code, right after the driver release.", "After the driver release, as the second release step.", "After this line the car has no strong references in the fix.");
+const RC_TRY_PRINT_AFTER = n("The print function from the Swift standard library.", "Prints the marker that both releases have happened.", "The last line of the practice program.", "Last, after every release step has run.", "Freed lines before this marker prove the fix worked.");
+const RC_TRY_CAR_DRIVER_WEAK = n("Each Car instance, referring without owning.", "Stores an optional weak reference from the car back to its driver.", "A stored property inside Car, replacing the strong version.", "Set after both objects exist, when the link is made.", "weak keeps the reference usable without keeping the driver alive.");
+const FB_ITEMS = n("Your code, fixing the workload size.", "Stores the number of list items one frame must handle: twenty.", "The first line of the program, above every cost line.", "First, before any segment cost is computed.", "Every segment cost below is computed from this one count.");
+const FB_FUNC = n("Your code, formatting durations for display.", "Declares a helper that turns tenths of a millisecond into text.", "At file scope, above the cost lines that use it.", "Compiled once; called by every print below.", "Working in integer tenths keeps every printed total exact.");
+const FB_FUNC_BODY = n("The helper function, building its return text.", "Returns whole milliseconds, a dot, then the tenths digit.", "The only statement inside the ms helper function.", "Each time a print formats a segment or a total.", "Dividing and taking the remainder formats tenths with no fractions.");
+const FB_INPUT = n("Your model of one frame, costing the input stage.", "Computes input cost: one tenth of a millisecond per item, twenty total.", "With the segment cost lines, after the item count.", "When the frame model is built, before totals are summed.", "Input is cheap per item, which the printed two milliseconds shows.");
+const FB_TOTAL_INPUT = n("Your code, starting the running frame total.", "Starts the total with the input cost alone.", "After the segment lines written so far, before the prints.", "After the input cost exists, before later segments are added.", "A var total can grow as each new segment joins the model.");
+const FB_PRINT_INPUT = n("The print function, formatting through the ms helper.", "Prints the input segment cost with one decimal place.", "In the output section, after the totals are summed.", "After the model is built, as the first printed segment.", "Each segment prints so the diagram can be checked against code.");
+const FB_PRINT_TOTAL = n("The print function, formatting through the ms helper.", "Prints the total frame cost with one decimal place.", "In the output section, after every segment line.", "After the totals are summed, as the verdict input.", "Sixteen point seven is the budget this total is judged against.");
+const FB_UPDATE = n("Your model of one frame, costing the update stage.", "Computes update cost: two tenths per item, forty total.", "With the segment cost lines, below the input cost.", "When the frame model is built, before totals are summed.", "Update costs more than input because every item changes state.");
+const FB_TOTAL_IU = n("Your code, starting the running frame total.", "Starts the total with the input and update costs added.", "After the input and update lines, before the prints.", "After both costs exist, before layout joins the model.", "Starting from the segments present keeps each frame total honest.");
+const FB_PRINT_UPDATE = n("The print function, formatting through the ms helper.", "Prints the update segment cost with one decimal place.", "In the output section, after the input line.", "After the model is built, as the second printed segment.", "Update at four milliseconds is the second largest honest cost.");
+const FB_LAYOUT_NAIVE = n("Your model of one frame, costing layout the naive way.", "Computes layout cost when every item re-lays out every item: one hundred twenty tenths.", "With the segment cost lines, in place of the cached line.", "When the frame model is built, before totals are summed.", "The items times items term is the repeated work that busts the budget.");
+const FB_ADD_LAYOUT = n("Your code, extending the running frame total.", "Adds the layout cost into the total for this frame.", "After the total starts, before the print lines.", "After the layout cost exists, in segment order.", "Adding segments one by one mirrors how a frame spends its budget.");
+const FB_PRINT_LAYOUT = n("The print function, formatting through the ms helper.", "Prints the layout segment cost with one decimal place.", "In the output section, after the update line.", "After the model is built, as the third printed segment.", "This is the line that changes when caching replaces recomputation.");
+const FB_RENDER = n("Your model of one frame, costing the render stage.", "Computes render cost: the item count plus ten, thirty tenths total.", "With the segment cost lines, below the layout cost.", "When the frame model is built, before totals are summed.", "Render is a fixed cost plus a small per item cost here.");
+const FB_ADD_RENDER = n("Your code, extending the running frame total.", "Adds the render cost into the total for this frame.", "After the layout addition, before the print lines.", "After the render cost exists, as the final segment.", "Render is the last segment, so this completes the frames cost.");
+const FB_PRINT_RENDER = n("The print function, formatting through the ms helper.", "Prints the render segment cost with one decimal place.", "In the output section, after the layout line.", "After the model is built, as the last printed segment.", "Render stays the same in both versions; layout was the problem.");
+const FB_CACHED_DECL = n("Your code, keeping the layout result for reuse.", "Stores the layout cost computed once: thirty tenths, three milliseconds.", "With the segment cost lines, above the layout cost line.", "Computed once, before the frame costs are summed.", "Caching means paying the layout cost a single time, not per item.");
+const FB_LAYOUT_CACHED = n("Your model of one frame, costing layout the cached way.", "Takes the layout cost from the cached value instead of recomputing it.", "With the segment cost lines, right after the cached value.", "When the frame model is built, before totals are summed.", "Reuse is the repair: same layout result, a quarter of the cost.");
+const FB_VERDICT = n("Your code, judging the total against the budget.", "Prints the on-time verdict when the total is at most one hundred sixty-seven tenths.", "The last line of the program, after the total print.", "Last, once the final total is known.", "Comparing in tenths keeps the budget check exact, with no rounding.");
+const FB_TRY_ITEMS = n("Your code, fixing the practice workload.", "Stores the number of items in the practice frame: ten.", "The first line of the practice program.", "First, before any practice cost is computed.", "Ten items keeps the practice arithmetic easy to check by hand.");
+const FB_TRY_INPUT = n("Your model of the practice frame, costing input.", "Stores the input cost directly: twenty tenths, two milliseconds.", "With the practice cost lines, after the item count.", "When the practice model is built, before the total.", "A fixed input cost keeps the practice focused on layout.");
+const FB_TRY_LAYOUT_NAIVE = n("Your model, costing layout the wasteful way.", "Computes layout as items times items: one hundred tenths.", "With the practice cost lines, in place of the cached line.", "When the practice model is built, before the total.", "The squared term is the repeated work to remove.");
+const FB_TRY_RENDER = n("Your model of the practice frame, costing render.", "Stores the render cost directly: thirty tenths, three milliseconds.", "With the practice cost lines, below the layout cost.", "When the practice model is built, before the total.", "Render does not change between starter and solution.");
+const FB_TRY_TOTAL = n("Swift integer arithmetic, adding the three segment costs.", "Computes the practice frame total from its three segments.", "After all three segment lines, before the print.", "After every segment exists, as the summed cost.", "The total is only ever the sum of the printed segments.");
+const FB_TRY_PRINT = n("The print function from the Swift standard library.", "Prints the practice total with one decimal place, from tenths.", "The last line of the practice program.", "Last, after the total has been summed.", "Tenths arithmetic prints exactly, so the total can be trusted.");
+const FB_TRY_LAYOUT_CACHED = n("Your model, costing layout the cached way.", "Stores the layout cost computed once: thirty tenths.", "With the practice cost lines, replacing the naive line.", "When the practice model is built, before the total.", "One stored cost replaces a per item recomputation.");
+const RL_FUNC = n("Your code, formatting one release gate result.", "Declares a helper that turns a gate name and its result into a report line.", "At file scope, above the release facts it reports on.", "Compiled once; called once per gate below.", "One formatter means every gate line has the same shape.");
+const RL_FUNC_IF = n("The gate helper, handling a passed gate.", "Returns the PASS report for the named gate when its fact is true.", "The first statement inside the gate helper function.", "Each time the helper is called with a true result.", "PASS lines are how the checklist shows a gate was cleared.");
+const RL_FUNC_RETURN = n("The gate helper, handling a failed gate.", "Returns the FAIL report for the named gate when its fact is false.", "The last statement inside the gate helper function.", "Each time the helper is called with a false result.", "A FAIL line must be just as visible as a PASS line.");
+const RL_BUILD = n("Your checklist model, recording the build fact.", "Stores that the release build compiled successfully.", "With the release facts, after the gate helper.", "Set before the gate lines are printed below.", "Each gate in this model is one fact the release depends on.");
+const RL_PRINT_BUILD = n("The print function, reporting through the gate helper.", "Prints the Build gate line using the build fact.", "In the output section, after the facts written so far.", "As the first gate line, in release order.", "Gates are reported in the order the release pipeline runs them.");
+const RL_SIGNED = n("Your checklist model, recording the signing fact.", "Stores that the archive was signed with the distribution certificate.", "With the release facts, below the build fact.", "Set before the gate lines are printed below.", "Unsigned builds cannot be archived for distribution at all.");
+const RL_PRINT_SIGN = n("The print function, reporting through the gate helper.", "Prints the Signing gate line using the signing fact.", "In the output section, after the build line.", "As the second gate line, in release order.", "Signing follows building in the pipeline and in this output.");
+const RL_ARCHIVED = n("Your checklist model, recording the archive fact.", "Stores that the archive was created from the release build.", "With the release facts, below the signing fact.", "Set before the gate lines are printed below.", "Archiving is the stage the release lesson builds toward.");
+const RL_PRINT_ARCH = n("The print function, reporting through the gate helper.", "Prints the Archive gate line using the archive fact.", "In the output section, after the signing line.", "As the third gate line, in release order.", "An archive exists only when the first two gates passed.");
+const RL_PRIVACY_BAD = n("Your checklist model, recording the missing entry.", "Stores that the required privacy entry is missing: false.", "With the release facts, below the archive fact.", "Set before validation is reported below.", "A missing privacy entry is a real validation failure, not a warning.");
+const RL_PRINT_VAL = n("The print function, reporting through the gate helper.", "Prints the Validation gate line using the privacy fact.", "In the output section, after the archive line.", "As the fourth gate line, in release order.", "Validation is the gate this example watches fail, then pass.");
+const RL_REASON = n("The print function from the Swift standard library.", "Prints the reason validation failed: a required privacy entry is missing.", "In the output section, right after the validation line.", "Only in the version where the privacy fact is false.", "A gate that fails must say why, or the fix is guesswork.");
+const RL_PRINT_BLOCKED = n("The print function from the Swift standard library.", "Prints that distribution cannot start while validation fails.", "In the output section, after the failure reason line.", "Only in the version where validation has failed.", "Later stages do not run around a failed gate; they wait.");
+const RL_PRIVACY_OK = n("Your checklist model, recording the added entry.", "Stores that the required privacy entry is now present: true.", "With the release facts, replacing the false version.", "Set before validation is reported below.", "Adding the entry is the whole fix; no other fact changes.");
+const RL_DIST = n("Your code, opening the final stage after validation.", "Prints that distribution is ready, but only when validation passed.", "The last line of the program, after the validation print.", "Last, after every earlier gate has been reported.", "Distribution is the reward at the end of a clean pipeline.");
+const RL_TRY_SIGNED = n("Your practice checklist, recording the signing fact.", "Stores that the practice build is signed: true.", "The first line of the practice program.", "First, before readiness is computed below.", "Signing is one of the two facts readiness needs here.");
+const RL_TRY_ICON_BAD = n("Your practice checklist, recording the icon fact.", "Stores that the app icon is missing: false.", "The second line of the practice program.", "Second, before readiness is computed below.", "A missing icon blocks a release just like a missing entry.");
+const RL_TRY_READY = n("Swift logic, combining the two release facts.", "Stores readiness: true only when the build is signed and has its icon.", "After both facts, before the verdict print.", "Once both facts exist, as the combined check.", "A release is ready only when every required fact holds.");
+const RL_TRY_PRINT = n("The print function, choosing with the ternary operator.", "Prints the ready verdict or the blocked verdict for the practice release.", "The last line of the practice program.", "Last, after readiness has been computed.", "One verdict line is what a release checklist finally produces.");
+const RL_TRY_ICON_OK = n("Your practice checklist, recording the icon fact.", "Stores that the app icon is now present: true.", "The second line of the practice program, replacing false.", "Second, before readiness is computed below.", "Supplying the missing asset is the whole practice fix.");
+
+
 // ---------------------------------------------------------------------------
 // Lesson 1: architecture
 // ---------------------------------------------------------------------------
@@ -3372,6 +3453,470 @@ const capstone = {
   ],
 };
 
+const workedExamples = {
+  id: 'shipping-worked-examples',
+  title: 'Worked Examples',
+  steps: [
+        {
+          kind: 'example',
+          title: "Build a retain cycle, watch it leak, then break it",
+          problem: "<p>A Pilot and a Ship hold each other. First build the strong two-way link and prove with deinit prints that releasing both variables frees nothing; then make one reference weak and watch both objects free.</p>",
+          adapter: 'trace',
+          expect: "Created pilot and ship\nPilot holds the ship\nCycle closed\nPilot freed\nShip freed\nafter release",
+          frames: [
+            {
+              caption: "Two classes, each with an optional reference to the other and a deinit print. Creating one of each is harmless; nothing links them yet, and the creation marker prints.",
+              lines: [
+                [r`final class Pilot {`, RC_PILOT_CLASS],
+                [r`    var ship: Ship?`, RC_PILOT_SHIP],
+                [r`    deinit { print("Pilot freed") }`, RC_PILOT_DEINIT],
+                ['}', null],
+                [r`final class Ship {`, RC_SHIP_CLASS],
+                [r`    var pilot: Pilot?`, RC_SHIP_PILOT_STRONG],
+                [r`    deinit { print("Ship freed") }`, RC_SHIP_DEINIT],
+                ['}', null],
+                [r`var pilot: Pilot? = Pilot()`, RC_VAR_PILOT],
+                [r`var ship: Ship? = Ship()`, RC_VAR_SHIP],
+                [r`print("Created pilot and ship")`, RC_PRINT_CREATED],
+              ],
+              expect: "Created pilot and ship",
+            },
+            {
+              caption: "One direction of reference is added: the pilot holds the ship. That arrow alone is ordinary ownership; each object still also has its outside variable holding it.",
+              lines: [
+                [r`final class Pilot {`, RC_PILOT_CLASS],
+                [r`    var ship: Ship?`, RC_PILOT_SHIP],
+                [r`    deinit { print("Pilot freed") }`, RC_PILOT_DEINIT],
+                ['}', null],
+                [r`final class Ship {`, RC_SHIP_CLASS],
+                [r`    var pilot: Pilot?`, RC_SHIP_PILOT_STRONG],
+                [r`    deinit { print("Ship freed") }`, RC_SHIP_DEINIT],
+                ['}', null],
+                [r`var pilot: Pilot? = Pilot()`, RC_VAR_PILOT],
+                [r`var ship: Ship? = Ship()`, RC_VAR_SHIP],
+                [r`print("Created pilot and ship")`, RC_PRINT_CREATED],
+                [r`pilot?.ship = ship`, RC_LINK1],
+                [r`print("Pilot holds the ship")`, RC_PRINT_HOLDS],
+              ],
+              expect: "Created pilot and ship\nPilot holds the ship",
+            },
+            {
+              caption: "The second direction closes the loop: the ship now holds the pilot too. Every object in the loop has a strong reference from inside the loop itself.",
+              lines: [
+                [r`final class Pilot {`, RC_PILOT_CLASS],
+                [r`    var ship: Ship?`, RC_PILOT_SHIP],
+                [r`    deinit { print("Pilot freed") }`, RC_PILOT_DEINIT],
+                ['}', null],
+                [r`final class Ship {`, RC_SHIP_CLASS],
+                [r`    var pilot: Pilot?`, RC_SHIP_PILOT_STRONG],
+                [r`    deinit { print("Ship freed") }`, RC_SHIP_DEINIT],
+                ['}', null],
+                [r`var pilot: Pilot? = Pilot()`, RC_VAR_PILOT],
+                [r`var ship: Ship? = Ship()`, RC_VAR_SHIP],
+                [r`print("Created pilot and ship")`, RC_PRINT_CREATED],
+                [r`pilot?.ship = ship`, RC_LINK1],
+                [r`print("Pilot holds the ship")`, RC_PRINT_HOLDS],
+                [r`ship?.pilot = pilot`, RC_LINK2],
+                [r`print("Cycle closed")`, RC_PRINT_CYCLE],
+              ],
+              expect: "Created pilot and ship\nPilot holds the ship\nCycle closed",
+            },
+            {
+              caption: "Both outside variables are set to nil, and the after release marker prints, but no freed lines appear before it. The cycle keeps both objects alive: this is the leak, proven.",
+              lines: [
+                [r`final class Pilot {`, RC_PILOT_CLASS],
+                [r`    var ship: Ship?`, RC_PILOT_SHIP],
+                [r`    deinit { print("Pilot freed") }`, RC_PILOT_DEINIT],
+                ['}', null],
+                [r`final class Ship {`, RC_SHIP_CLASS],
+                [r`    var pilot: Pilot?`, RC_SHIP_PILOT_STRONG],
+                [r`    deinit { print("Ship freed") }`, RC_SHIP_DEINIT],
+                ['}', null],
+                [r`var pilot: Pilot? = Pilot()`, RC_VAR_PILOT],
+                [r`var ship: Ship? = Ship()`, RC_VAR_SHIP],
+                [r`print("Created pilot and ship")`, RC_PRINT_CREATED],
+                [r`pilot?.ship = ship`, RC_LINK1],
+                [r`print("Pilot holds the ship")`, RC_PRINT_HOLDS],
+                [r`ship?.pilot = pilot`, RC_LINK2],
+                [r`print("Cycle closed")`, RC_PRINT_CYCLE],
+                [r`pilot = nil`, RC_NIL_PILOT],
+                [r`ship = nil`, RC_NIL_SHIP],
+                [r`print("after release")`, RC_PRINT_AFTER],
+              ],
+              expect: "Created pilot and ship\nPilot holds the ship\nCycle closed\nafter release",
+            },
+            {
+              caption: "The repair changes exactly one word: the ship reference back to the pilot becomes weak. The same creation and linking runs, and the printed markers are unchanged so far.",
+              lines: [
+                [r`final class Pilot {`, RC_PILOT_CLASS],
+                [r`    var ship: Ship?`, RC_PILOT_SHIP],
+                [r`    deinit { print("Pilot freed") }`, RC_PILOT_DEINIT],
+                ['}', null],
+                [r`final class Ship {`, RC_SHIP_CLASS],
+                [r`    weak var pilot: Pilot?`, RC_SHIP_PILOT_WEAK],
+                [r`    deinit { print("Ship freed") }`, RC_SHIP_DEINIT],
+                ['}', null],
+                [r`var pilot: Pilot? = Pilot()`, RC_VAR_PILOT],
+                [r`var ship: Ship? = Ship()`, RC_VAR_SHIP],
+                [r`print("Created pilot and ship")`, RC_PRINT_CREATED],
+                [r`pilot?.ship = ship`, RC_LINK1],
+                [r`print("Pilot holds the ship")`, RC_PRINT_HOLDS],
+                [r`ship?.pilot = pilot`, RC_LINK2],
+                [r`print("Cycle closed")`, RC_PRINT_CYCLE],
+              ],
+              expect: "Created pilot and ship\nPilot holds the ship\nCycle closed",
+            },
+            {
+              caption: "The same release now frees both objects: Pilot freed prints when its variable goes nil, Ship freed follows, and only then does the after release marker print.",
+              lines: [
+                [r`final class Pilot {`, RC_PILOT_CLASS],
+                [r`    var ship: Ship?`, RC_PILOT_SHIP],
+                [r`    deinit { print("Pilot freed") }`, RC_PILOT_DEINIT],
+                ['}', null],
+                [r`final class Ship {`, RC_SHIP_CLASS],
+                [r`    weak var pilot: Pilot?`, RC_SHIP_PILOT_WEAK],
+                [r`    deinit { print("Ship freed") }`, RC_SHIP_DEINIT],
+                ['}', null],
+                [r`var pilot: Pilot? = Pilot()`, RC_VAR_PILOT],
+                [r`var ship: Ship? = Ship()`, RC_VAR_SHIP],
+                [r`print("Created pilot and ship")`, RC_PRINT_CREATED],
+                [r`pilot?.ship = ship`, RC_LINK1],
+                [r`print("Pilot holds the ship")`, RC_PRINT_HOLDS],
+                [r`ship?.pilot = pilot`, RC_LINK2],
+                [r`print("Cycle closed")`, RC_PRINT_CYCLE],
+                [r`pilot = nil`, RC_NIL_PILOT],
+                [r`ship = nil`, RC_NIL_SHIP],
+                [r`print("after release")`, RC_PRINT_AFTER],
+              ],
+              expect: "Created pilot and ship\nPilot holds the ship\nCycle closed\nPilot freed\nShip freed\nafter release",
+            },
+          ],
+          tryIt: {
+            task: "<p>A Driver and a Car hold each other strongly and leak the same way. Change the starter so releasing both variables frees both objects, keeping the driver to car link strong.</p>",
+            lines: [
+              [r`final class Driver {`, RC_TRY_DRIVER_CLASS],
+              [r`    var car: Car?`, RC_TRY_DRIVER_CAR],
+              [r`    deinit { print("Driver freed") }`, RC_TRY_DRIVER_DEINIT],
+              ['}', null],
+              [r`final class Car {`, RC_TRY_CAR_CLASS],
+              [r`    var driver: Driver?`, RC_TRY_CAR_DRIVER_STRONG],
+              [r`    deinit { print("Car freed") }`, RC_TRY_CAR_DEINIT],
+              ['}', null],
+              [r`var driver: Driver? = Driver()`, RC_TRY_VAR_DRIVER],
+              [r`var car: Car? = Car()`, RC_TRY_VAR_CAR],
+              [r`driver?.car = car`, RC_TRY_LINK1],
+              [r`car?.driver = driver`, RC_TRY_LINK2],
+              [r`driver = nil`, RC_TRY_NIL_DRIVER],
+              [r`car = nil`, RC_TRY_NIL_CAR],
+              [r`print("after release")`, RC_TRY_PRINT_AFTER],
+            ],
+            solution: [
+              [r`final class Driver {`, RC_TRY_DRIVER_CLASS],
+              [r`    var car: Car?`, RC_TRY_DRIVER_CAR],
+              [r`    deinit { print("Driver freed") }`, RC_TRY_DRIVER_DEINIT],
+              ['}', null],
+              [r`final class Car {`, RC_TRY_CAR_CLASS],
+              [r`    weak var driver: Driver?`, RC_TRY_CAR_DRIVER_WEAK],
+              [r`    deinit { print("Car freed") }`, RC_TRY_CAR_DEINIT],
+              ['}', null],
+              [r`var driver: Driver? = Driver()`, RC_TRY_VAR_DRIVER],
+              [r`var car: Car? = Car()`, RC_TRY_VAR_CAR],
+              [r`driver?.car = car`, RC_TRY_LINK1],
+              [r`car?.driver = driver`, RC_TRY_LINK2],
+              [r`driver = nil`, RC_TRY_NIL_DRIVER],
+              [r`car = nil`, RC_TRY_NIL_CAR],
+              [r`print("after release")`, RC_TRY_PRINT_AFTER],
+            ],
+            expect: "Driver freed\nCar freed\nafter release",
+          },
+        },
+        {
+          kind: 'example',
+          title: "Find the work that busts a 16.7 ms frame",
+          problem: "<p>Model one frame of a scrolling list in tenths of a millisecond: input, update, layout and render for twenty items. Find the segment that pushes the total over the 16.7 ms budget, then cache it and fit.</p>",
+          adapter: 'diagram',
+          diagram: 'frame-budget',
+          frames: [
+            {
+              caption: "The model starts with the item count, a tenths formatter, and the input segment alone: twenty items at one tenth each. The first total is two milliseconds, well inside budget.",
+              lines: [
+                [r`let items = 20`, FB_ITEMS],
+                [r`func ms(_ tenths: Int) -> String {`, FB_FUNC],
+                [r`    "\(tenths / 10).\(tenths % 10)"`, FB_FUNC_BODY],
+                ['}', null],
+                [r`let inputTenths = items * 1`, FB_INPUT],
+                [r`var totalTenths = inputTenths`, FB_TOTAL_INPUT],
+                [r`print("Input: \(ms(inputTenths)) ms")`, FB_PRINT_INPUT],
+                [r`print("Total: \(ms(totalTenths)) ms")`, FB_PRINT_TOTAL],
+              ],
+              diagram: {"segments": [{"label": "Input", "ms": 2.0}], "budget": 16.7, "note": "Only input is modelled so far"},
+              claims: ["Input: 2.0 ms", "Total: 2.0 ms"],
+            },
+            {
+              caption: "Update joins at two tenths per item, four milliseconds. The running total is six milliseconds; the frame still fits with plenty of the budget left.",
+              lines: [
+                [r`let items = 20`, FB_ITEMS],
+                [r`func ms(_ tenths: Int) -> String {`, FB_FUNC],
+                [r`    "\(tenths / 10).\(tenths % 10)"`, FB_FUNC_BODY],
+                ['}', null],
+                [r`let inputTenths = items * 1`, FB_INPUT],
+                [r`let updateTenths = items * 2`, FB_UPDATE],
+                [r`var totalTenths = inputTenths + updateTenths`, FB_TOTAL_IU],
+                [r`print("Input: \(ms(inputTenths)) ms")`, FB_PRINT_INPUT],
+                [r`print("Update: \(ms(updateTenths)) ms")`, FB_PRINT_UPDATE],
+                [r`print("Total: \(ms(totalTenths)) ms")`, FB_PRINT_TOTAL],
+              ],
+              diagram: {"segments": [{"label": "Input", "ms": 2.0}, {"label": "Update", "ms": 4.0}], "budget": 16.7, "note": "Input plus update: 6.0 ms"},
+              claims: ["Update: 4.0 ms", "Total: 6.0 ms"],
+            },
+            {
+              caption: "Naive layout arrives and it redoes work per item: items times items in the formula. Layout alone is twelve milliseconds and the total is already over budget at eighteen.",
+              lines: [
+                [r`let items = 20`, FB_ITEMS],
+                [r`func ms(_ tenths: Int) -> String {`, FB_FUNC],
+                [r`    "\(tenths / 10).\(tenths % 10)"`, FB_FUNC_BODY],
+                ['}', null],
+                [r`let inputTenths = items * 1`, FB_INPUT],
+                [r`let updateTenths = items * 2`, FB_UPDATE],
+                [r`let layoutTenths = items * items * 3 / 10`, FB_LAYOUT_NAIVE],
+                [r`var totalTenths = inputTenths + updateTenths`, FB_TOTAL_IU],
+                [r`totalTenths += layoutTenths`, FB_ADD_LAYOUT],
+                [r`print("Input: \(ms(inputTenths)) ms")`, FB_PRINT_INPUT],
+                [r`print("Update: \(ms(updateTenths)) ms")`, FB_PRINT_UPDATE],
+                [r`print("Layout: \(ms(layoutTenths)) ms")`, FB_PRINT_LAYOUT],
+                [r`print("Total: \(ms(totalTenths)) ms")`, FB_PRINT_TOTAL],
+              ],
+              diagram: {"segments": [{"label": "Input", "ms": 2.0}, {"label": "Update", "ms": 4.0}, {"label": "Layout", "ms": 12.0}], "budget": 16.7, "note": "Naive layout busts the budget on its own"},
+              claims: ["Layout: 12.0 ms", "Total: 18.0 ms"],
+            },
+            {
+              caption: "Render adds three more milliseconds, for a total of twenty-one. The diagram and the printed total agree: this frame drops, and layout is most of the cost.",
+              lines: [
+                [r`let items = 20`, FB_ITEMS],
+                [r`func ms(_ tenths: Int) -> String {`, FB_FUNC],
+                [r`    "\(tenths / 10).\(tenths % 10)"`, FB_FUNC_BODY],
+                ['}', null],
+                [r`let inputTenths = items * 1`, FB_INPUT],
+                [r`let updateTenths = items * 2`, FB_UPDATE],
+                [r`let layoutTenths = items * items * 3 / 10`, FB_LAYOUT_NAIVE],
+                [r`let renderTenths = items + 10`, FB_RENDER],
+                [r`var totalTenths = inputTenths + updateTenths`, FB_TOTAL_IU],
+                [r`totalTenths += layoutTenths`, FB_ADD_LAYOUT],
+                [r`totalTenths += renderTenths`, FB_ADD_RENDER],
+                [r`print("Input: \(ms(inputTenths)) ms")`, FB_PRINT_INPUT],
+                [r`print("Update: \(ms(updateTenths)) ms")`, FB_PRINT_UPDATE],
+                [r`print("Layout: \(ms(layoutTenths)) ms")`, FB_PRINT_LAYOUT],
+                [r`print("Render: \(ms(renderTenths)) ms")`, FB_PRINT_RENDER],
+                [r`print("Total: \(ms(totalTenths)) ms")`, FB_PRINT_TOTAL],
+              ],
+              diagram: {"segments": [{"label": "Input", "ms": 2.0}, {"label": "Update", "ms": 4.0}, {"label": "Layout", "ms": 12.0}, {"label": "Render", "ms": 3.0}], "budget": 16.7, "note": "21.0 ms against a 16.7 ms budget"},
+              claims: ["Render: 3.0 ms", "Total: 21.0 ms"],
+            },
+            {
+              caption: "The repair caches layout: the result is computed once, stored, and reused, so layout costs three milliseconds instead of twelve. The total drops to twelve and the frame fits.",
+              lines: [
+                [r`let items = 20`, FB_ITEMS],
+                [r`func ms(_ tenths: Int) -> String {`, FB_FUNC],
+                [r`    "\(tenths / 10).\(tenths % 10)"`, FB_FUNC_BODY],
+                ['}', null],
+                [r`let inputTenths = items * 1`, FB_INPUT],
+                [r`let updateTenths = items * 2`, FB_UPDATE],
+                [r`let cachedLayoutTenths = 30`, FB_CACHED_DECL],
+                [r`let layoutTenths = cachedLayoutTenths`, FB_LAYOUT_CACHED],
+                [r`let renderTenths = items + 10`, FB_RENDER],
+                [r`var totalTenths = inputTenths + updateTenths`, FB_TOTAL_IU],
+                [r`totalTenths += layoutTenths`, FB_ADD_LAYOUT],
+                [r`totalTenths += renderTenths`, FB_ADD_RENDER],
+                [r`print("Input: \(ms(inputTenths)) ms")`, FB_PRINT_INPUT],
+                [r`print("Update: \(ms(updateTenths)) ms")`, FB_PRINT_UPDATE],
+                [r`print("Layout: \(ms(layoutTenths)) ms")`, FB_PRINT_LAYOUT],
+                [r`print("Render: \(ms(renderTenths)) ms")`, FB_PRINT_RENDER],
+                [r`print("Total: \(ms(totalTenths)) ms")`, FB_PRINT_TOTAL],
+              ],
+              diagram: {"segments": [{"label": "Input", "ms": 2.0}, {"label": "Update", "ms": 4.0}, {"label": "Layout", "ms": 3.0}, {"label": "Render", "ms": 3.0}], "budget": 16.7, "note": "Cached layout: total 12.0 ms"},
+              claims: ["Layout: 3.0 ms", "Total: 12.0 ms"],
+            },
+            {
+              caption: "A verdict line compares the total in tenths against one hundred sixty-seven, the budget in tenths. Twelve milliseconds is on time, and the diagram shows the same four segments.",
+              lines: [
+                [r`let items = 20`, FB_ITEMS],
+                [r`func ms(_ tenths: Int) -> String {`, FB_FUNC],
+                [r`    "\(tenths / 10).\(tenths % 10)"`, FB_FUNC_BODY],
+                ['}', null],
+                [r`let inputTenths = items * 1`, FB_INPUT],
+                [r`let updateTenths = items * 2`, FB_UPDATE],
+                [r`let cachedLayoutTenths = 30`, FB_CACHED_DECL],
+                [r`let layoutTenths = cachedLayoutTenths`, FB_LAYOUT_CACHED],
+                [r`let renderTenths = items + 10`, FB_RENDER],
+                [r`var totalTenths = inputTenths + updateTenths`, FB_TOTAL_IU],
+                [r`totalTenths += layoutTenths`, FB_ADD_LAYOUT],
+                [r`totalTenths += renderTenths`, FB_ADD_RENDER],
+                [r`print("Input: \(ms(inputTenths)) ms")`, FB_PRINT_INPUT],
+                [r`print("Update: \(ms(updateTenths)) ms")`, FB_PRINT_UPDATE],
+                [r`print("Layout: \(ms(layoutTenths)) ms")`, FB_PRINT_LAYOUT],
+                [r`print("Render: \(ms(renderTenths)) ms")`, FB_PRINT_RENDER],
+                [r`print("Total: \(ms(totalTenths)) ms")`, FB_PRINT_TOTAL],
+                [r`if totalTenths <= 167 { print("Verdict: on time") }`, FB_VERDICT],
+              ],
+              diagram: {"segments": [{"label": "Input", "ms": 2.0}, {"label": "Update", "ms": 4.0}, {"label": "Layout", "ms": 3.0}, {"label": "Render", "ms": 3.0}], "budget": 16.7, "note": "12.0 ms: the frame ships on time"},
+              claims: ["Total: 12.0 ms", "Verdict: on time"],
+            },
+          ],
+          tryIt: {
+            task: "<p>The starter costs layout as items times items for ten items and totals 15.0 ms. Change layout to a single cached cost of thirty tenths and print the new total.</p>",
+            lines: [
+              [r`let items = 10`, FB_TRY_ITEMS],
+              [r`let inputTenths = 20`, FB_TRY_INPUT],
+              [r`let layoutTenths = items * items`, FB_TRY_LAYOUT_NAIVE],
+              [r`let renderTenths = 30`, FB_TRY_RENDER],
+              [r`let totalTenths = inputTenths + layoutTenths + renderTenths`, FB_TRY_TOTAL],
+              [r`print("Total: \(totalTenths / 10).\(totalTenths % 10) ms")`, FB_TRY_PRINT],
+            ],
+            solution: [
+              [r`let items = 10`, FB_TRY_ITEMS],
+              [r`let inputTenths = 20`, FB_TRY_INPUT],
+              [r`let layoutTenths = 30`, FB_TRY_LAYOUT_CACHED],
+              [r`let renderTenths = 30`, FB_TRY_RENDER],
+              [r`let totalTenths = inputTenths + layoutTenths + renderTenths`, FB_TRY_TOTAL],
+              [r`print("Total: \(totalTenths / 10).\(totalTenths % 10) ms")`, FB_TRY_PRINT],
+            ],
+            expect: "Total: 8.0 ms",
+          },
+        },
+        {
+          kind: 'example',
+          title: "Walk a release through its gates, including the one that fails",
+          problem: "<p>Model a release as a checklist: build, signing, archive, validation and distribution gates, each printed from a simple fact. Validation fails on a missing privacy entry; add the entry and walk the release through.</p>",
+          adapter: 'diagram',
+          diagram: 'release',
+          simulation: true,
+          frames: [
+            {
+              caption: "The checklist helper formats any gate line, and the first fact says the build compiled. The Build gate prints PASS and the pipeline stands at its first stage.",
+              lines: [
+                [r`func gate(_ name: String, _ passed: Bool) -> String {`, RL_FUNC],
+                [r`    if passed { return "\(name): PASS" }`, RL_FUNC_IF],
+                [r`    return "\(name): FAIL"`, RL_FUNC_RETURN],
+                ['}', null],
+                [r`let buildOK = true`, RL_BUILD],
+                [r`print(gate("Build", buildOK))`, RL_PRINT_BUILD],
+              ],
+              diagram: {"at": 0, "note": "Build gate cleared"},
+              claims: ["Build: PASS"],
+            },
+            {
+              caption: "The signing fact joins the checklist and its gate prints PASS. A signed build is the only kind that can be archived for distribution later.",
+              lines: [
+                [r`func gate(_ name: String, _ passed: Bool) -> String {`, RL_FUNC],
+                [r`    if passed { return "\(name): PASS" }`, RL_FUNC_IF],
+                [r`    return "\(name): FAIL"`, RL_FUNC_RETURN],
+                ['}', null],
+                [r`let buildOK = true`, RL_BUILD],
+                [r`let signed = true`, RL_SIGNED],
+                [r`print(gate("Build", buildOK))`, RL_PRINT_BUILD],
+                [r`print(gate("Signing", signed))`, RL_PRINT_SIGN],
+              ],
+              diagram: {"at": 1, "note": "Signing gate cleared"},
+              claims: ["Signing: PASS"],
+            },
+            {
+              caption: "The archive fact joins and the Archive gate prints PASS. Three stages are cleared; the archive is the exact build validation will now inspect.",
+              lines: [
+                [r`func gate(_ name: String, _ passed: Bool) -> String {`, RL_FUNC],
+                [r`    if passed { return "\(name): PASS" }`, RL_FUNC_IF],
+                [r`    return "\(name): FAIL"`, RL_FUNC_RETURN],
+                ['}', null],
+                [r`let buildOK = true`, RL_BUILD],
+                [r`let signed = true`, RL_SIGNED],
+                [r`let archived = true`, RL_ARCHIVED],
+                [r`print(gate("Build", buildOK))`, RL_PRINT_BUILD],
+                [r`print(gate("Signing", signed))`, RL_PRINT_SIGN],
+                [r`print(gate("Archive", archived))`, RL_PRINT_ARCH],
+              ],
+              diagram: {"at": 2, "note": "Archive gate cleared"},
+              claims: ["Archive: PASS"],
+            },
+            {
+              caption: "Validation runs against a missing privacy entry and prints FAIL, with the reason and a blocked distribution line. The diagram marks the Validation stage as failed.",
+              lines: [
+                [r`func gate(_ name: String, _ passed: Bool) -> String {`, RL_FUNC],
+                [r`    if passed { return "\(name): PASS" }`, RL_FUNC_IF],
+                [r`    return "\(name): FAIL"`, RL_FUNC_RETURN],
+                ['}', null],
+                [r`let buildOK = true`, RL_BUILD],
+                [r`let signed = true`, RL_SIGNED],
+                [r`let archived = true`, RL_ARCHIVED],
+                [r`var hasPrivacy = false`, RL_PRIVACY_BAD],
+                [r`print(gate("Build", buildOK))`, RL_PRINT_BUILD],
+                [r`print(gate("Signing", signed))`, RL_PRINT_SIGN],
+                [r`print(gate("Archive", archived))`, RL_PRINT_ARCH],
+                [r`print(gate("Validation", hasPrivacy))`, RL_PRINT_VAL],
+                [r`print("Validation failed: missing privacy entry")`, RL_REASON],
+                [r`print("Distribution: BLOCKED")`, RL_PRINT_BLOCKED],
+              ],
+              diagram: {"at": 3, "failed": 3, "note": "Validation failed: privacy entry missing"},
+              claims: ["Validation: FAIL", "Validation failed: missing privacy entry", "Distribution: BLOCKED"],
+            },
+            {
+              caption: "The fix is the missing entry itself: the privacy fact becomes true and nothing else changes. Validation now prints PASS at the same stage that failed before.",
+              lines: [
+                [r`func gate(_ name: String, _ passed: Bool) -> String {`, RL_FUNC],
+                [r`    if passed { return "\(name): PASS" }`, RL_FUNC_IF],
+                [r`    return "\(name): FAIL"`, RL_FUNC_RETURN],
+                ['}', null],
+                [r`let buildOK = true`, RL_BUILD],
+                [r`let signed = true`, RL_SIGNED],
+                [r`let archived = true`, RL_ARCHIVED],
+                [r`var hasPrivacy = true`, RL_PRIVACY_OK],
+                [r`print(gate("Build", buildOK))`, RL_PRINT_BUILD],
+                [r`print(gate("Signing", signed))`, RL_PRINT_SIGN],
+                [r`print(gate("Archive", archived))`, RL_PRINT_ARCH],
+                [r`print(gate("Validation", hasPrivacy))`, RL_PRINT_VAL],
+              ],
+              diagram: {"at": 3, "note": "Validation passed after the fix"},
+              claims: ["Validation: PASS"],
+            },
+            {
+              caption: "With every earlier gate green, the distribution line prints READY and the pipeline reaches its last stage. The release walked through all five gates in order.",
+              lines: [
+                [r`func gate(_ name: String, _ passed: Bool) -> String {`, RL_FUNC],
+                [r`    if passed { return "\(name): PASS" }`, RL_FUNC_IF],
+                [r`    return "\(name): FAIL"`, RL_FUNC_RETURN],
+                ['}', null],
+                [r`let buildOK = true`, RL_BUILD],
+                [r`let signed = true`, RL_SIGNED],
+                [r`let archived = true`, RL_ARCHIVED],
+                [r`var hasPrivacy = true`, RL_PRIVACY_OK],
+                [r`print(gate("Build", buildOK))`, RL_PRINT_BUILD],
+                [r`print(gate("Signing", signed))`, RL_PRINT_SIGN],
+                [r`print(gate("Archive", archived))`, RL_PRINT_ARCH],
+                [r`print(gate("Validation", hasPrivacy))`, RL_PRINT_VAL],
+                [r`if hasPrivacy { print("Distribution: READY") }`, RL_DIST],
+              ],
+              diagram: {"at": 4, "note": "Distribution ready: all gates passed"},
+              claims: ["Distribution: READY"],
+            },
+          ],
+          tryIt: {
+            task: "<p>The starter release is signed but has no app icon, so its verdict is blocked. Supply the missing icon fact and make the same checklist print the ready verdict.</p>",
+            lines: [
+              [r`let signed = true`, RL_TRY_SIGNED],
+              [r`let hasIcon = false`, RL_TRY_ICON_BAD],
+              [r`let ready = signed && hasIcon`, RL_TRY_READY],
+              [r`print(ready ? "Release: READY" : "Release: BLOCKED")`, RL_TRY_PRINT],
+            ],
+            solution: [
+              [r`let signed = true`, RL_TRY_SIGNED],
+              [r`let hasIcon = true`, RL_TRY_ICON_OK],
+              [r`let ready = signed && hasIcon`, RL_TRY_READY],
+              [r`print(ready ? "Release: READY" : "Release: BLOCKED")`, RL_TRY_PRINT],
+            ],
+            expect: "Release: READY",
+          },
+        },
+  ],
+};
+
 export default {
   id: 'shipping',
   number: 9,
@@ -3388,5 +3933,6 @@ export default {
     performanceQuality,
     release,
     capstone,
+    workedExamples,
   ],
 };

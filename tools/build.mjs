@@ -71,8 +71,16 @@ ${bodyContent}
 </body>
 </html>
 `;
+const bytes = Buffer.byteLength(full, 'utf8');
+const SIZE_MAX = 5_767_168; // 5.5 MB hard cap for the single-file page
+const SIZE_WARN = 5_000_000;
+if (bytes > SIZE_MAX) {
+  console.error(`ios-development.html is ${bytes} bytes, over the ${SIZE_MAX}-byte (5.5 MB) size guard. Trim content or split the file before shipping.`);
+  process.exit(1);
+}
+if (bytes > SIZE_WARN) console.warn(`warning: ios-development.html is ${bytes} bytes, over the 5.0 MB soft size target`);
 fs.writeFileSync(rel('ios-development.html'), full);
-console.log(`ios-development.html  ${(full.length / 1024 / 1024).toFixed(2)} MB  (${contentFiles.length} modules, ${widgetFiles.length} widget files, run worker ${(workerJs.length / 1024).toFixed(0)} KB)`);
+console.log(`ios-development.html  ${(bytes / 1024 / 1024).toFixed(2)} MB  (${contentFiles.length} modules, ${widgetFiles.length} widget files, run worker ${(workerJs.length / 1024).toFixed(0)} KB)`);
 if (process.argv.includes('--fragment')) {
   fs.mkdirSync(rel('dist'), { recursive: true });
   fs.writeFileSync(rel('dist/ios-development-fragment.html'), `${head}\n${bodyContent}\n`);

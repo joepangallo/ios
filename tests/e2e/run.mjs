@@ -134,6 +134,7 @@ async function checkStep(page, i, info, probed) {
       if (!fb) fail(info.id, 'quiz did not show feedback after answering');
     } catch (e) { fail(info.id, `quiz choice could not be clicked: ${String(e.message).split('\n')[0]}`); }
   }
+  if (info.kind === 'example') await checkExample(page, i, info, probed);
   // one-viewport rule at desktop size
   const fit = await page.evaluate(() => {
     const body = document.getElementById('stage-body');
@@ -147,6 +148,104 @@ async function checkStep(page, i, info, probed) {
   if (fit.docScroll) fail(info.id, 'page scrolls at 1440x900 (breaks the one-viewport layout)');
   if (fit.bodyOver) warnings.push(`${info.id}: stage content taller than the viewport`);
   if (fit.over.length) warnings.push(`${info.id}: internal scroll in ${[...new Set(fit.over)].join(', ')}`);
+}
+
+// Worked examples: the player steps with captions, Play autoplays, keyboard
+// reaches the end, the checked result appears, the tryIt editor rejects the
+// starter and accepts the reference solution, and leaving mid-play leaks no
+// live players. Runs on every example step; the leak probe runs once.
+async function checkExample(page, i, info, probed) {
+  const id = info.id;
+  const pos = () => page.evaluate(() => document.querySelector('.st-example .player-pos')?.textContent || '');
+  const posIndex = async () => { const m = (await pos()).match(/Step (\d+) of (\d+)/); return m ? { k: Number(m[1]), n: Number(m[2]) } : null; };
+  try {
+    const present = await page.evaluate(() => ({
+      problem: (document.querySelector('.st-example .ex-problem')?.textContent || '').trim().length,
+      lines: document.querySelectorAll('.st-example .ex-line').length,
+    }));
+    if (!present.problem) fail(id, 'worked example has no problem statement');
+    if (!present.lines) fail(id, 'worked example shows no code lines');
+    const start = await posIndex();
+    if (!start || start.k !== 1) fail(id, `player does not start at step 1 (got "${await pos()}")`);
+
+    // Manual stepping updates the caption to the frame's own caption.
+    await page.click('.st-example .player-next', { timeout: UI_WAIT });
+    const cap2 = await page.evaluate((i) => window.__course.steps[i].step.frames[1].caption, i);
+    const shownCap = await page.evaluate(() => document.querySelector('.st-example .ex-caption')?.textContent || '');
+    if (shownCap !== cap2) fail(id, 'stepping did not show frame 2\u2019s caption');
+
+    // Play autoplays: the position advances on its own, then pause stops it.
+    await page.click('.st-example .player-play', { timeout: UI_WAIT });
+    await page.waitForFunction(() => { const m = (document.querySelector('.st-example .player-pos')?.textContent || '').match(/Step (\d+) of/); return m && Number(m[1]) >= 3; }, null, { timeout: 8000 });
+    await page.click('.st-example .player-play', { timeout: UI_WAIT });
+
+    // Keyboard: Home returns to the first frame, End jumps to the last.
+    await page.click('.st-example .ex-line >> nth=0', { timeout: UI_WAIT });
+    await page.evaluate(() => document.querySelector('.st-example .ex-code').focus());
+    await page.keyboard.press('Home');
+    if ((await posIndex())?.k !== 1) fail(id, 'Home did not return to the first frame');
+    await page.keyboard.press('End');
+    const end = await posIndex();
+    if (!end || end.k !== end.n) fail(id, `End did not reach the final frame (got "${await pos()}")`);
+
+    // The checked result: trace and phone examples report "Checked:"; a
+    // diagram example with a result reports "Result:".
+    const kind = await page.evaluate((i) => ({ adapter: window.__course.steps[i].step.adapter, hasResult: !!window.__course.steps[i].step.result }), i);
+    if (kind.adapter === 'trace' || kind.adapter === 'phone') {
+      await page.waitForFunction(() => (document.querySelector('.st-example .ex-result')?.textContent || '').includes('Checked:'), null, { timeout: RUN_WAIT })
+        .catch(() => fail(id, 'the checked result never appeared on the final frame'));
+    } else if (kind.hasResult) {
+      const r = await page.evaluate(() => document.querySelector('.st-example .ex-result')?.textContent || '');
+      if (!r.includes('Result:')) fail(id, 'the diagram result never appeared on the final frame');
+    }
+
+    // Try it: the starter is a plausible wrong attempt and must fail; the
+    // reference solution must pass.
+    await page.click('.st-example .ex-check-btn', { timeout: UI_WAIT });
+    await page.waitForFunction(() => (document.querySelector('.st-example .ex-try-status')?.textContent || '').includes('Not yet'), null, { timeout: RUN_WAIT })
+      .catch(() => fail(id, 'the tryIt starter was not rejected'));
+    const solution = await page.evaluate((i) => window.__course.steps[i].step.tryIt.solution.map((l) => l[0]).join('\n'), i);
+    await page.fill('.st-example .ex-try-ed .ed-ta', solution);
+    await page.waitForFunction(() => (document.querySelector('.st-example .ex-try-status')?.textContent || '').includes('Correct.'), null, { timeout: RUN_WAIT })
+      .catch(() => fail(id, 'the tryIt reference solution was not accepted'));
+
+    // Leaving mid-play must destroy THIS step's player (the destination
+    // step may register its own, so compare by identity, once per run).
+    if (!probed.has('example-leak')) {
+      probed.add('example-leak');
+      await page.click('.st-example .player-restart', { timeout: UI_WAIT }).catch(() => {});
+      await page.click('.st-example .player-play', { timeout: UI_WAIT });
+      await page.evaluate(() => { window.__leakProbe = [...window.__stepPlayers]; });
+      await page.evaluate((i) => window.__course.go(i + 1), i);
+      await page.waitForTimeout(300);
+      const leaked = await page.evaluate(() => (window.__leakProbe || []).filter((p) => window.__stepPlayers.has(p)).length);
+      if (leaked !== 0) fail(id, `navigating away mid-play left ${leaked} of this step's player(s) alive`);
+    }
+  } catch (e) {
+    fail(id, `worked example check failed: ${String(e.message).split('\n')[0]}`);
+  }
+}
+
+// Reduced motion: with the media feature emulated, stepping still updates
+// captions and no transitions run.
+async function checkExampleReducedMotion(page) {
+  const id = 'reduced motion example';
+  try {
+    const idx = await page.evaluate(() => window.__course.steps.findIndex((s) => s.step.kind === 'example'));
+    if (idx < 0) { fail(id, 'no worked example found'); return; }
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.evaluate((i) => window.__course.go(i), idx);
+    await page.waitForTimeout(600);
+    const before = await page.evaluate(() => document.querySelector('.st-example .ex-caption')?.textContent || '');
+    await page.click('.st-example .player-next', { timeout: UI_WAIT });
+    const after = await page.evaluate(() => ({
+      caption: document.querySelector('.st-example .ex-caption')?.textContent || '',
+      transition: getComputedStyle(document.querySelector('.st-example .ex-caption')).transitionDuration,
+    }));
+    if (after.caption === before) fail(id, 'caption did not update under reduced motion');
+    if (after.transition !== '0s') fail(id, `transitions still run under reduced motion (${after.transition})`);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+  } catch (e) { fail(id, String(e.message).split('\n')[0]); }
 }
 
 // Prove the same browser checks reject failing assertions and missing tests.
@@ -313,6 +412,36 @@ async function checkPhoneWidth(page, total) {
       const wide = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
       if (wide) fail(`phone step ${k}`, 'horizontal overflow at 400px');
     }
+    // Every worked example at 390 px: the example itself must not overflow
+    // horizontally. (Scoped to .st-example: the app shell's top bar is 5 px
+    // wider than 390 px on every step kind, a pre-existing shell trait the
+    // 400 px sample above already covers as far as it goes.)
+    await page.setViewportSize({ width: 390, height: 844 });
+    const exampleIdx = await page.evaluate(() => window.__course.steps.map((s, i) => (s.step.kind === 'example' ? i : -1)).filter((i) => i >= 0));
+    for (const k of exampleIdx) {
+      await page.evaluate((k) => window.__course.go(k), k);
+      await page.waitForTimeout(450);
+      const wide = await page.evaluate(() => {
+        const ex = document.querySelector('.st-example');
+        if (!ex) return 'missing';
+        if (ex.scrollWidth > ex.clientWidth + 1) return 'scrolls';
+        const edge = ex.getBoundingClientRect().right;
+        // A descendant may extend past the edge only when an intermediate
+        // box clips it (the code panes scroll their own long lines).
+        const escapes = [...ex.querySelectorAll('*')].some((e) => {
+          if (e.getBoundingClientRect().right <= edge + 1) return false;
+          let p = e.parentElement;
+          while (p && p !== ex) {
+            const ox = getComputedStyle(p).overflowX;
+            if (ox === 'auto' || ox === 'scroll' || ox === 'hidden' || ox === 'clip') return false;
+            p = p.parentElement;
+          }
+          return true;
+        });
+        return escapes ? 'child' : '';
+      });
+      if (wide) fail(`phone example step ${k}`, `horizontal overflow at 390px (${wide})`);
+    }
   } catch (e) { fail('phone width', String(e.message).split('\n')[0]); }
 }
 
@@ -350,6 +479,7 @@ try {
   }
 
   await checkTestValidation(page);
+  await checkExampleReducedMotion(page);
   await checkRunaway(page);
   await checkShell(page);
   await checkPhoneWidth(page, total);

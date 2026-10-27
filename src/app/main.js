@@ -14,6 +14,7 @@ const KIND = {
   compare: ['square.grid.2x2', 'Compare'],
   widget: ['hand.thumbsup', 'Interactive'],
   quiz: ['checklist', 'Check yourself'],
+  example: ['wand.and.stars', 'Worked example'],
 };
 
 // ------------------------------------------------------------------ data

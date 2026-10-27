@@ -143,6 +143,63 @@ class PreviewController {
     this.render();
   }
 
+  // ------------------------------------------------------------ scripted use
+  // Small API for worked examples and tests: change the device or text size,
+  // tap a control by its label, and observe state changes.
+  setDevice(name) {
+    if (!DEVICES[name] || name === this.device) return;
+    this.device = name;
+    // Sync the chrome device picker by index (control state, not page content).
+    const sel = this.root.querySelector('.pv-device');
+    if (sel) sel.selectedIndex = [...sel.options].findIndex((o) => o.value === name);
+    this.applyDevice();
+    this.render();
+  }
+
+  setDynamicType(i) {
+    const k = Math.max(0, Math.min(DYNAMIC_TYPE.length - 1, i | 0));
+    if (k === this.dtIndex) return;
+    this.dtIndex = k;
+    this.applyDevice();
+    this.render();
+  }
+
+  // A plain-object snapshot of the preview's @State: slot key -> described value.
+  stateSnapshot() {
+    const out = {};
+    if (this.state) for (const [k, v] of this.state) { try { out[k] = describe(v); } catch { out[k] = '(value)'; } }
+    return out;
+  }
+
+  reportState() {
+    if (!this.opts.onStateChange) return;
+    const snap = this.stateSnapshot();
+    const json = JSON.stringify(snap);
+    if (json === this._lastStateJson) return;
+    this._lastStateJson = json;
+    try { this.opts.onStateChange(snap); } catch { /* a listener must not break the preview */ }
+  }
+
+  // The visible text of the rendered app (no chrome, no status bar).
+  previewText() {
+    const c = this.screen && this.screen.querySelector('.content');
+    return c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
+  }
+
+  // Taps the first control whose accessible label or text matches `label`
+  // (exact match first, then substring). Returns whether one was found.
+  tap(label) {
+    if (this.destroyed || this.error || !this.screen) return false;
+    const wanted = String(label).trim().toLowerCase();
+    if (!wanted) return false;
+    const els = [...this.screen.querySelectorAll('button, a, input, select, textarea, [role="button"], [role="switch"], [role="tab"], .tappable')];
+    const nameOf = (el) => (el.getAttribute('aria-label') || el.dataset.a11yLabel || el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const hit = els.find((el) => nameOf(el) === wanted) || els.find((el) => nameOf(el).includes(wanted));
+    if (!hit) return false;
+    hit.click();
+    return true;
+  }
+
   reset() {
     this.state.clear(); this.nav.clear(); this.tabs.clear(); this.appeared.clear(); this.changeValues.clear(); this.memStore.clear(); this.presented.clear();
     try { for (const k of Object.keys(localStorage)) if (k.startsWith(this.ns)) localStorage.removeItem(k); } catch { /* storage blocked */ }
@@ -423,6 +480,7 @@ class PreviewController {
     try { this.runLifecycle(resolver.lifecycle); } catch (e) { return this.showError(e); }
     if (this.inspect) this.drawInspector();
     this.setStatus(this.warnings.join('\n'));
+    this.reportState();
     if (this.opts.onRender) this.opts.onRender();
   }
 

@@ -5,6 +5,8 @@ import { GLOSSARY, termsInLine, autoExplain, stripStrings, stripLineComment } fr
 import { runOnRealSwift } from './compiler.js';
 import { icon } from './icons.js';
 import { createConsoleTail } from './console-tail.js';
+import { createPlayer } from './player.js';
+import { renderExample } from './example.js';
 
 const AUTO_CLOSE = /^\s*[\}\)\]][\}\)\],;\s]*$/;
 // Storage key for the one-time "send code to Compiler Explorer" consent (finding: real-compiler privacy).
@@ -199,7 +201,7 @@ function wireTerms(insp) {
   });
 }
 
-function renderFive(note, codeLine, lineNo, total) {
+export function renderFive(note, codeLine, lineNo, total) {
   const terms = termsInLine(codeLine || '');
   const { html } = highlightLine(codeLine || '');
   return `
@@ -222,6 +224,7 @@ export function renderStep(step, host, ctx) {
     case 'compare': return renderCompare(step, host, ctx);
     case 'widget': return renderWidget(step, host, ctx);
     case 'quiz': return renderQuiz(step, host, ctx);
+    case 'example': return renderExample(step, host, ctx);
     default:
       host.textContent = `Unknown step type ${step.kind}`;
       return { destroy() {} };
@@ -402,12 +405,9 @@ function renderCode(step, host, ctx) {
         </div>
         <div class="console-body tab-out"><pre class="out"></pre></div>
         ${run === 'swift' ? `<div class="console-body tab-trace" hidden>
-          <div class="trace-ctl">
-            <button type="button" class="btn ghost small trace-prev" aria-label="Previous step">${icon('chevron.left', 14)}</button>
-            <input type="range" class="trace-range" min="0" max="0" value="0" aria-label="Execution step">
-            <button type="button" class="btn ghost small trace-next" aria-label="Next step">${icon('chevron.right', 14)}</button>
-            <span class="trace-pos muted small"></span>
-          </div>
+          <div class="trace-player"></div>
+          <p class="trace-pos trace-fallback muted small" hidden></p>
+          <p class="trace-caption"></p>
           <div class="trace-vars"></div>
           <pre class="trace-out"></pre>
         </div>` : ''}
@@ -532,6 +532,7 @@ function renderCode(step, host, ctx) {
     const r = await ctx.engine.run(code, { trace: true, onOutput, signal });
     if (gen !== runGen || destroyed) return;
     lastRun = r;
+    lastRunCode = code;
     // stdout goes in as a text node: escaping it into HTML could grow 2 MB of quotes six-fold
     out.textContent = '';
     if (r.stdout) out.appendChild(textSpan('o-text', r.stdout));
@@ -556,39 +557,24 @@ function renderCode(step, host, ctx) {
     });
   }
 
-  // ---------------- step-through tracer
+  // ---------------- step-through tracer (driven by the shared player)
   const tracePane = root.querySelector('.tab-trace');
   const tabs = root.querySelectorAll('.seg-btn');
+  let tracePlayer = null;
+  let lastRunCode = original;
   tabs.forEach((b) => b.addEventListener('click', () => {
     tabs.forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', String(x === b)); });
     root.querySelector('.tab-out').hidden = b.dataset.tab !== 'out';
     if (tracePane) tracePane.hidden = b.dataset.tab !== 'trace';
-    if (b.dataset.tab === 'trace') showTrace(Number(root.querySelector('.trace-range').value)); else editor.setTraceLine(0);
+    if (b.dataset.tab === 'trace') { if (tracePlayer) tracePlayer.goTo(tracePlayer.index); }
+    else editor.setTraceLine(0);
   }));
-  function setupTrace() {
-    if (!tracePane || !lastRun) return;
-    const range = root.querySelector('.trace-range');
-    range.max = String(Math.max(0, lastRun.trace.length - 1));
-    range.value = '0';
-    if (!tracePane.hidden) showTrace(0);
-  }
-  function showTrace(k) {
-    if (!lastRun || !lastRun.trace.length) {
-      // nothing to step through (no run yet, or the last run failed before its first line): clear the old frame
-      root.querySelector('.trace-pos').textContent = lastRun ? 'This run has no steps to show.' : 'Run the code first.';
-      root.querySelector('.trace-vars').innerHTML = '';
-      root.querySelector('.trace-out').textContent = '';
-      editor.setTraceLine(0);
-      return;
-    }
+  function renderTraceFrame(k) {
     const t = lastRun.trace[k];
-    root.querySelector('.trace-range').value = String(k);
-    const where = t.end === 'finished' ? 'the program finished: final values and all the output'
-      : t.end === 'stopped' ? `the program stopped at line ${t.line}: values and output at that point`
-      : `about to run line ${t.line}`;
-    root.querySelector('.trace-pos').textContent = `Step ${k + 1} of ${lastRun.trace.length} · ${where}`;
-    if (t.end === 'finished') editor.setTraceLine(0);
-    else { editor.setTraceLine(t.line); editor.setLine(t.line, false); }
+    if (!tracePane.hidden) {
+      if (t.end === 'finished') editor.setTraceLine(0);
+      else { editor.setTraceLine(t.line); editor.setLine(t.line, false); }
+    }
     const vars = Object.entries(t.vars);
     const prevVars = k > 0 ? lastRun.trace[k - 1].vars : {};
     root.querySelector('.trace-vars').innerHTML = vars.length
@@ -597,11 +583,56 @@ function renderCode(step, host, ctx) {
     const shown = lastRun.stdout.slice(0, t.out);
     root.querySelector('.trace-out').textContent = shown || ' ';
   }
-  if (tracePane) {
-    const range = root.querySelector('.trace-range');
-    range.addEventListener('input', () => showTrace(Number(range.value)));
-    root.querySelector('.trace-prev').addEventListener('click', () => showTrace(Math.max(0, Number(range.value) - 1)));
-    root.querySelector('.trace-next').addEventListener('click', () => showTrace(Math.min(Number(range.max), Number(range.value) + 1)));
+  function setupTrace() {
+    if (!tracePane || !lastRun) return;
+    const fallback = root.querySelector('.trace-fallback');
+    if (!lastRun.trace.length) {
+      // nothing to step through (the last run failed before its first line): clear the old frame
+      if (tracePlayer) { tracePlayer.destroy(); tracePlayer = null; }
+      fallback.hidden = false;
+      fallback.textContent = 'This run has no steps to show.';
+      root.querySelector('.trace-vars').innerHTML = '';
+      root.querySelector('.trace-out').textContent = '';
+      editor.setTraceLine(0);
+      return;
+    }
+    fallback.hidden = true;
+    // One player frame per trace entry. The caption is the current line's own
+    // five-part `what` note; a line without one keeps the previous caption.
+    let caption = 'The program is about to run.';
+    const frames = lastRun.trace.map((t, k) => {
+      const label = t.end === 'finished' ? 'the program finished: final values and all the output'
+        : t.end === 'stopped' ? `the program stopped at line ${t.line}: values and output at that point`
+        : `about to run line ${t.line}`;
+      if (t.end === 'finished') caption = 'The program finished: these are the final values, and all of its output.';
+      else if (t.end === 'stopped') caption = `The program stopped at line ${t.line}: these are the values and output at that point.`;
+      else {
+        const note = lookupNote(origLines, lastRunCode, t.line);
+        if (note && note.what) caption = note.what;
+      }
+      return { k, caption, label };
+    });
+    const adapter = {
+      mount() {},
+      show(frame) { renderTraceFrame(frame.k); },
+      destroy() {},
+    };
+    if (tracePlayer) tracePlayer.setFrames(frames);
+    else {
+      tracePlayer = createPlayer({
+        visualEl: tracePane,
+        captionEl: root.querySelector('.trace-caption'),
+        controlsEl: root.querySelector('.trace-player'),
+        frames,
+        adapter,
+        reducedMotion: ctx.runtime ? ctx.runtime.reducedMotion : false,
+        posClass: 'trace',
+        prevClass: 'trace-prev',
+        nextClass: 'trace-next',
+        label: 'Execution steps',
+      });
+    }
+    if (!tracePane.hidden) tracePlayer.goTo(0);
   }
 
   // ---------------- real compiler
@@ -690,7 +721,7 @@ function renderCode(step, host, ctx) {
   if (hasSim) handles.push(mountWidget(step.simulate.widget, root.querySelector('.pane-sim'), step.simulate.props, ctx));
   if (run === 'swift' || run === 'swifttest') doRun();
   return {
-    destroy() { destroyed = true; later.stop(); if (running) running.abort(); handles.forEach((h) => h.destroy()); },
+    destroy() { destroyed = true; later.stop(); if (running) running.abort(); if (tracePlayer) { tracePlayer.destroy(); tracePlayer = null; } handles.forEach((h) => h.destroy()); },
     lineUp: () => editor.setLine(editor.line - 1),
     lineDown: () => editor.setLine(editor.line + 1),
   };

@@ -29,6 +29,17 @@ function codeBlock(lines) {
   return `<pre class="code">${html.map((h, i) => `<span class="ln">${i + 1}</span>${h || ' '}`).join('\n')}</pre>`;
 }
 
+// A frame's code with the lines that changed since the previous frame marked
+// with a + in the margin and a tinted background, mirroring the web player.
+function frameCodeBlock(lines, prevLines) {
+  const html = highlightCode(lines.map((l) => l[0]).join('\n'));
+  const rows = html.map((h, i) => {
+    const changed = !!prevLines && (!prevLines[i] || prevLines[i][0] !== lines[i][0]);
+    return `<span class="${changed ? 'fl chg' : 'fl'}"><span class="ln">${i + 1}</span><span class="mk">${changed ? '+' : ''}</span>${h || ' '}</span>`;
+  });
+  return `<pre class="code frames">${rows.join('\n')}</pre>`;
+}
+
 function notes(lines) {
   const rows = [];
   lines.forEach(([code, note], i) => {
@@ -40,7 +51,7 @@ function notes(lines) {
 }
 
 function stepHtml(s, answers) {
-  const kindLabel = { concept: 'Concept', code: 'Code', compare: 'Compare', widget: 'Interactive', quiz: 'Check yourself' }[s.kind];
+  const kindLabel = { concept: 'Concept', code: 'Code', compare: 'Compare', widget: 'Interactive', quiz: 'Check yourself', example: 'Worked example' }[s.kind];
   let h = `<section class="step"><div class="kind">${kindLabel}${s.kind === 'code' ? ` · ${{ swift: 'runs in the browser', swiftui: 'live SwiftUI preview', static: 'read-along', swifttest: 'Swift Testing' }[s.run]}` : ''}</div><h3>${esc(s.title)}</h3>`;
   if (s.kind === 'concept') {
     h += `<div class="prose">${s.body}</div>`;
@@ -67,6 +78,25 @@ function stepHtml(s, answers) {
   }
   if (s.kind === 'widget') {
     h += `<div class="prose">${s.intro || ''}</div><p class="interactive-note">This step is an interactive simulation in the HTML version.</p>`;
+  }
+  if (s.kind === 'example') {
+    h += `<div class="prose"><strong>Problem.</strong> ${s.problem}</div>`;
+    if (s.simulation) h += `<p class="interactive-note">The visual for this example in the HTML version is labelled Simulation: it models Apple frameworks or platform processes that cannot run in a web page.</p>`;
+    s.frames.forEach((fr, fi) => {
+      h += `<h4>Frame ${fi + 1} of ${s.frames.length}</h4><p class="frame-cap">${esc(fr.caption)}</p>`;
+      if (fr.partial) h += `<p class="interactive-note">This frame is unfinished on purpose: ${esc(fr.reason || '')}</p>`;
+      h += frameCodeBlock(fr.lines, fi > 0 ? s.frames[fi - 1].lines : null);
+      if (fr.expect !== undefined) h += `<div class="output"><span>Output so far</span><pre>${esc(fr.expect)}</pre></div>`;
+      if (fr.expectError) h += `<div class="output err"><span>Error (on purpose)</span><pre>${esc(fr.expectError)}</pre></div>`;
+    });
+    if (s.adapter === 'trace' && s.expect !== undefined) h += `<div class="output"><span>Final result — checked output</span><pre>${esc(s.expect)}</pre></div>`;
+    if (s.adapter === 'phone' && s.check) h += `<div class="output"><span>Final result — checked on screen</span><pre>Tap “${esc(s.check.tap)}” and the screen shows “${esc(s.check.expectText)}”.</pre></div>`;
+    if (s.adapter === 'diagram' && s.result) h += `<div class="output"><span>Final result</span><pre>${esc(s.result)}</pre></div>`;
+    const last = s.frames[s.frames.length - 1];
+    h += `<h4>Line by line: the finished program</h4>${notes(last.lines)}`;
+    if (s.tryIt) {
+      h += `<aside class="try"><strong>Try it</strong><div class="prose">${s.tryIt.task}</div>${codeBlock(s.tryIt.lines)}<div class="output"><span>Expected output</span><pre>${esc(s.tryIt.expect)}</pre></div></aside>`;
+    }
   }
   if (s.kind === 'quiz') {
     h += `<ol class="quiz">${s.questions.map((q, k) => `<li><div class="q">${q.q}</div><ol class="choices" type="A">${q.choices.map((c) => `<li>${c}</li>`).join('')}</ol></li>`).join('')}</ol>`;
@@ -137,6 +167,9 @@ code, pre { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; }
 .interactive-note { color: #6d7380; font-style: italic; font-size: 9pt; }
 pre.code { background: #fbfbfc; border: 1px solid #d9dde4; border-radius: 6px; padding: 8px 10px; font-size: 8.4pt; line-height: 1.5; white-space: pre-wrap; break-inside: avoid; margin: 8px 0; }
 .ln { display: inline-block; width: 22px; color: #a0a5af; user-select: none; }
+.mk { display: inline-block; width: 12px; color: #1a7f45; font-weight: 700; user-select: none; }
+.fl.chg { background: #fdf3e0; }
+.frame-cap { margin: 0 0 2px; color: #2f333b; }
 .t-kw { color: #9b2393; font-weight: 700; } .t-str { color: #c41a16; } .t-num { color: #1c00cf; } .t-cmt { color: #5d6c79; font-style: italic; }
 .t-type { color: #0b4f79; } .t-fn, .t-member, .t-decl { color: #326d74; } .t-attr, .t-proj { color: #815f03; } .t-interp { color: #6d7380; }
 .output { margin: 6px 0; break-inside: avoid; }

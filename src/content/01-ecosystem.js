@@ -1823,6 +1823,451 @@ const swiftEverywhere = {
   ],
 };
 
+// ---------------------------------------------------------------------------
+// Lesson: Worked Examples (shared five-part notes for its steps)
+// ---------------------------------------------------------------------------
+const PP_PLAN = n('Your console model, narrating the first pipeline stage.', 'Prints the Plan stage line, naming the app and the run destination.', 'The first line of the program in frame 1; later frames keep it as the opening line of the log.', 'First, before any other stage line prints.', 'Every Run starts with a plan: Xcode reads the scheme and target before compiling anything.');
+const PP_FUNC = n('Your code declares it; the console model calls it below.', 'Declares greeting, a function that returns the greeting text the app would show.', 'At the top of the program, before the stage lines that use it.', 'Compiled first; the function runs only when the last line calls it.', 'Keeping the greeting in one function means the Launch stage prints exactly what the app shows.');
+const PP_RETURN = n('The greeting function, when the last line calls it.', 'Returns the fixed greeting text, Hello, world!, to the caller.', 'The only line inside greeting.', 'At the moment print(greeting()) runs, at the end of the program.', 'Returning the text, instead of printing inside the function, lets the caller decide when it appears.');
+const PP_COMPILE = n('Your console model, narrating the compiler stage.', 'Prints that ContentView.swift passed the Swift compiler stage.', 'After the greeting function, as the first stage line of the log.', 'After the Plan line, in pipeline order.', 'The Swift compiler checks names and types before any machine code exists.');
+const PP_GREET = n('The print function, calling greeting() for its text.', 'Prints the greeting the app itself would show on screen.', 'The last line of the program.', 'Last, after every stage line.', 'Ending with the app output proves the whole pipeline delivered the one thing the user sees.');
+const PP_LLVM = n('Your console model, narrating the LLVM stage.', 'Prints that LLVM produced the ContentView.o object file.', 'The second stage line of the log, under the compile line.', 'After compiling, in pipeline order.', 'LLVM turns the checked Swift code into machine code, one object file per source file.');
+const PP_LINK = n('Your console model, narrating the Link stage.', 'Prints that the linker assembled the object files into HelloWorld.app.', 'The third stage line of the log.', 'After LLVM, in pipeline order.', 'Linking joins the object files into one app bundle the system can install.');
+const PP_INSTALL = n('Your console model, narrating the Install stage.', 'Prints that the app was installed on the simulated iPhone destination.', 'The fourth stage line of the log.', 'After linking, in pipeline order.', 'Install copies the signed bundle into the destination, here the iPhone 17 Pro Simulator.');
+const PP_LAUNCH = n('Your console model, narrating the Launch stage.', 'Prints that the installed app launched and its first view appeared.', 'The last stage line, just before the greeting itself prints.', 'After install, at the end of the pipeline.', 'Launch is the payoff stage: the system starts the process and SwiftUI shows ContentView.');
+const PP_HELLO = n('The print function, showing the app output line.', 'Prints Hello, world!, the greeting the launched app would show.', 'The last line of the program.', 'Last, after the compile lines.', 'The tryIt ends with the user-visible result, like the frames do.');
+const PP_SETTINGS = n('Your console model, narrating the compiler stage.', 'Prints that the second file, SettingsView.swift, also passed the compiler stage.', 'Between the ContentView compile line and the greeting.', 'Second, once both files are planned.', 'A second file is a second compile task in the plan; both must pass before linking.');
+const DG_FUNC = n('You declare it; the call sites below run it.', 'Declares greet, a function that takes one name and prints a greeting for it.', 'At the top of the program, before any call to it.', 'Compiled first; the body runs only when a call site runs it.', 'A function names the greeting once, so every call greets the same way.');
+const DG_BODY = n('The greet function, each time a call runs it.', 'Prints Hello, then the name it was given, using interpolation.', 'The only line inside greet.', 'Once per call, at the moment of the call.', 'Interpolation inserts the parameter, so one body serves every name.');
+const DG_TYPO = n('Your code at the call site; the compiler stops here.', 'Calls greett, but the function is named greet: one extra t makes a different, unknown name.', 'The first call site, under the function.', 'Caught at compile time, so nothing in this frame prints.', 'This is the frame to repair: name lookup fails in the Swift compiler stage, before the program can run.');
+const DG_CALL = n('Your top-level code, calling the repaired function.', 'Calls greet with the name Ana, so the body prints one greeting.', 'The first call site, under the function.', 'At run time, after the function is declared.', 'With the spelling fixed, the call matches the declaration and the program runs.');
+const DG_FUNC2 = n('You declare it; the call sites below run it.', 'Declares greet with two parameters: a name and a day, so the greeting can wish a happy day.', 'At the top of the program, replacing the one-parameter version.', 'Compiled first; the body runs once per call.', 'A second parameter carries the day in, instead of the function guessing or hard-coding it.');
+const DG_BODY2 = n('The greet function, each time a call runs it.', 'Prints the greeting with both parameters interpolated: name first, then the day.', 'The only line inside greet.', 'Once per call, at the moment of the call.', 'Both facts come from the caller, so the same body greets anyone on any day.');
+const DG_CALL2 = n('Your top-level code, calling the two-parameter version.', 'Calls greet for Ana on Friday, passing the day with its label.', 'The first call site, under the function.', 'At run time, after the function is declared.', 'The labeled second argument shows the parameter list and the call site growing together.');
+const DG_FRIENDS = n('Your top-level code; the loop below reads it.', 'Stores three names in an array, in greeting order.', 'Under the function, before the loop.', 'At run time, before the loop starts.', 'An array turns three separate calls into one loop the compiler can check.');
+const DG_FOR = n('The for-in loop, visiting each name in friends.', 'Starts a loop that binds each name in friends to friend, one at a time.', 'Top-level code, under the array.', 'At run time; the body runs three times, once per name.', 'Looping over the array means adding a name later adds a greeting with no new code.');
+const DG_CALL_LOOP = n('The loop body, calling greet once per name.', 'Calls greet for the current friend, always on Friday.', 'Inside the loop, indented under it.', 'Three times, once for each name in friends.', 'The day stays fixed here; only the name changes per visit, which is what the loop is for.');
+const DG_COUNT = n('Your top-level code, reading the array after the loop.', 'Prints how many friends were greeted, counted from the array itself.', 'The last line of the program, after the loop.', 'After the loop finishes all three greetings.', 'Counting from friends.count keeps the summary honest if the list grows.');
+const DG_CALL_BEN = n('Your top-level code, calling greet a second time.', 'Calls greet with the name Ben, printing a second greeting.', 'Under the first call site.', 'At run time, right after Ana is greeted.', 'Each call reuses the same body; only the argument changes.');
+const DG_CALL_CLEO = n('Your top-level code, calling greet a third time.', 'Calls greet with the name Cleo, printing a third greeting.', 'Under the second call site.', 'At run time, right after Ben is greeted.', 'A third call costs one line, because the greeting logic lives in the function.');
+const LC_ENUM = n('You declare it; the program compares phase against its cases.', 'Declares ScenePhase, an enum naming the five lifecycle states from this module.', 'At the top of the program, before the variables that use it.', 'Compiled first; declaring it runs no code.', 'An enum makes the phase one of five known values, never a misspelled string.');
+const LC_CASES = n('The ScenePhase type, listing its possibilities.', 'Names the five cases in day order: notRunning, inactive, active, background, suspended.', 'The only line inside the enum.', 'Compile time; the list is fixed for the whole program.', 'Grouping the cases on one line keeps this small model compact.');
+const LC_PHASE = n('Your top-level code; later lines reassign it.', 'Starts phase at notRunning: the app has not launched yet.', 'The first variable of the model, under the enum.', 'First, before any transition line runs.', 'Every day in this model starts from not running, matching a fresh launch.');
+const LC_EDITS = n('Your top-level code; the Active stage adds to it.', 'Starts the unsaved-edit counter at zero.', 'Under phase, as part of the model state.', 'At the start, before the app becomes active.', 'Counting edits in the model, not in a view, lets the Background stage save them.');
+const LC_PENDING = n('Your top-level code; the Background stage appends to it.', 'Starts the pending list empty: edits waiting for the app to return to Active.', 'Under edits, as part of the model state.', 'At the start, before anything is deferred.', 'A list, not a flag, so several deferred edits could queue in order.');
+const LC_P_NOTRUN = n('The print function, narrating the model.', 'Prints the opening phase line: the app is not running.', 'The first action line of the script.', 'First, while phase is still notRunning.', 'Each stage prints as it happens, so the console reads as the day log.');
+const LC_TO_INACTIVE = n('Your top-level code, moving the model.', 'Moves phase to inactive: the app is launching, on screen but not yet interactive.', 'After the not-running line.', 'Second, at the start of the launch.', 'Launch passes through Inactive briefly before the app can receive touches.');
+const LC_P_INACTIVE = n('The print function, narrating the model.', 'Prints the inactive phase line as the app finishes launching.', 'Right after the move to inactive.', 'While phase is inactive.', 'The log line matches the diagram phase beside it, frame by frame.');
+const LC_TO_ACTIVE = n('Your top-level code, moving the model.', 'Moves phase to active: the app is on screen and receiving events.', 'After the inactive line, and again at the end of the day.', 'When launch completes, and again when the user returns.', 'Active is the only phase where editing makes sense, so the edits happen there.');
+const LC_EDIT = n('Your top-level code, doing the user work of the model.', 'Adds one unsaved edit to the counter.', 'In the Active stage, twice in a row.', 'While phase is active, before any save.', 'Each increment is one change the user made and has not saved yet.');
+const LC_P_ACTIVE = n('The print function, reading the counter.', 'Prints how many unsaved edits the Active stage produced: two.', 'After both edit lines.', 'While phase is still active.', 'Printing the count proves the edits landed in the model before the app backgrounds.');
+const LC_TO_BG = n('Your top-level code, moving the model.', 'Moves phase to background: the user left the app, but it is still resident.', 'After the Active stage lines.', 'Fourth, when the user goes home.', 'Background is the last reliable chance to run code, which is why saving happens here.');
+const LC_P_SAVED = n('The print function, reporting the autosave.', 'Prints that the model saved both edits as the app entered the background.', 'Right after the move to background.', 'While phase is background, before suspension.', 'Saving on entering Background means a later silent termination loses nothing.');
+const LC_IF = n('Your top-level code, testing the current phase.', 'Checks that the app really is in the background before deferring the edit.', 'In the Background stage, after the save line.', 'Once, while phase is background.', 'The same edit during Active would apply at once; the phase decides the behavior.');
+const LC_APPEND = n('The if body, queuing the work.', 'Appends the Fix title edit to the pending list instead of applying it.', 'Inside the if, in the Background stage.', 'While phase is background.', 'Background code should finish quickly; real editing waits for the user to return.');
+const LC_P_DEFER = n('The print function, inside the if body.', 'Prints that the title fix is deferred until the app is active again.', 'Inside the if, after the append.', 'While phase is background.', 'Naming the deferral in the log makes the model behavior visible, not silent.');
+const LC_TO_SUSP = n('Your top-level code, moving the model.', 'Moves phase to suspended: the app is frozen in memory and runs no code.', 'After the Background stage.', 'Fifth, some time after backgrounding.', 'Suspension is the system decision, not the app choice; the model just records it.');
+const LC_P_SUSP = n('The print function, narrating the model.', 'Prints the suspended line: the last line the model can print until it thaws.', 'Right after the move to suspended.', 'While phase is suspended.', 'A suspended app prints nothing more, so the log pauses here until the return.');
+const LC_FOR = n('The for-in loop, draining the pending list.', 'Visits each deferred edit in pending and prints it as applied, all on one line.', 'In the final Active stage, after phase returns to active.', 'Last stage, when the user comes back.', 'Applying the queue on return makes the deferred title fix actually happen.');
+const LT_PHASE = n('Your top-level code; the last lines change it.', 'Stores the phase as a plain string starting at active.', 'The first line of the program.', 'First, before the edits are counted.', 'The tryIt keeps the model tiny: a string stands in for the enum from the frames.');
+const LT_EDITS = n('Your top-level code; the lines below add to it.', 'Starts the edit counter at zero.', 'Under the phase line.', 'Before any edit is counted.', 'Starting at zero makes the printed save count come only from the edit lines.');
+const LT_EDIT = n('Your top-level code, recording user work.', 'Adds one edit to the counter.', 'In the starter once; the solution adds a second copy under it.', 'While the phase is active.', 'Each line is one edit, so the final count is easy to predict.');
+const LT_P_EARLY = n('The print function, reporting progress.', 'Prints the edit count so far, before any save happens.', 'The last line of the starter.', 'After the single edit line.', 'The starter stops mid-story: the task asks you to finish the save.');
+const LT_TOBG = n('Your top-level code, moving the tiny model.', 'Changes the phase string to background.', 'After the edit lines, before the save print.', 'When the imagined user leaves the app.', 'The save line reads the phase, so the move must come before it.');
+const LT_PRINT = n('The print function, reporting the save.', 'Prints how many edits were saved and the phase they were saved in.', 'The last line of the program.', 'Last, after the move to background.', 'One line confirms both the count and the phase at save time.');
+
+const workedExamples = {
+  id: 'ecosystem-worked-examples',
+  title: 'Worked Examples',
+  steps: [
+    {
+      kind: 'example',
+      title: 'Press Run: follow one build from plan to launch',
+      problem: '<p>Pressing Run in Xcode carries one tiny app, HelloWorld, through six stages. Follow a console model of that journey: each frame grows the program by one stage line, and the diagram advances beside it until the app launches and greets.</p>',
+      adapter: 'diagram',
+      diagram: 'pipeline',
+      frames: [
+        {
+          caption: 'Plan stage: the whole program is one print line naming the app and its destination, the iPhone 17 Pro Simulator. The diagram marks Plan as the active stage; nothing has been compiled yet.',
+          diagram: { at: 0, dest: 'iPhone 17 Pro (Simulator)', note: 'Console model only: the print line stands for the Plan stage.' },
+          claims: ['Plan: build HelloWorld for iPhone 17 Pro Simulator'],
+          lines: [
+            ['print("Plan: build HelloWorld for iPhone 17 Pro Simulator")', PP_PLAN],
+          ],
+        },
+        {
+          caption: 'Swift compiler stage: a greeting function joins the program and a compile line prints. The function returns the text the app would show, and the last line prints it after the stage line.',
+          diagram: { at: 1, dest: 'iPhone 17 Pro (Simulator)', note: 'The greeting function is the code being compiled in this model.' },
+          claims: ['Compile: ContentView.swift checked', 'Hello, world!'],
+          lines: [
+            ['func greeting() -> String {', PP_FUNC],
+            ['    return "Hello, world!"', PP_RETURN],
+            ['}', null],
+            ['print("Plan: build HelloWorld for iPhone 17 Pro Simulator")', PP_PLAN],
+            ['print("Compile: ContentView.swift checked")', PP_COMPILE],
+            ['print(greeting())', PP_GREET],
+          ],
+        },
+        {
+          caption: 'LLVM stage: one more stage line prints, reporting the object file for ContentView. The greeting still prints last, unchanged, because later stages only transform what the compiler already checked.',
+          diagram: { at: 2, dest: 'iPhone 17 Pro (Simulator)', note: 'One object file per source file comes out of LLVM.' },
+          claims: ['LLVM: object file ContentView.o ready', 'Hello, world!'],
+          lines: [
+            ['func greeting() -> String {', PP_FUNC],
+            ['    return "Hello, world!"', PP_RETURN],
+            ['}', null],
+            ['print("Plan: build HelloWorld for iPhone 17 Pro Simulator")', PP_PLAN],
+            ['print("Compile: ContentView.swift checked")', PP_COMPILE],
+            ['print("LLVM: object file ContentView.o ready")', PP_LLVM],
+            ['print(greeting())', PP_GREET],
+          ],
+        },
+        {
+          caption: 'Link stage: the log adds the assembled app bundle, HelloWorld.app. The diagram advances to Link; the program itself only narrates the stage, it does not really link anything.',
+          diagram: { at: 3, dest: 'iPhone 17 Pro (Simulator)', note: 'Link joins the object files into HelloWorld.app.' },
+          claims: ['Link: HelloWorld.app assembled', 'Hello, world!'],
+          lines: [
+            ['func greeting() -> String {', PP_FUNC],
+            ['    return "Hello, world!"', PP_RETURN],
+            ['}', null],
+            ['print("Plan: build HelloWorld for iPhone 17 Pro Simulator")', PP_PLAN],
+            ['print("Compile: ContentView.swift checked")', PP_COMPILE],
+            ['print("LLVM: object file ContentView.o ready")', PP_LLVM],
+            ['print("Link: HelloWorld.app assembled")', PP_LINK],
+            ['print(greeting())', PP_GREET],
+          ],
+        },
+        {
+          caption: 'Install stage: the log reports the app installed on the iPhone 17 Pro Simulator, the destination named since the Plan frame. One stage remains before the app can launch.',
+          diagram: { at: 4, dest: 'iPhone 17 Pro (Simulator)', note: 'Install copies the bundle into the simulated iPhone.' },
+          claims: ['Install: HelloWorld on iPhone 17 Pro (Simulator)', 'Hello, world!'],
+          lines: [
+            ['func greeting() -> String {', PP_FUNC],
+            ['    return "Hello, world!"', PP_RETURN],
+            ['}', null],
+            ['print("Plan: build HelloWorld for iPhone 17 Pro Simulator")', PP_PLAN],
+            ['print("Compile: ContentView.swift checked")', PP_COMPILE],
+            ['print("LLVM: object file ContentView.o ready")', PP_LLVM],
+            ['print("Link: HelloWorld.app assembled")', PP_LINK],
+            ['print("Install: HelloWorld on iPhone 17 Pro (Simulator)")', PP_INSTALL],
+            ['print(greeting())', PP_GREET],
+          ],
+        },
+        {
+          caption: 'Launch stage: the final stage line prints, then the greeting itself, exactly what the launched app would show. The diagram sits at Launch with every earlier stage marked done.',
+          diagram: { at: 5, dest: 'iPhone 17 Pro (Simulator)', note: 'Launch: the greeting below is what the app would show.' },
+          claims: ['Launch: ContentView appeared', 'Hello, world!'],
+          lines: [
+            ['func greeting() -> String {', PP_FUNC],
+            ['    return "Hello, world!"', PP_RETURN],
+            ['}', null],
+            ['print("Plan: build HelloWorld for iPhone 17 Pro Simulator")', PP_PLAN],
+            ['print("Compile: ContentView.swift checked")', PP_COMPILE],
+            ['print("LLVM: object file ContentView.o ready")', PP_LLVM],
+            ['print("Link: HelloWorld.app assembled")', PP_LINK],
+            ['print("Install: HelloWorld on iPhone 17 Pro (Simulator)")', PP_INSTALL],
+            ['print("Launch: ContentView appeared")', PP_LAUNCH],
+            ['print(greeting())', PP_GREET],
+          ],
+        },
+      ],
+      tryIt: {
+        task: '<p>The app gains a second file, SettingsView.swift. The starter plans the build and compiles ContentView, then prints the greeting. Add the compile line for SettingsView.swift between the ContentView line and the greeting, so both files are checked before the app output.</p>',
+        lines: [
+          ['print("Plan: build HelloWorld for iPhone 17 Pro Simulator")', PP_PLAN],
+          ['print("Compile: ContentView.swift checked")', PP_COMPILE],
+          ['print("Hello, world!")', PP_HELLO],
+        ],
+        solution: [
+          ['print("Plan: build HelloWorld for iPhone 17 Pro Simulator")', PP_PLAN],
+          ['print("Compile: ContentView.swift checked")', PP_COMPILE],
+          ['print("Compile: SettingsView.swift checked")', PP_SETTINGS],
+          ['print("Hello, world!")', PP_HELLO],
+        ],
+        expect: 'Plan: build HelloWorld for iPhone 17 Pro Simulator\nCompile: ContentView.swift checked\nCompile: SettingsView.swift checked\nHello, world!',
+      },
+    },
+    {
+      kind: 'example',
+      title: 'Diagnose and repair a compiler error',
+      problem: '<p>A greeting program fails to build, and the error names a function that looks almost right. Diagnose the failure from the compiler message, repair it with the smallest change, then grow the fixed program with a parameter and a loop.</p>',
+      adapter: 'trace',
+      expect: 'Hello, Ana! Happy Friday.\nHello, Ben! Happy Friday.\nHello, Cleo! Happy Friday.\nGreeted 3 friends',
+      frames: [
+        {
+          caption: 'The program starts with just the function: greet takes a name and prints a greeting for it. Nothing calls it yet, so this frame runs and prints nothing at all.',
+          expect: '',
+          lines: [
+            ['func greet(_ name: String) {', DG_FUNC],
+            ['    print("Hello, \\(name)!")', DG_BODY],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'A call site appears, but it calls greett with an extra t. The compiler cannot find that name, so the build stops here: this frame is the failure to diagnose.',
+          partial: true,
+          reason: 'The call site misspells greet as greett, so the compiler stops the build.',
+          expectError: 'cannot find \'greett\' in scope',
+          lines: [
+            ['func greet(_ name: String) {', DG_FUNC],
+            ['    print("Hello, \\(name)!")', DG_BODY],
+            ['}', null],
+            ['greett("Ana")', DG_TYPO],
+          ],
+        },
+        {
+          caption: 'The repair is one letter: the call now spells greet exactly as declared. The program runs and prints the first greeting, Hello, Ana!, proving the diagnosis was right.',
+          expect: 'Hello, Ana!',
+          lines: [
+            ['func greet(_ name: String) {', DG_FUNC],
+            ['    print("Hello, \\(name)!")', DG_BODY],
+            ['}', null],
+            ['greet("Ana")', DG_CALL],
+          ],
+        },
+        {
+          caption: 'The working program grows: greet gains a day parameter, and the call passes Friday with its label. The greeting now uses both pieces of information the caller supplies.',
+          expect: 'Hello, Ana! Happy Friday.',
+          lines: [
+            ['func greet(_ name: String, day: String) {', DG_FUNC2],
+            ['    print("Hello, \\(name)! Happy \\(day).")', DG_BODY2],
+            ['}', null],
+            ['greet("Ana", day: "Friday")', DG_CALL2],
+          ],
+        },
+        {
+          caption: 'Three names move into an array and a loop calls greet for each one. The output triples without tripling the code: one call site now serves the whole list.',
+          expect: 'Hello, Ana! Happy Friday.\nHello, Ben! Happy Friday.\nHello, Cleo! Happy Friday.',
+          lines: [
+            ['func greet(_ name: String, day: String) {', DG_FUNC2],
+            ['    print("Hello, \\(name)! Happy \\(day).")', DG_BODY2],
+            ['}', null],
+            ['let friends = ["Ana", "Ben", "Cleo"]', DG_FRIENDS],
+            ['for friend in friends {', DG_FOR],
+            ['    greet(friend, day: "Friday")', DG_CALL_LOOP],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'A final line counts the greetings from the array itself and prints the total. The finished program greets three friends and reports exactly how many it greeted.',
+          expect: 'Hello, Ana! Happy Friday.\nHello, Ben! Happy Friday.\nHello, Cleo! Happy Friday.\nGreeted 3 friends',
+          lines: [
+            ['func greet(_ name: String, day: String) {', DG_FUNC2],
+            ['    print("Hello, \\(name)! Happy \\(day).")', DG_BODY2],
+            ['}', null],
+            ['let friends = ["Ana", "Ben", "Cleo"]', DG_FRIENDS],
+            ['for friend in friends {', DG_FOR],
+            ['    greet(friend, day: "Friday")', DG_CALL_LOOP],
+            ['}', null],
+            ['print("Greeted \\(friends.count) friends")', DG_COUNT],
+          ],
+        },
+      ],
+      tryIt: {
+        task: '<p>The starter greets only Ana. Add two more calls so the program also greets Ben and Cleo, in that order, reusing the same greet function for each name.</p>',
+        lines: [
+          ['func greet(_ name: String) {', DG_FUNC],
+          ['    print("Hello, \\(name)!")', DG_BODY],
+          ['}', null],
+          ['greet("Ana")', DG_CALL],
+        ],
+        solution: [
+          ['func greet(_ name: String) {', DG_FUNC],
+          ['    print("Hello, \\(name)!")', DG_BODY],
+          ['}', null],
+          ['greet("Ana")', DG_CALL],
+          ['greet("Ben")', DG_CALL_BEN],
+          ['greet("Cleo")', DG_CALL_CLEO],
+        ],
+        expect: 'Hello, Ana!\nHello, Ben!\nHello, Cleo!',
+      },
+    },
+    {
+      kind: 'example',
+      title: 'Follow an app through its day: launch, work, background, gone',
+      problem: '<p>Model one day in an app life: launch, two edits, a trip to the background with an autosave, a deferred edit, suspension, and a return that applies what waited. The diagram tracks memory and disk beside the console log.</p>',
+      adapter: 'diagram',
+      diagram: 'lifecycle',
+      frames: [
+        {
+          caption: 'Not running: the model declares its phase enum and counters, starts at notRunning, and prints the opening line. The diagram shows the app absent from memory and disk alike.',
+          diagram: { phase: 'Not running', note: 'Console model of one day; nothing has launched.' },
+          claims: ['Phase: not running'],
+          lines: [
+            ['enum ScenePhase {', LC_ENUM],
+            ['    case notRunning, inactive, active, background, suspended', LC_CASES],
+            ['}', null],
+            ['var phase = ScenePhase.notRunning', LC_PHASE],
+            ['var edits = 0', LC_EDITS],
+            ['var pending: [String] = []', LC_PENDING],
+            ['print("Phase: not running")', LC_P_NOTRUN],
+          ],
+        },
+        {
+          caption: 'Launch begins: phase moves to inactive and the log adds its line. The app is loaded and on screen, but not yet receiving touches, so no edits happen yet.',
+          diagram: { phase: 'Inactive', memory: 'App loaded, draft empty', note: 'Launch passes through Inactive on its way to Active.' },
+          claims: ['Phase: inactive'],
+          lines: [
+            ['enum ScenePhase {', LC_ENUM],
+            ['    case notRunning, inactive, active, background, suspended', LC_CASES],
+            ['}', null],
+            ['var phase = ScenePhase.notRunning', LC_PHASE],
+            ['var edits = 0', LC_EDITS],
+            ['var pending: [String] = []', LC_PENDING],
+            ['print("Phase: not running")', LC_P_NOTRUN],
+            ['phase = .inactive', LC_TO_INACTIVE],
+            ['print("Phase: inactive")', LC_P_INACTIVE],
+          ],
+        },
+        {
+          caption: 'Active: two edits accumulate in the counter and the log prints the count. The diagram shows the draft living only in memory; nothing has reached the disk yet.',
+          diagram: { phase: 'Active', memory: 'Draft: 2 unsaved edits', disk: 'Nothing saved yet', note: 'Edits live in memory only until the app backgrounds.' },
+          claims: ['Active: 2 unsaved edits'],
+          lines: [
+            ['enum ScenePhase {', LC_ENUM],
+            ['    case notRunning, inactive, active, background, suspended', LC_CASES],
+            ['}', null],
+            ['var phase = ScenePhase.notRunning', LC_PHASE],
+            ['var edits = 0', LC_EDITS],
+            ['var pending: [String] = []', LC_PENDING],
+            ['print("Phase: not running")', LC_P_NOTRUN],
+            ['phase = .inactive', LC_TO_INACTIVE],
+            ['print("Phase: inactive")', LC_P_INACTIVE],
+            ['phase = .active', LC_TO_ACTIVE],
+            ['edits += 1', LC_EDIT],
+            ['edits += 1', LC_EDIT],
+            ['print("Active: \\(edits) unsaved edits")', LC_P_ACTIVE],
+          ],
+        },
+        {
+          caption: 'Background: the user leaves, and the model autosaves at exactly this moment, printing that both edits are saved. The diagram now shows the saved state on disk.',
+          diagram: { phase: 'Background', memory: 'App resident: 2 edits', disk: 'Saved: 2 edits', note: 'Autosave on entering Background protects the draft.' },
+          claims: ['Saved 2 edits'],
+          lines: [
+            ['enum ScenePhase {', LC_ENUM],
+            ['    case notRunning, inactive, active, background, suspended', LC_CASES],
+            ['}', null],
+            ['var phase = ScenePhase.notRunning', LC_PHASE],
+            ['var edits = 0', LC_EDITS],
+            ['var pending: [String] = []', LC_PENDING],
+            ['print("Phase: not running")', LC_P_NOTRUN],
+            ['phase = .inactive', LC_TO_INACTIVE],
+            ['print("Phase: inactive")', LC_P_INACTIVE],
+            ['phase = .active', LC_TO_ACTIVE],
+            ['edits += 1', LC_EDIT],
+            ['edits += 1', LC_EDIT],
+            ['print("Active: \\(edits) unsaved edits")', LC_P_ACTIVE],
+            ['phase = .background', LC_TO_BG],
+            ['print("Saved \\(edits) edits")', LC_P_SAVED],
+          ],
+        },
+        {
+          caption: 'Still in Background, an edit arrives: the phase check defers it into the pending list and the log says it will apply on return, instead of editing now.',
+          diagram: { phase: 'Background', memory: 'App resident: 2 edits, 1 deferred', disk: 'Saved: 2 edits', note: 'The new edit waits in the pending list.' },
+          claims: ['Deferred: Fix title until active'],
+          lines: [
+            ['enum ScenePhase {', LC_ENUM],
+            ['    case notRunning, inactive, active, background, suspended', LC_CASES],
+            ['}', null],
+            ['var phase = ScenePhase.notRunning', LC_PHASE],
+            ['var edits = 0', LC_EDITS],
+            ['var pending: [String] = []', LC_PENDING],
+            ['print("Phase: not running")', LC_P_NOTRUN],
+            ['phase = .inactive', LC_TO_INACTIVE],
+            ['print("Phase: inactive")', LC_P_INACTIVE],
+            ['phase = .active', LC_TO_ACTIVE],
+            ['edits += 1', LC_EDIT],
+            ['edits += 1', LC_EDIT],
+            ['print("Active: \\(edits) unsaved edits")', LC_P_ACTIVE],
+            ['phase = .background', LC_TO_BG],
+            ['print("Saved \\(edits) edits")', LC_P_SAVED],
+            ['if phase == .background {', LC_IF],
+            ['    pending.append("Fix title")', LC_APPEND],
+            ['    print("Deferred: Fix title until active")', LC_P_DEFER],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'Suspended: the system freezes the app in memory. The log prints its suspended line, and after this frame no model code runs until the user returns.',
+          diagram: { phase: 'Suspended', memory: 'Frozen: 2 edits', disk: 'Saved: 2 edits', note: 'A suspended app runs no code and may be removed silently.' },
+          claims: ['Phase: suspended'],
+          lines: [
+            ['enum ScenePhase {', LC_ENUM],
+            ['    case notRunning, inactive, active, background, suspended', LC_CASES],
+            ['}', null],
+            ['var phase = ScenePhase.notRunning', LC_PHASE],
+            ['var edits = 0', LC_EDITS],
+            ['var pending: [String] = []', LC_PENDING],
+            ['print("Phase: not running")', LC_P_NOTRUN],
+            ['phase = .inactive', LC_TO_INACTIVE],
+            ['print("Phase: inactive")', LC_P_INACTIVE],
+            ['phase = .active', LC_TO_ACTIVE],
+            ['edits += 1', LC_EDIT],
+            ['edits += 1', LC_EDIT],
+            ['print("Active: \\(edits) unsaved edits")', LC_P_ACTIVE],
+            ['phase = .background', LC_TO_BG],
+            ['print("Saved \\(edits) edits")', LC_P_SAVED],
+            ['if phase == .background {', LC_IF],
+            ['    pending.append("Fix title")', LC_APPEND],
+            ['    print("Deferred: Fix title until active")', LC_P_DEFER],
+            ['}', null],
+            ['phase = .suspended', LC_TO_SUSP],
+            ['print("Phase: suspended")', LC_P_SUSP],
+          ],
+        },
+        {
+          caption: 'Active again: the loop drains the pending list and prints the title fix being applied. The day ends with every edit either saved or applied, none lost.',
+          diagram: { phase: 'Active', memory: 'Draft: 2 edits, title fix applied', disk: 'Saved: 2 edits', note: 'The deferred edit applied as soon as the app returned.' },
+          claims: ['Applied on return: Fix title'],
+          lines: [
+            ['enum ScenePhase {', LC_ENUM],
+            ['    case notRunning, inactive, active, background, suspended', LC_CASES],
+            ['}', null],
+            ['var phase = ScenePhase.notRunning', LC_PHASE],
+            ['var edits = 0', LC_EDITS],
+            ['var pending: [String] = []', LC_PENDING],
+            ['print("Phase: not running")', LC_P_NOTRUN],
+            ['phase = .inactive', LC_TO_INACTIVE],
+            ['print("Phase: inactive")', LC_P_INACTIVE],
+            ['phase = .active', LC_TO_ACTIVE],
+            ['edits += 1', LC_EDIT],
+            ['edits += 1', LC_EDIT],
+            ['print("Active: \\(edits) unsaved edits")', LC_P_ACTIVE],
+            ['phase = .background', LC_TO_BG],
+            ['print("Saved \\(edits) edits")', LC_P_SAVED],
+            ['if phase == .background {', LC_IF],
+            ['    pending.append("Fix title")', LC_APPEND],
+            ['    print("Deferred: Fix title until active")', LC_P_DEFER],
+            ['}', null],
+            ['phase = .suspended', LC_TO_SUSP],
+            ['print("Phase: suspended")', LC_P_SUSP],
+            ['phase = .active', LC_TO_ACTIVE],
+            ['for item in pending { print("Applied on return: \\(item)") }', LC_FOR],
+          ],
+        },
+      ],
+      tryIt: {
+        task: '<p>The starter counts one edit while active and stops. Finish the day: count a second edit, move the phase to background, and print the save line showing how many edits were saved and in which phase.</p>',
+        lines: [
+          ['var phase = "active"', LT_PHASE],
+          ['var edits = 0', LT_EDITS],
+          ['edits += 1', LT_EDIT],
+          ['print("Edits so far: \\(edits)")', LT_P_EARLY],
+        ],
+        solution: [
+          ['var phase = "active"', LT_PHASE],
+          ['var edits = 0', LT_EDITS],
+          ['edits += 1', LT_EDIT],
+          ['edits += 1', LT_EDIT],
+          ['phase = "background"', LT_TOBG],
+          ['print("Saved \\(edits) edits in \\(phase)")', LT_PRINT],
+        ],
+        expect: 'Saved 2 edits in background',
+      },
+    },
+  ],
+};
+
 export default {
   id: 'ecosystem',
   number: 1,
@@ -1831,5 +2276,5 @@ export default {
   summary: 'Know the Apple platforms and their screens, find your way around Xcode, explain how an app is built, launched and suspended, apply the development life cycle to an iOS app, and choose the right kind of app or extension for an idea.',
   objectives: ['CLO1', 'CLO3'],
   outcomes: ['SLO1', 'SLO2'],
-  lessons: [platforms, tools, anatomy, lifecycle, sdlc, appTypes, swiftEverywhere],
+  lessons: [platforms, tools, anatomy, lifecycle, sdlc, appTypes, swiftEverywhere, workedExamples],
 };

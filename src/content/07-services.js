@@ -3748,6 +3748,560 @@ const extensionsLesson = {
   ],
 };
 
+// ---------------------------------------------------------------------------
+// Worked Examples lesson
+// ---------------------------------------------------------------------------
+// Five-part notes shared by the worked examples in this lesson: the same line
+// appears in many frames, so its note is written once here.
+const PM_ENUM = n('Your code, declaring the model’s status type.', 'Declares AuthStatus, an enum with the three answers this model handles.', 'A type in this program, standing in for CLAuthorizationStatus.', 'Compiled once; every status value below is one of its cases.', 'An enum makes the states a closed list the switch must cover completely.');
+const PM_CASES = n('Your AuthStatus enum, listing its cases on one line.', 'Names the three states: not yet asked, refused, and allowed.', 'The cases of AuthStatus.', 'Read at compile time; matched by the switches below.', 'These mirror the real statuses an app checks before using location.');
+const PM_START = n('Your program, starting the model in its first state.', 'Creates the status variable at notDetermined, because nothing has been asked yet.', 'A variable in top-level code.', 'When the program starts, before any check runs.', 'Every permission journey starts here; later frames move this variable.');
+const PM_SWITCH = n('Your program, switching over the current status.', 'Reads the status and runs exactly one of the three branches below.', 'Top-level code, running on the current value of status.', 'Each time this code runs, on the freshest value of status.', 'Handling every case is the module’s rule: no status may fall through unhandled.');
+const PM_CASE_ND = n('The switch over status, matching the notDetermined case.', 'Prints that nothing has been asked yet.', 'The first branch of the switch.', 'Only while the status is notDetermined.', 'This is the only state in which asking is even possible, so the message points forward.');
+const PM_CASE_DENIED = n('The switch over status, matching the denied case.', 'Prints the fallback: manual city entry mode.', 'The second branch of the switch.', 'Only after the person has refused.', 'A denial must land somewhere useful; this branch is the recovery, not a dead end.');
+const PM_CASE_GRANTED = n('The switch over status, matching the granted case.', 'Prints the real feature running: trails near you.', 'The third branch of the switch.', 'Only while permission is granted.', 'The granted branch is the only one allowed to touch the person’s location.');
+const PM_PROMPT_PRINT = n('Your program, printing the line that models the system prompt.', 'Prints the prompt the system would show for Trailhead’s location request.', 'Standard output, standing in for the iOS alert on a device.', 'At the moment the app asks, after the feature is tapped.', 'On a device iOS draws this alert itself; the model prints it so the moment is visible.');
+const PM_WAIT = n('Your program, printing the state of play.', 'Prints that the app is waiting for the person’s answer.', 'Standard output, one line.', 'Right after the prompt appears, before any answer exists.', 'Asking is asynchronous in real life too: the app pauses and the person decides.');
+const PM_ASK = n('Your program, declaring the function that models the system request.', 'Declares ask, which shows the prompt and returns the status the canned answer implies.', 'A function in this program.', 'Called whenever the model needs to ask for permission.', 'One function for the ask keeps every frame’s prompt wording identical.');
+const PM_ASK_RETURN = n('Your ask function, choosing its return value with a ternary.', 'Returns granted when the canned answer allows, and denied when it refuses.', 'The return value of ask, becoming the caller’s new status.', 'At the end of each ask call.', 'The person’s tap is the only input; the model keeps it as a plain Bool so frames stay deterministic.');
+const PM_ASK_DENIED = n('Your program, calling ask with the canned answer false.', 'Asks, receives a refusal, and stores denied as the current status.', 'A variable in top-level code.', 'When this line runs, at the start of the denial journey.', 'userAllows: false is the Don’t Allow tap, canned so the frame always ends denied.');
+const PM_CITY = n('Your program, storing the city the person typed.', 'Creates the city constant, Venice, that the person entered by hand.', 'A constant in top-level code.', 'After the denial, when the person chooses the manual path.', 'Typed input replaces sensed input; the feature’s output can still be useful.');
+const PM_MANUAL_PRINT = n('Swift string interpolation, reading the typed city, then print.', 'Prints the trails answer built from the typed city instead of GPS.', 'Standard output, one line.', 'After the city exists, at the end of the program.', 'This line is the proof that a denied app can still serve its user.');
+const PM_RECHECK = n('Your program, assigning the status the Settings change produced.', 'Sets the status to granted, as a fresh check would read after the person changed Settings.', 'The status variable, in top-level code.', 'After the Settings visit, before the second switch runs.', 'The app never edits this value in real life; it re-reads what the system reports.');
+const PM_JOURNEY = n('Your program, declaring the function that runs the whole story.', 'Declares runJourney, which asks, falls back, re-checks and runs the feature in order.', 'A function in this program.', 'Called once, by the last line of the program.', 'Gathering the journey in one function makes the frame a complete, runnable story.');
+const PM_J_STATUS = n('runJourney, calling ask with the canned answer false.', 'Asks inside the journey and stores the refusal as the local status.', 'A local variable of runJourney.', 'At the start of the journey, when the feature is first tapped.', 'The journey starts with the same refusal the earlier frames survived.');
+const PM_J_SWITCH = n('runJourney, switching over its local status.', 'Reads the local status and runs exactly one branch.', 'Inside runJourney, on its local status variable.', 'Twice in this program: after the ask, and again after the re-check.', 'The same decision table serves both checks, which is why it was worth extracting.');
+const PM_J_CASE_ND = n('The switch inside runJourney, matching the notDetermined case.', 'Prints that nothing has been asked yet.', 'The first branch of the journey’s switch.', 'Only while the local status is notDetermined.', 'Neither journey check lands here, but the switch must still cover the case.');
+const PM_J_CASE_DENIED = n('The switch inside runJourney, matching the denied case.', 'Prints the fallback: manual city entry mode.', 'The second branch of the journey’s switch.', 'On the first journey check, right after the refusal.', 'The fallback appears in the log, so the denial is visibly survived, not hidden.');
+const PM_J_CASE_GRANTED = n('The switch inside runJourney, matching the granted case.', 'Prints the real feature running: trails near you.', 'The third branch of the journey’s switch.', 'On the second journey check, after the re-check reads granted.', 'The journey ends on the granted branch, exactly where a recovered permission should end.');
+const PM_J_RECHECK = n('runJourney, assigning the status the Settings change produced.', 'Sets the local status to granted for the second check.', 'The local status variable of runJourney.', 'Between the two switches, standing in for the Settings visit.', 'Between the checks, the only thing that changed is the reported status.');
+const PM_CALL_JOURNEY = n('Your program, calling the journey function.', 'Runs the whole permission journey from the first tap to the granted feature.', 'The last line of the program.', 'Once, after every declaration exists.', 'A function does nothing until it is called; this call is the frame’s starting gun.');
+const PM_T_STATUS = n('Your program, fixing the scenario for this exercise.', 'Creates the status constant at denied, the situation the exercise repairs.', 'A constant in top-level code.', 'When the program starts.', 'A let, because this exercise changes the response, not the status.');
+const PM_T_CASE_ND = n('The switch over status, matching the notDetermined case.', 'Prints the ask-first message for completeness.', 'The first branch of the switch.', 'Only while the status is notDetermined, which this exercise never reaches.', 'The switch stays exhaustive even though the scenario exercises one branch.');
+const PM_T_CASE_DENIED = n('The switch over status, matching the denied case.', 'Prints a dead-end message: location is off and nothing is offered instead.', 'The second branch of the switch.', 'Whenever the status is denied, which is this whole exercise.', 'This is the line the task replaces: a refusal answered with a shrug.');
+const WT_START = n('Your program, fixing the timeline’s start as a number of minutes.', 'Sets start to 540 minutes, which is 9:00, counted from midnight.', 'A constant in top-level code.', 'When the program starts, before any entry is built.', 'Minutes as integers keep the model deterministic; no clock is read.');
+const WT_POLICY = n('Your program, naming the reload policy for this timeline.', 'Sets the policy to atEnd, the value the final frame will print.', 'A constant in top-level code.', 'When the program starts; read only in the final frame.', 'In WidgetKit this is Timeline’s .atEnd policy: ask again when the last entry passes.');
+const WT_FUNC = n('Your program, declaring the label builder.', 'Declares clockLabel, which turns a minute count into a clock label.', 'A function in this program.', 'Called once per entry, as each entry is appended.', 'One formatter means every entry’s label is built the same way.');
+const WT_HOUR = n('clockLabel, dividing the minute count by sixty.', 'Computes the hour by integer division, discarding any leftover minutes.', 'A local constant inside clockLabel.', 'On every clockLabel call.', 'Integer division is the whole trick: 570 minutes is hour 9, remainder 30.');
+const WT_MINUTE = n('clockLabel, taking the remainder after the hour.', 'Computes the leftover minutes with the remainder operator.', 'A local constant inside clockLabel.', 'On every clockLabel call, next to the hour.', 'Hour and minute together are the label; each is one arithmetic step.');
+const WT_IF = n('clockLabel, checking whether the minute needs a leading zero.', 'Returns the label with a zero padded before a one-digit minute.', 'Inside clockLabel, as its first return.', 'When the minute is under ten, such as exactly on the hour.', 'Without this, 9:00 would print as 9:0, and the diagram’s labels would disagree.');
+const WT_RETURN = n('clockLabel, building its label by interpolation.', 'Returns the hour and the two-digit minute joined by a colon.', 'Inside clockLabel, as its last line.', 'When the minute is ten or more.', 'The common path needs no padding, so it is the plain return.');
+const WT_ENTRIES = n('Your program, declaring the timeline under construction.', 'Creates the empty entries array the appends below will fill.', 'A variable in top-level code.', 'When the program starts, before the first append.', 'An array is the timeline: ordered snapshots, each with its moment.');
+const WT_ADD0 = n('Your program, appending the first entry to the timeline.', 'Builds the 9:00 entry, labelled by clockLabel from start plus zero minutes.', 'The first element of the entries array.', 'First, before the later entries are appended.', 'Offset zero means this entry is the one showing when the timeline is delivered.');
+const WT_ADD30 = n('Your program, appending the second entry to the timeline.', 'Builds the 9:30 entry, thirty minutes after the start.', 'The second element of the entries array.', 'After the 9:00 entry, in timeline order.', 'Entries are planned ahead, so the widget can change without code running.');
+const WT_ADD60 = n('Your program, appending the third entry to the timeline.', 'Builds the 10:00 entry, whose title changes to Breezy.', 'The third element of the entries array.', 'After the 9:30 entry, in timeline order.', 'A new title in this snapshot is what makes the widget appear to update.');
+const WT_ADD90 = n('Your program, appending the fourth entry to the timeline.', 'Builds the 10:30 entry, the last one this timeline plans.', 'The fourth element of the entries array.', 'After the 10:00 entry, completing the timeline.', 'Four entries cover two hours; the policy decides what happens after that.');
+const WT_PRINT_LOOP = n('Your program, looping over the entries array with print inside.', 'Prints every entry built so far, one per line, in timeline order.', 'Standard output, one line per entry.', 'At the end of the program, after all appends.', 'The printout is the timeline in text form; compare it with the diagram, entry for entry.');
+const WT_PRINT_CURRENT = n('Your program, calling print with the last entry.', 'Prints which entry is current: the fourth, at 10:30.', 'Standard output, one line.', 'After the entry loop, at the end of the program.', 'In this model the newest entry is current; on a device the system picks by time.');
+const WT_PRINT_POLICY = n('Your program, calling print with the policy constant.', 'Prints the reload policy line: atEnd.', 'Standard output, the last line this program prints.', 'At the very end of the program.', 'This line names what WidgetKit should do when the timeline runs out.');
+const WT_T_START = n('Your program, fixing the start as a number of minutes.', 'Sets start to 600 minutes, which is 10:00, counted from midnight.', 'A constant in top-level code.', 'When the program starts, before any entry is built.', 'A different start from the example’s, so the labels must be recomputed, not copied.');
+const WT_T_ADD0 = n('Your program, appending the first ferry entry.', 'Builds the 10:00 entry, labelled from start plus zero minutes.', 'The first element of the entries array.', 'First, before the second entry is appended.', 'The starter builds only this entry; the second is the task.');
+const WT_T_ADD45 = n('Your program, appending the second ferry entry.', 'Builds the 10:45 entry, forty-five minutes after the start.', 'The second element of the entries array.', 'After the 10:00 entry, in timeline order.', 'Forty-five minutes exercises the remainder path in clockLabel: hour 10, minute 45.');
+const WT_T_PRINT_ONE = n('Your program, calling print with the first entry.', 'Prints the only entry the starter builds.', 'Standard output, the single line this program prints.', 'At the end of the starter program.', 'Printing one entry proves the builder works; the timeline is simply incomplete.');
+const SO_REPORT = n('Your program, declaring the log function.', 'Declares report, which prints one log line from a label, a phase and a detail.', 'A function in this program.', 'Called at every phase change in every frame.', 'One log format means the eye can compare orders line by line.');
+const SO_REPORT_PRINT = n('report, building its line by interpolation and printing it.', 'Prints the label, the phase in words, and the detail, joined as one log line.', 'Standard output, one line per report call.', 'Each time report is called.', 'The phase word in the line must match the diagram’s phase for that frame.');
+const SO_PHASE_VAR = n('Your program, declaring the phase variable.', 'Creates phase at Idle, the state every order starts in.', 'A variable in top-level code.', 'When the program starts, before any transition.', 'The variable is the state machine: transitions are assignments to it.');
+const SO_PRINT_IDLE = n('Your program, calling print with the starting phase.', 'Prints the idle log line for Order 1, waiting for a request.', 'Standard output, the single line this program prints.', 'At the end of the first frame’s program.', 'An explicit idle line makes the starting state part of the record, not an assumption.');
+const SO_TO_REQUESTED = n('Your program, assigning the next phase.', 'Moves the phase to Requested, the moment the customer places the order.', 'The phase variable, in top-level code.', 'At the start of the order’s story.', 'Requested is always the first transition; nothing can be printed or shipped before it.');
+const SO_REP_REQ1 = n('Your program, reporting through the shared log function.', 'Logs Order 1’s request: a photo print was ordered.', 'Standard output, one line.', 'Right after the phase becomes Requested.', 'The detail says what was requested, so the log reads like a receipt.');
+const SO_TO_PROGRESS = n('Your program, assigning the next phase.', 'Moves the phase to In progress, when the service starts the work.', 'The phase variable, in top-level code.', 'After the request, before delivery can be reported.', 'In progress is the only phase where work is happening; the others wait or are done.');
+const SO_REP_PROG1 = n('Your program, reporting through the shared log function.', 'Logs Order 1 in progress: the photo is being printed.', 'Standard output, one line.', 'Right after the phase becomes In progress.', 'Printing is the visible work of this service, so it is the progress detail.');
+const SO_TO_DELIVERED = n('Your program, assigning the final phase.', 'Moves the phase to Delivered, the successful ending.', 'The phase variable, in top-level code.', 'After the work completes, as the order’s last transition.', 'Delivered is terminal: no transition in this model leaves it.');
+const SO_REP_DEL1 = n('Your program, reporting through the shared log function.', 'Logs Order 1 delivered: ready for pickup.', 'Standard output, one line.', 'Right after the phase becomes Delivered.', 'Ready for pickup tells the customer the ending is real and actionable.');
+const SO_REP_REQ2 = n('Your program, reporting through the shared log function.', 'Logs Order 2’s request: a photo print was ordered.', 'Standard output, one line.', 'Right after the phase becomes Requested for the second order.', 'The second order starts identically; only its ending will differ.');
+const SO_TO_CANCELLED = n('Your program, assigning the early-ending phase.', 'Moves the phase to Cancelled, because the customer changed their mind.', 'The phase variable, in top-level code.', 'After the request, before any work began.', 'Cancelling is only honest before work starts; this model cancels from Requested.');
+const SO_REP_CAN2 = n('Your program, reporting through the shared log function.', 'Logs Order 2 cancelled, stating that nothing was charged.', 'Standard output, one line.', 'Right after the phase becomes Cancelled.', 'The money sentence matters most in a cancellation, so the log says it outright.');
+const SO_REP_REQ3 = n('Your program, reporting through the shared log function.', 'Logs Order 3’s request: a photo print was ordered.', 'Standard output, one line.', 'Right after the phase becomes Requested for the third order.', 'The third order also starts normally; its trouble arrives later.');
+const SO_TO_FAILED = n('Your program, assigning the failure phase.', 'Moves the phase to Failed, because the canned network flag says the service is unreachable.', 'The phase variable, in top-level code.', 'After the request, when the network step runs.', 'Failed is an ending for this attempt, not for the order, as the retry line shows.');
+const SO_REP_FAIL3 = n('Your program, reporting through the shared log function.', 'Logs Order 3 failed: the network was unreachable.', 'Standard output, one line.', 'Right after the phase becomes Failed.', 'Naming the cause in the log is what separates a failure from a mystery.');
+const SO_PRINT_RETRY = n('Your program, calling print with the recovery plan.', 'Prints that a retry for Order 3 is scheduled in five minutes.', 'Standard output, one line.', 'Right after the failure line, at the end of the program.', 'A failure without a next step strands the customer; the schedule is the recovery.');
+const SO_REP_REQ3R = n('Your program, reporting through the shared log function.', 'Logs the retry’s request for Order 3: a photo print was ordered.', 'Standard output, one line.', 'Right after the phase becomes Requested on the retry.', 'The retry label keeps the second attempt’s log separate from the first attempt’s.');
+const SO_REP_PROG3R = n('Your program, reporting through the shared log function.', 'Logs the retry in progress: the photo is being printed.', 'Standard output, one line.', 'Right after the phase becomes In progress on the retry.', 'Same work, second attempt: the phase sequence repeats exactly.');
+const SO_REP_DEL3R = n('Your program, reporting through the shared log function.', 'Logs the retry delivered: ready for pickup.', 'Standard output, one line.', 'Right after the phase becomes Delivered on the retry.', 'Delivery on the retry is the proof that scheduling it was worthwhile.');
+const SO_T_REPORT = n('Your program, declaring the log function for this exercise.', 'Declares report, which prints one log line from a phase and a detail.', 'A function in this program.', 'Called at every phase change.', 'A two-input version of the example’s reporter; the log format is the same idea.');
+const SO_T_PRINT = n('report, building its line by interpolation and printing it.', 'Prints the phase and the detail as one log line.', 'Standard output, one line per report call.', 'Each time report is called.', 'The printed phase must match the variable at the moment of the call.');
+const SO_T_REP_REQ = n('Your program, reporting through the log function.', 'Logs the request: a repair visit was booked.', 'Standard output, one line.', 'Right after the phase becomes Requested.', 'Every service story in this exercise starts with a booked request.');
+const SO_T_REP_PROG = n('Your program, reporting through the log function.', 'Logs the visit in progress: the engineer is on the way.', 'Standard output, one line.', 'Right after the phase becomes In progress.', 'This is the line the starter skips and the solution restores.');
+const SO_T_REP_DEL = n('Your program, reporting through the log function.', 'Logs delivery: the engineer visited.', 'Standard output, one line.', 'Right after the phase becomes Delivered.', 'In the starter this line follows the request directly, which is the impossibility to fix.');
+
+const workedExamplesLesson = {
+  id: 'services-worked-examples',
+  title: 'Worked Examples',
+  steps: [
+    {
+      kind: 'example',
+      title: 'Ask for location: granted, denied, and the recovery',
+      problem: '<p>Trailhead needs location to show nearby trails. Ask at the moment of use, survive a refusal with a manual fallback, and recover when the person later changes their mind in Settings.</p>',
+      adapter: 'diagram',
+      diagram: 'permission',
+      simulation: true,
+      frames: [
+        {
+          caption: 'Nothing has been asked yet, so the status is notDetermined and the app waits for the person to tap the trails feature before requesting anything at all.',
+          lines: [
+            ['enum AuthStatus {', PM_ENUM],
+            ['    case notDetermined, denied, granted', PM_CASES],
+            ['}', null],
+            ['var status = AuthStatus.notDetermined', PM_START],
+            ['switch status {', PM_SWITCH],
+            ['case .notDetermined: print("Status: not determined - not asked yet")', PM_CASE_ND],
+            ['case .denied: print("Fallback: manual city entry mode")', PM_CASE_DENIED],
+            ['case .granted: print("Showing trails near you")', PM_CASE_GRANTED],
+            ['}', null],
+          ],
+          claims: ['Status: not determined - not asked yet'],
+          diagram: { feature: 'Location', app: 'Trailhead', status: 'notDetermined' },
+        },
+        {
+          caption: 'The person taps the feature, the status check runs, and the system prompt appears. This plain-Swift model prints the prompt line; on a device, iOS draws the real alert itself.',
+          lines: [
+            ['enum AuthStatus {', PM_ENUM],
+            ['    case notDetermined, denied, granted', PM_CASES],
+            ['}', null],
+            ['var status = AuthStatus.notDetermined', PM_START],
+            ['switch status {', PM_SWITCH],
+            ['case .notDetermined: print("Status: not determined - not asked yet")', PM_CASE_ND],
+            ['case .denied: print("Fallback: manual city entry mode")', PM_CASE_DENIED],
+            ['case .granted: print("Showing trails near you")', PM_CASE_GRANTED],
+            ['}', null],
+            ['print("System prompt: Trailhead wants to use your location")', PM_PROMPT_PRINT],
+            ['print("Waiting for the person’s answer")', PM_WAIT],
+          ],
+          claims: ['Status: not determined - not asked yet', 'System prompt: Trailhead wants to use your location'],
+          diagram: { feature: 'Location', app: 'Trailhead', status: 'prompt' },
+        },
+        {
+          caption: 'The canned answer is Don’t Allow, so ask returns denied and the switch takes its denied branch. Instead of a dead end, the app falls back to manual city entry.',
+          lines: [
+            ['enum AuthStatus {', PM_ENUM],
+            ['    case notDetermined, denied, granted', PM_CASES],
+            ['}', null],
+            ['func ask(userAllows: Bool) -> AuthStatus {', PM_ASK],
+            ['    print("System prompt: Trailhead wants to use your location")', PM_PROMPT_PRINT],
+            ['    return userAllows ? AuthStatus.granted : AuthStatus.denied', PM_ASK_RETURN],
+            ['}', null],
+            ['var status = ask(userAllows: false)', PM_ASK_DENIED],
+            ['switch status {', PM_SWITCH],
+            ['case .notDetermined: print("Status: not determined - not asked yet")', PM_CASE_ND],
+            ['case .denied: print("Fallback: manual city entry mode")', PM_CASE_DENIED],
+            ['case .granted: print("Showing trails near you")', PM_CASE_GRANTED],
+            ['}', null],
+          ],
+          claims: ['System prompt: Trailhead wants to use your location', 'Fallback: manual city entry mode'],
+          diagram: { feature: 'Location', app: 'Trailhead', status: 'denied' },
+        },
+        {
+          caption: 'Still denied, the app keeps working: the person types a city and the trails list answers from that instead of from GPS. A refusal degraded the feature, not the app.',
+          lines: [
+            ['enum AuthStatus {', PM_ENUM],
+            ['    case notDetermined, denied, granted', PM_CASES],
+            ['}', null],
+            ['func ask(userAllows: Bool) -> AuthStatus {', PM_ASK],
+            ['    print("System prompt: Trailhead wants to use your location")', PM_PROMPT_PRINT],
+            ['    return userAllows ? AuthStatus.granted : AuthStatus.denied', PM_ASK_RETURN],
+            ['}', null],
+            ['var status = ask(userAllows: false)', PM_ASK_DENIED],
+            ['switch status {', PM_SWITCH],
+            ['case .notDetermined: print("Status: not determined - not asked yet")', PM_CASE_ND],
+            ['case .denied: print("Fallback: manual city entry mode")', PM_CASE_DENIED],
+            ['case .granted: print("Showing trails near you")', PM_CASE_GRANTED],
+            ['}', null],
+            ['let city = "Venice"', PM_CITY],
+            [r`print("Manual mode: showing trails near \(city)")`, PM_MANUAL_PRINT],
+          ],
+          claims: ['Fallback: manual city entry mode', 'Manual mode: showing trails near Venice'],
+          diagram: { feature: 'Location', app: 'Trailhead', status: 'denied', note: 'Denied, but the app still works in manual mode.' },
+        },
+        {
+          caption: 'The person later flips the switch in Settings, and a fresh check reads granted, because the code reads the status anew instead of remembering the old denial forever.',
+          lines: [
+            ['enum AuthStatus {', PM_ENUM],
+            ['    case notDetermined, denied, granted', PM_CASES],
+            ['}', null],
+            ['func ask(userAllows: Bool) -> AuthStatus {', PM_ASK],
+            ['    print("System prompt: Trailhead wants to use your location")', PM_PROMPT_PRINT],
+            ['    return userAllows ? AuthStatus.granted : AuthStatus.denied', PM_ASK_RETURN],
+            ['}', null],
+            ['var status = ask(userAllows: false)', PM_ASK_DENIED],
+            ['switch status {', PM_SWITCH],
+            ['case .notDetermined: print("Status: not determined - not asked yet")', PM_CASE_ND],
+            ['case .denied: print("Fallback: manual city entry mode")', PM_CASE_DENIED],
+            ['case .granted: print("Showing trails near you")', PM_CASE_GRANTED],
+            ['}', null],
+            ['status = AuthStatus.granted', PM_RECHECK],
+            ['switch status {', PM_SWITCH],
+            ['case .notDetermined: print("Status: not determined - not asked yet")', PM_CASE_ND],
+            ['case .denied: print("Fallback: manual city entry mode")', PM_CASE_DENIED],
+            ['case .granted: print("Showing trails near you")', PM_CASE_GRANTED],
+            ['}', null],
+          ],
+          claims: ['Fallback: manual city entry mode', 'Showing trails near you'],
+          diagram: { feature: 'Location', app: 'Trailhead', status: 'granted' },
+        },
+        {
+          caption: 'The whole journey in one function: ask, fall back on denial, then re-check and run the real feature once Settings says granted. Every branch ends somewhere useful.',
+          lines: [
+            ['enum AuthStatus {', PM_ENUM],
+            ['    case notDetermined, denied, granted', PM_CASES],
+            ['}', null],
+            ['func ask(userAllows: Bool) -> AuthStatus {', PM_ASK],
+            ['    print("System prompt: Trailhead wants to use your location")', PM_PROMPT_PRINT],
+            ['    return userAllows ? AuthStatus.granted : AuthStatus.denied', PM_ASK_RETURN],
+            ['}', null],
+            ['func runJourney() {', PM_JOURNEY],
+            ['    var status = ask(userAllows: false)', PM_J_STATUS],
+            ['    switch status {', PM_J_SWITCH],
+            ['    case .notDetermined: print("Status: not determined - not asked yet")', PM_J_CASE_ND],
+            ['    case .denied: print("Fallback: manual city entry mode")', PM_J_CASE_DENIED],
+            ['    case .granted: print("Showing trails near you")', PM_J_CASE_GRANTED],
+            ['    }', null],
+            ['    status = AuthStatus.granted', PM_J_RECHECK],
+            ['    switch status {', PM_J_SWITCH],
+            ['    case .notDetermined: print("Status: not determined - not asked yet")', PM_J_CASE_ND],
+            ['    case .denied: print("Fallback: manual city entry mode")', PM_J_CASE_DENIED],
+            ['    case .granted: print("Showing trails near you")', PM_J_CASE_GRANTED],
+            ['    }', null],
+            ['}', null],
+            ['runJourney()', PM_CALL_JOURNEY],
+          ],
+          claims: ['System prompt: Trailhead wants to use your location', 'Fallback: manual city entry mode', 'Showing trails near you'],
+          diagram: { feature: 'Location', app: 'Trailhead', status: 'granted', note: 'The re-check after Settings reads granted.' },
+        },
+      ],
+      tryIt: {
+        task: '<p>The starter’s denied branch is a dead end: it prints that location is off and offers nothing. Change that one branch to offer the manual fallback instead, printing the fallback line.</p>',
+        lines: [
+          ['enum AuthStatus {', PM_ENUM],
+          ['    case notDetermined, denied, granted', PM_CASES],
+          ['}', null],
+          ['let status = AuthStatus.denied', PM_T_STATUS],
+          ['switch status {', PM_SWITCH],
+          ['case .notDetermined: print("Ask first, then show trails")', PM_T_CASE_ND],
+          ['case .denied: print("Location is off - nothing to show")', PM_T_CASE_DENIED],
+          ['case .granted: print("Showing trails near you")', PM_CASE_GRANTED],
+          ['}', null],
+        ],
+        solution: [
+          ['enum AuthStatus {', PM_ENUM],
+          ['    case notDetermined, denied, granted', PM_CASES],
+          ['}', null],
+          ['let status = AuthStatus.denied', PM_T_STATUS],
+          ['switch status {', PM_SWITCH],
+          ['case .notDetermined: print("Ask first, then show trails")', PM_T_CASE_ND],
+          ['case .denied: print("Fallback: manual city entry mode")', PM_CASE_DENIED],
+          ['case .granted: print("Showing trails near you")', PM_CASE_GRANTED],
+          ['}', null],
+        ],
+        expect: 'Fallback: manual city entry mode',
+      },
+    },
+    {
+      kind: 'example',
+      title: 'Build a widget timeline, entry by entry',
+      problem: '<p>A trail widget shows conditions that change through the morning. Build its timeline entry by entry, thirty minutes apart from a fixed start, and finish with the reload policy that keeps it fed.</p>',
+      adapter: 'diagram',
+      diagram: 'widget-timeline',
+      simulation: true,
+      frames: [
+        {
+          caption: 'The builder starts at minute 540, which is 9:00 by integer arithmetic, and makes exactly one entry. The diagram shows that single entry as the current one.',
+          lines: [
+            ['let start = 540', WT_START],
+            ['let policy = "atEnd"', WT_POLICY],
+            ['func clockLabel(_ total: Int) -> String {', WT_FUNC],
+            ['    let hour = total / 60', WT_HOUR],
+            ['    let minute = total % 60', WT_MINUTE],
+            [r`    if minute < 10 { return "\(hour):0\(minute)" }`, WT_IF],
+            [r`    return "\(hour):\(minute)"`, WT_RETURN],
+            ['}', null],
+            ['var entries: [String] = []', WT_ENTRIES],
+            [r`entries.append("\(clockLabel(start + 0)) Trail conditions: Sunny")`, WT_ADD0],
+            ['for entry in entries { print(entry) }', WT_PRINT_LOOP],
+          ],
+          claims: ['9:00 Trail conditions: Sunny'],
+          diagram: { policy: 'atEnd', entries: [{ when: '9:00', title: 'Trail conditions: Sunny' }], current: 0 },
+        },
+        {
+          caption: 'A second entry joins, thirty minutes later at 9:30, built by the same clockLabel function. The timeline now covers an hour of the morning, and the newest entry is current.',
+          lines: [
+            ['let start = 540', WT_START],
+            ['let policy = "atEnd"', WT_POLICY],
+            ['func clockLabel(_ total: Int) -> String {', WT_FUNC],
+            ['    let hour = total / 60', WT_HOUR],
+            ['    let minute = total % 60', WT_MINUTE],
+            [r`    if minute < 10 { return "\(hour):0\(minute)" }`, WT_IF],
+            [r`    return "\(hour):\(minute)"`, WT_RETURN],
+            ['}', null],
+            ['var entries: [String] = []', WT_ENTRIES],
+            [r`entries.append("\(clockLabel(start + 0)) Trail conditions: Sunny")`, WT_ADD0],
+            [r`entries.append("\(clockLabel(start + 30)) Trail conditions: Sunny")`, WT_ADD30],
+            ['for entry in entries { print(entry) }', WT_PRINT_LOOP],
+          ],
+          claims: ['9:00 Trail conditions: Sunny', '9:30 Trail conditions: Sunny'],
+          diagram: { policy: 'atEnd', entries: [{ when: '9:00', title: 'Trail conditions: Sunny' }, { when: '9:30', title: 'Trail conditions: Sunny' }], current: 1 },
+        },
+        {
+          caption: 'The third entry lands at 10:00 and its title changes to Breezy, because each entry is a frozen snapshot of what the widget should show at that moment.',
+          lines: [
+            ['let start = 540', WT_START],
+            ['let policy = "atEnd"', WT_POLICY],
+            ['func clockLabel(_ total: Int) -> String {', WT_FUNC],
+            ['    let hour = total / 60', WT_HOUR],
+            ['    let minute = total % 60', WT_MINUTE],
+            [r`    if minute < 10 { return "\(hour):0\(minute)" }`, WT_IF],
+            [r`    return "\(hour):\(minute)"`, WT_RETURN],
+            ['}', null],
+            ['var entries: [String] = []', WT_ENTRIES],
+            [r`entries.append("\(clockLabel(start + 0)) Trail conditions: Sunny")`, WT_ADD0],
+            [r`entries.append("\(clockLabel(start + 30)) Trail conditions: Sunny")`, WT_ADD30],
+            [r`entries.append("\(clockLabel(start + 60)) Trail conditions: Breezy")`, WT_ADD60],
+            ['for entry in entries { print(entry) }', WT_PRINT_LOOP],
+          ],
+          claims: ['9:00 Trail conditions: Sunny', '9:30 Trail conditions: Sunny', '10:00 Trail conditions: Breezy'],
+          diagram: { policy: 'atEnd', entries: [{ when: '9:00', title: 'Trail conditions: Sunny' }, { when: '9:30', title: 'Trail conditions: Sunny' }, { when: '10:00', title: 'Trail conditions: Breezy' }], current: 2 },
+        },
+        {
+          caption: 'The fourth entry completes the planned timeline at 10:30. Four snapshots now cover two hours, so the widget can change on schedule without any code running.',
+          lines: [
+            ['let start = 540', WT_START],
+            ['let policy = "atEnd"', WT_POLICY],
+            ['func clockLabel(_ total: Int) -> String {', WT_FUNC],
+            ['    let hour = total / 60', WT_HOUR],
+            ['    let minute = total % 60', WT_MINUTE],
+            [r`    if minute < 10 { return "\(hour):0\(minute)" }`, WT_IF],
+            [r`    return "\(hour):\(minute)"`, WT_RETURN],
+            ['}', null],
+            ['var entries: [String] = []', WT_ENTRIES],
+            [r`entries.append("\(clockLabel(start + 0)) Trail conditions: Sunny")`, WT_ADD0],
+            [r`entries.append("\(clockLabel(start + 30)) Trail conditions: Sunny")`, WT_ADD30],
+            [r`entries.append("\(clockLabel(start + 60)) Trail conditions: Breezy")`, WT_ADD60],
+            [r`entries.append("\(clockLabel(start + 90)) Trail conditions: Breezy")`, WT_ADD90],
+            ['for entry in entries { print(entry) }', WT_PRINT_LOOP],
+          ],
+          claims: ['9:00 Trail conditions: Sunny', '9:30 Trail conditions: Sunny', '10:00 Trail conditions: Breezy', '10:30 Trail conditions: Breezy'],
+          diagram: { policy: 'atEnd', entries: [{ when: '9:00', title: 'Trail conditions: Sunny' }, { when: '9:30', title: 'Trail conditions: Sunny' }, { when: '10:00', title: 'Trail conditions: Breezy' }, { when: '10:30', title: 'Trail conditions: Breezy' }], current: 3 },
+        },
+        {
+          caption: 'The program names the last entry as the current one. In WidgetKit the system, not your code, picks whichever entry’s time has arrived; this model simply reports the newest.',
+          lines: [
+            ['let start = 540', WT_START],
+            ['let policy = "atEnd"', WT_POLICY],
+            ['func clockLabel(_ total: Int) -> String {', WT_FUNC],
+            ['    let hour = total / 60', WT_HOUR],
+            ['    let minute = total % 60', WT_MINUTE],
+            [r`    if minute < 10 { return "\(hour):0\(minute)" }`, WT_IF],
+            [r`    return "\(hour):\(minute)"`, WT_RETURN],
+            ['}', null],
+            ['var entries: [String] = []', WT_ENTRIES],
+            [r`entries.append("\(clockLabel(start + 0)) Trail conditions: Sunny")`, WT_ADD0],
+            [r`entries.append("\(clockLabel(start + 30)) Trail conditions: Sunny")`, WT_ADD30],
+            [r`entries.append("\(clockLabel(start + 60)) Trail conditions: Breezy")`, WT_ADD60],
+            [r`entries.append("\(clockLabel(start + 90)) Trail conditions: Breezy")`, WT_ADD90],
+            ['for entry in entries { print(entry) }', WT_PRINT_LOOP],
+            [r`print("Current entry: \(entries[3])")`, WT_PRINT_CURRENT],
+          ],
+          claims: ['9:00 Trail conditions: Sunny', '9:30 Trail conditions: Sunny', '10:00 Trail conditions: Breezy', '10:30 Trail conditions: Breezy', 'Current entry: 10:30 Trail conditions: Breezy'],
+          diagram: { policy: 'atEnd', entries: [{ when: '9:00', title: 'Trail conditions: Sunny' }, { when: '9:30', title: 'Trail conditions: Sunny' }, { when: '10:00', title: 'Trail conditions: Breezy' }, { when: '10:30', title: 'Trail conditions: Breezy' }], current: 3, note: 'All four entries are planned; the newest is current in this model.' },
+        },
+        {
+          caption: 'The final line prints the reload policy, atEnd: when the last entry passes, the system asks the provider for a fresh timeline, keeping the widget fed automatically.',
+          lines: [
+            ['let start = 540', WT_START],
+            ['let policy = "atEnd"', WT_POLICY],
+            ['func clockLabel(_ total: Int) -> String {', WT_FUNC],
+            ['    let hour = total / 60', WT_HOUR],
+            ['    let minute = total % 60', WT_MINUTE],
+            [r`    if minute < 10 { return "\(hour):0\(minute)" }`, WT_IF],
+            [r`    return "\(hour):\(minute)"`, WT_RETURN],
+            ['}', null],
+            ['var entries: [String] = []', WT_ENTRIES],
+            [r`entries.append("\(clockLabel(start + 0)) Trail conditions: Sunny")`, WT_ADD0],
+            [r`entries.append("\(clockLabel(start + 30)) Trail conditions: Sunny")`, WT_ADD30],
+            [r`entries.append("\(clockLabel(start + 60)) Trail conditions: Breezy")`, WT_ADD60],
+            [r`entries.append("\(clockLabel(start + 90)) Trail conditions: Breezy")`, WT_ADD90],
+            ['for entry in entries { print(entry) }', WT_PRINT_LOOP],
+            [r`print("Current entry: \(entries[3])")`, WT_PRINT_CURRENT],
+            [r`print("Reload policy: \(policy)")`, WT_PRINT_POLICY],
+          ],
+          claims: ['Current entry: 10:30 Trail conditions: Breezy', 'Reload policy: atEnd'],
+          diagram: { policy: 'atEnd', entries: [{ when: '9:00', title: 'Trail conditions: Sunny' }, { when: '9:30', title: 'Trail conditions: Sunny' }, { when: '10:00', title: 'Trail conditions: Breezy' }, { when: '10:30', title: 'Trail conditions: Breezy' }], current: 3, note: 'Policy atEnd: a fresh timeline is requested after the last entry.' },
+        },
+      ],
+      tryIt: {
+        task: '<p>A ferry widget starts at minute 600 and should list two departures, at 0 and 45 minutes. The starter builds only the first. Add the second entry and print the whole timeline.</p>',
+        lines: [
+          ['let start = 600', WT_T_START],
+          ['func clockLabel(_ total: Int) -> String {', WT_FUNC],
+          ['    let hour = total / 60', WT_HOUR],
+          ['    let minute = total % 60', WT_MINUTE],
+          [r`    if minute < 10 { return "\(hour):0\(minute)" }`, WT_IF],
+          [r`    return "\(hour):\(minute)"`, WT_RETURN],
+          ['}', null],
+          ['var entries: [String] = []', WT_ENTRIES],
+          [r`entries.append("\(clockLabel(start + 0)) Ferry departs")`, WT_T_ADD0],
+          ['print(entries[0])', WT_T_PRINT_ONE],
+        ],
+        solution: [
+          ['let start = 600', WT_T_START],
+          ['func clockLabel(_ total: Int) -> String {', WT_FUNC],
+          ['    let hour = total / 60', WT_HOUR],
+          ['    let minute = total % 60', WT_MINUTE],
+          [r`    if minute < 10 { return "\(hour):0\(minute)" }`, WT_IF],
+          [r`    return "\(hour):\(minute)"`, WT_RETURN],
+          ['}', null],
+          ['var entries: [String] = []', WT_ENTRIES],
+          [r`entries.append("\(clockLabel(start + 0)) Ferry departs")`, WT_T_ADD0],
+          [r`entries.append("\(clockLabel(start + 45)) Ferry departs")`, WT_T_ADD45],
+          ['for entry in entries { print(entry) }', WT_PRINT_LOOP],
+        ],
+        expect: '10:00 Ferry departs\n10:45 Ferry departs',
+      },
+    },
+    {
+      kind: 'example',
+      title: 'One delivery, four endings: delivered, cancelled, failed',
+      problem: '<p>A photo-print service takes an order from request to delivery. Follow one order all the way, then two more that end early: one cancelled by the customer, one failed by the network, with a retry.</p>',
+      adapter: 'diagram',
+      diagram: 'service-operation',
+      simulation: true,
+      frames: [
+        {
+          caption: 'The operation starts Idle: the report function is defined, the phase variable holds Idle, and the first log line shows an order that has not been requested yet.',
+          lines: [
+            ['func report(_ label: String, _ phase: String, _ detail: String) {', SO_REPORT],
+            [r`    print("\(label) \(phase): \(detail)")`, SO_REPORT_PRINT],
+            ['}', null],
+            ['var phase = "Idle"', SO_PHASE_VAR],
+            [r`print("Order 1 \(phase): waiting for a request")`, SO_PRINT_IDLE],
+          ],
+          claims: ['Order 1 Idle: waiting for a request'],
+          diagram: { phase: 'Idle', detail: 'Order 1 is waiting for a request' },
+        },
+        {
+          caption: 'The customer places the order and the phase moves to Requested. The log line is the program’s proof: same report function, new phase, new detail.',
+          lines: [
+            ['func report(_ label: String, _ phase: String, _ detail: String) {', SO_REPORT],
+            [r`    print("\(label) \(phase): \(detail)")`, SO_REPORT_PRINT],
+            ['}', null],
+            ['var phase = "Idle"', SO_PHASE_VAR],
+            ['phase = "Requested"', SO_TO_REQUESTED],
+            ['report("Order 1", phase, "photo print ordered")', SO_REP_REQ1],
+          ],
+          claims: ['Order 1 Requested: photo print ordered'],
+          diagram: { phase: 'Requested', detail: 'Order 1: photo print ordered' },
+        },
+        {
+          caption: 'Work begins and the phase moves to In progress. Both log lines print, so the history shows the order was requested before printing started, in that order.',
+          lines: [
+            ['func report(_ label: String, _ phase: String, _ detail: String) {', SO_REPORT],
+            [r`    print("\(label) \(phase): \(detail)")`, SO_REPORT_PRINT],
+            ['}', null],
+            ['var phase = "Idle"', SO_PHASE_VAR],
+            ['phase = "Requested"', SO_TO_REQUESTED],
+            ['report("Order 1", phase, "photo print ordered")', SO_REP_REQ1],
+            ['phase = "In progress"', SO_TO_PROGRESS],
+            ['report("Order 1", phase, "printing your photo")', SO_REP_PROG1],
+          ],
+          claims: ['Order 1 Requested: photo print ordered', 'Order 1 In progress: printing your photo'],
+          diagram: { phase: 'In progress', detail: 'Order 1: printing your photo' },
+        },
+        {
+          caption: 'The print finishes and the phase reaches Delivered, the successful ending. One order has now walked the full path the diagram shows across the top.',
+          lines: [
+            ['func report(_ label: String, _ phase: String, _ detail: String) {', SO_REPORT],
+            [r`    print("\(label) \(phase): \(detail)")`, SO_REPORT_PRINT],
+            ['}', null],
+            ['var phase = "Idle"', SO_PHASE_VAR],
+            ['phase = "Requested"', SO_TO_REQUESTED],
+            ['report("Order 1", phase, "photo print ordered")', SO_REP_REQ1],
+            ['phase = "In progress"', SO_TO_PROGRESS],
+            ['report("Order 1", phase, "printing your photo")', SO_REP_PROG1],
+            ['phase = "Delivered"', SO_TO_DELIVERED],
+            ['report("Order 1", phase, "ready for pickup")', SO_REP_DEL1],
+          ],
+          claims: ['Order 1 Requested: photo print ordered', 'Order 1 In progress: printing your photo', 'Order 1 Delivered: ready for pickup'],
+          diagram: { phase: 'Delivered', detail: 'Order 1: ready for pickup' },
+        },
+        {
+          caption: 'A second order starts the same way, but the customer cancels before printing. The log says plainly that nothing was charged, so a cancelled order is an ending, not an error.',
+          lines: [
+            ['func report(_ label: String, _ phase: String, _ detail: String) {', SO_REPORT],
+            [r`    print("\(label) \(phase): \(detail)")`, SO_REPORT_PRINT],
+            ['}', null],
+            ['var phase = "Idle"', SO_PHASE_VAR],
+            ['phase = "Requested"', SO_TO_REQUESTED],
+            ['report("Order 2", phase, "photo print ordered")', SO_REP_REQ2],
+            ['phase = "Cancelled"', SO_TO_CANCELLED],
+            ['report("Order 2", phase, "cancelled by you - nothing was charged")', SO_REP_CAN2],
+          ],
+          claims: ['Order 2 Requested: photo print ordered', 'Order 2 Cancelled: cancelled by you - nothing was charged'],
+          diagram: { phase: 'Cancelled', detail: 'Order 2 was cancelled - nothing was charged' },
+        },
+        {
+          caption: 'A third order hits a canned network failure and lands in Failed. The recovery is printed, not wished for: a retry is scheduled, so the story continues in the next frame.',
+          lines: [
+            ['func report(_ label: String, _ phase: String, _ detail: String) {', SO_REPORT],
+            [r`    print("\(label) \(phase): \(detail)")`, SO_REPORT_PRINT],
+            ['}', null],
+            ['var phase = "Idle"', SO_PHASE_VAR],
+            ['phase = "Requested"', SO_TO_REQUESTED],
+            ['report("Order 3", phase, "photo print ordered")', SO_REP_REQ3],
+            ['phase = "Failed"', SO_TO_FAILED],
+            ['report("Order 3", phase, "network unreachable")', SO_REP_FAIL3],
+            ['print("Retry scheduled: Order 3 will try again in 5 minutes")', SO_PRINT_RETRY],
+          ],
+          claims: ['Order 3 Failed: network unreachable', 'Retry scheduled: Order 3 will try again in 5 minutes'],
+          diagram: { phase: 'Failed', detail: 'Order 3: network unreachable - retry scheduled' },
+        },
+        {
+          caption: 'The scheduled retry runs the same path as the first order and reaches Delivered. Failure was a detour with a plan, which is what a recovery is supposed to be.',
+          lines: [
+            ['func report(_ label: String, _ phase: String, _ detail: String) {', SO_REPORT],
+            [r`    print("\(label) \(phase): \(detail)")`, SO_REPORT_PRINT],
+            ['}', null],
+            ['var phase = "Idle"', SO_PHASE_VAR],
+            ['phase = "Requested"', SO_TO_REQUESTED],
+            ['report("Order 3 retry", phase, "photo print ordered")', SO_REP_REQ3R],
+            ['phase = "In progress"', SO_TO_PROGRESS],
+            ['report("Order 3 retry", phase, "printing your photo")', SO_REP_PROG3R],
+            ['phase = "Delivered"', SO_TO_DELIVERED],
+            ['report("Order 3 retry", phase, "ready for pickup")', SO_REP_DEL3R],
+          ],
+          claims: ['Order 3 retry Requested: photo print ordered', 'Order 3 retry Delivered: ready for pickup'],
+          diagram: { phase: 'Delivered', detail: 'The retry delivered Order 3: ready for pickup' },
+        },
+      ],
+      tryIt: {
+        task: '<p>A repair-visit order in the starter jumps straight from Requested to Delivered, skipping the work. Add the In progress step between them so the log shows all three phases.</p>',
+        lines: [
+          ['func report(_ phase: String, _ detail: String) {', SO_T_REPORT],
+          [r`    print("\(phase): \(detail)")`, SO_T_PRINT],
+          ['}', null],
+          ['var phase = "Idle"', SO_PHASE_VAR],
+          ['phase = "Requested"', SO_TO_REQUESTED],
+          ['report(phase, "book a repair visit")', SO_T_REP_REQ],
+          ['phase = "Delivered"', SO_TO_DELIVERED],
+          ['report(phase, "engineer visited")', SO_T_REP_DEL],
+        ],
+        solution: [
+          ['func report(_ phase: String, _ detail: String) {', SO_T_REPORT],
+          [r`    print("\(phase): \(detail)")`, SO_T_PRINT],
+          ['}', null],
+          ['var phase = "Idle"', SO_PHASE_VAR],
+          ['phase = "Requested"', SO_TO_REQUESTED],
+          ['report(phase, "book a repair visit")', SO_T_REP_REQ],
+          ['phase = "In progress"', SO_TO_PROGRESS],
+          ['report(phase, "engineer is on the way")', SO_T_REP_PROG],
+          ['phase = "Delivered"', SO_TO_DELIVERED],
+          ['report(phase, "engineer visited")', SO_T_REP_DEL],
+        ],
+        expect: 'Requested: book a repair visit\nIn progress: engineer is on the way\nDelivered: engineer visited',
+      },
+    },
+  ],
+};
+
+
 export default {
   id: 'services',
   number: 7,
@@ -3764,5 +4318,6 @@ export default {
     mediaLesson,
     intelligenceLesson,
     extensionsLesson,
+    workedExamplesLesson,
   ],
 };

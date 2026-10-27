@@ -4,6 +4,80 @@
 // every code line carries a five-part note (who, what, where, when, why).
 
 // ---------------------------------------------------------------------------
+// Five-part notes shared by the worked examples at the end of this module:
+// the same line appears in many frames, so its note is written once here.
+// ---------------------------------------------------------------------------
+// Example 1: a grade report with filter, map and reduce (prefix GR_)
+const GR_OPEN = { who: 'You declare the class data; the compiler infers the element type from the tuples.', what: 'Opens an array literal of labeled tuples, each holding a student name and a score.', where: 'Top-level code; students becomes a global constant for the whole program.', when: 'Built once, as the first statement runs, before any step below reads it.', why: 'Fixed data keeps every frame predictable, so the printed output can be checked exactly.' };
+const GR_PAIR_AB = { who: 'Your data: the first two labeled tuples in the array literal.', what: 'Ada with a score of 92 and Ben with a score of 74, written side by side on one line.', where: 'Inside the students array literal, as elements at index 0 and index 1.', when: 'Created while the array literal is evaluated, before students holds its value.', why: 'Two short tuples share one line to keep the data block compact and easy to scan.' };
+const GR_PAIR_CD = { who: 'Your data: the next two labeled tuples in the array literal.', what: 'Cleo with a score of 58 and Dan with a score of 85, using the same labels as every other element.', where: 'Inside the students array literal, as elements at index 2 and index 3.', when: 'Created while the array literal is evaluated, in order after Ada and Ben.', why: 'Cleo is the one score below the passing line, which gives the filter below something to remove.' };
+const GR_LAST_EVE = { who: 'Your data: the fifth and last labeled tuple in the array literal.', what: 'Eve with a score of 67, the lowest passing score in the class data.', where: 'The last element of the students array, at index 4, just before the closing bracket.', when: 'Created last while the array literal is evaluated; then students is complete.', why: 'A score just above the passing line checks that the filter keeps borderline passes.' };
+const GR_FOR_RAW = { who: 'The for-in loop, which asks the students array for one tuple at a time.', what: 'Starts a loop over every student in the raw class list, binding each tuple to the name student.', where: 'Top-level code, after the data exists; student exists only inside these braces.', when: 'Runs five times, once per student, in the order the array stores them.', why: 'Printing the untouched data first gives a baseline the filtered frames can be compared against.' };
+const GR_PRINT_RAW = { who: 'The print function, reading the name and score of the tuple the loop is visiting.', what: 'Prints one raw line such as Ada: 92, built by interpolating the tuple labels name and score.', where: 'Inside the raw-list loop, so it runs once for every element of students.', when: 'Once per loop pass, in array order, producing the five lines of raw output.', why: 'One line per student is the report shape; later frames keep the shape and change what fills it.' };
+const GR_PASSING = { who: 'The filter method, which asks the closure a yes-or-no question about each student tuple.', what: 'Builds a new array passing holding only the tuples whose score is 60 or more; students itself is unchanged.', where: 'Top-level code; $0 is one student tuple at a time inside the filter closure.', when: 'Runs once here, calling the closure five times, before the frames below read passing.', why: 'Filtering first means every later step, grades and report alike, only ever sees passing students.' };
+const GR_FOR_PASSING = { who: 'The for-in loop, now walking the filtered passing array instead of the raw list.', what: 'Starts a loop over the passing students only, binding each tuple to the name student.', where: 'Top-level code; student exists only inside these braces.', when: 'Runs four times, once per passing student, because Cleo was filtered out.', why: 'The loop code is identical to the raw one; only its input changed, which is the point of filtering into a new array.' };
+const GR_PRINT_PASSING = { who: 'The print function, reading the tuple the passing loop is visiting.', what: 'Prints one line such as Ada: 92 for a passing student, in the same format as the raw list.', where: 'Inside the passing loop, so it runs once for every element of passing.', when: 'Once per passing student, in the original class order.', why: 'Keeping the format fixed makes the missing line, Cleo, the only visible difference from the raw list.' };
+const GR_MAP_OPEN = { who: 'The map method, which transforms each passing tuple into a new value of a different type.', what: 'Opens a map over passing and names the closure parameter student, so the lines below can read each score.', where: 'Top-level code; the result will be stored in the new constant letters.', when: 'Runs once here, calling the closure once per passing student.', why: 'map produces exactly one letter per passing student, in the same order, so letters lines up with passing by index.' };
+const GR_TERN_A = { who: 'The ternary operator inside the map closure, testing the highest grade boundary first.', what: 'Returns the letter A when this student score is 90 or more; otherwise the test continues on the next line.', where: 'The first line of the map closure body, reading the score of the student parameter.', when: 'Evaluated once per passing student, before the lower boundaries below are tried.', why: 'Testing from the top grade down means the first matching boundary is the right one, with no overlap.' };
+const GR_TERN_B = { who: 'The same ternary chain, reached only when the score was below 90.', what: 'Returns the letter B when this student score is 80 or more; otherwise the test continues on the next line.', where: 'The second line of the map closure body, continuing the expression started above.', when: 'Evaluated only for passing students whose score is under 90.', why: 'Each line of the chain handles exactly one grade band, so the rule reads like the grade table it models.' };
+const GR_TERN_CD = { who: 'The last line of the ternary chain inside the map closure.', what: 'Returns C when the score is 70 or more, and D otherwise; passing students cannot score below 60, so no F can appear.', where: 'The final line of the map closure body; its value becomes this element of letters.', when: 'Evaluated only for passing students whose score is under 80.', why: 'The final alternative needs no test, because every earlier band has already been ruled out.' };
+const GR_FOR_ENUM = { who: 'The enumerated() method, which pairs every passing tuple with its position in the array.', what: 'Starts a loop binding index and student together, so the body can read the letter stored at the same index.', where: 'Top-level code; index and student exist only inside these braces.', when: 'Runs once per passing student, four passes in all, in array order.', why: 'letters and passing are separate arrays that line up by position, and enumerated() is how the loop visits both at once.' };
+const GR_PRINT_GRADE = { who: 'The print function, joining a name from passing with a letter from letters at the same index.', what: 'Prints one line such as Ada: A, reading letters[index] for the student being visited.', where: 'Inside the enumerated loop, so it runs once per passing student.', when: 'Once per loop pass, after map has already filled letters.', why: 'It proves the two arrays line up: each name is printed beside its own letter grade.' };
+const GR_REDUCE_OPEN = { who: 'The reduce method, which walks the students array carrying one running value.', what: 'Opens a reduce starting at 0; the closure names the running total sum and the tuple being visited student.', where: 'Top-level code; the result will be stored in the new constant total.', when: 'Runs once here, calling the closure once per student in the class.', why: 'The average needs the sum of every score in the class, passing or not, and reduce is the tool that folds an array into one value.' };
+const GR_REDUCE_BODY = { who: 'The reduce closure, combining the running total with the next score.', what: 'Adds this student score to sum and hands the new total back as the running value for the next pass.', where: 'The only line of the reduce closure body; sum and student exist only inside the closure.', when: 'Once per student, five times, so the running value ends as the full class total of 376.', why: 'A single-expression closure returns its value automatically, so no return keyword is written.' };
+const GR_AVG_TENTHS = { who: 'Integer arithmetic, working in tenths so the average keeps one decimal place without fractions.', what: 'Multiplies the total by 10 and divides by the number of students, giving the average in whole tenths: 752.', where: 'Top-level code, reading the total that reduce produced and the count of the students array.', when: 'Runs once, after reduce has finished and before anything prints the average.', why: 'Doing the math in tenths first is what lets the print below show 75.2 exactly, with no long decimal tail.' };
+const GR_PRINT_AVG = { who: 'The print function, splitting the tenths value back into a whole part and one decimal digit.', what: 'Prints Class average: 75.2 by dividing tenths by 10 for the whole part and taking the remainder for the digit.', where: 'Top-level code, after the average has been computed in tenths.', when: 'In the frame that computes the average it is the only output; in the final frame it runs after the report loop.', why: 'Splitting a scaled integer with division and remainder formats the decimal exactly, the same trick used for dollars and cents.' };
+const GR_PRINT_REPORT = { who: 'The print function, joining the name, score and letter for one passing student into a single report line.', what: 'Prints one finished line such as Ada: 92 (A), reading the letter from letters at the same index.', where: 'Inside the enumerated loop over passing, so it runs once per passing student.', when: 'Once per loop pass, after both letters and, in the final frame, the average have been computed.', why: 'This is the finished report format: every fact about one student on one line, ready to read down the page.' };
+const GR_TRY_SCORES = { who: 'You declare the try-it data; the compiler infers an array of Int from the literals.', what: 'Stores three quiz scores, 88, 91 and 79, for the average calculation.', where: 'Top-level code, the first line of the try-it program.', when: 'First, before the reduce on the next line reads it.', why: 'Three scores with a total that divides unevenly make the tenths arithmetic visible in the answer.' };
+const GR_TRY_TOTAL = { who: 'The reduce method, passed the plus operator itself as its combining function.', what: 'Adds every score starting from 0 and stores the total, 258, in the constant total.', where: 'Top-level code, after the scores array exists.', when: 'Second, once per element, three combining steps in all.', why: 'reduce(0, +) is the shortest form of a sum, used throughout this module for exactly this job.' };
+const GR_TRY_PRINT_TOTAL = { who: 'The print function, reading the total constant from the line above.', what: 'Prints Total: 258, the starter output; it shows the sum but never computes the average the task asks for.', where: 'The last line of the starter program.', when: 'Last, after reduce has produced the total.', why: 'The starter stops one step early on purpose, so the missing average line is the work left to do.' };
+const GR_TRY_AVG = { who: 'Integer arithmetic, the same tenths trick the worked example uses for the class average.', what: 'Multiplies the total by 10 and divides by the number of scores, giving the average in whole tenths: 860.', where: 'Top-level code, between the total and the print that reports it.', when: 'After the total exists and before the average is printed.', why: 'Working in tenths keeps the one-decimal answer exact: 258 shared by 3 is 86.0, with no fraction left over.' };
+const GR_TRY_PRINT_AVG = { who: 'The print function, splitting the tenths value into a whole part and one decimal digit.', what: 'Prints Average: 86.0, using division by 10 for the whole part and the remainder for the digit after the point.', where: 'The last line of the solution program.', when: 'Last, after the tenths value has been computed.', why: 'It shows the average in the one-decimal form the task requires, instead of the bare total the starter printed.' };
+
+// Example 2: optional input, the success path and the failure path (prefix OP_)
+const OP_TEXT_42 = { who: 'You declare it, standing in for text a person typed into a field.', what: 'Stores the String 42: two digit characters in a text value, not yet a number.', where: 'Top-level code, the first line of the program, where the parsing lines below can read it.', when: 'First, before the conversion is attempted on the next line.', why: 'Typed input always arrives as text, so the program starts with a String even when it looks like a number.' };
+const OP_TEXT_ABC = { who: 'You declare it, the same stand-in for typed text, now holding bad input.', what: 'Stores the String abc: three letters that no number conversion can accept.', where: 'Top-level code, in exactly the position the good input occupied in the frame before.', when: 'First, before the identical parsing code below runs on it.', why: 'Changing only the input proves the same code path handles failure, instead of needing a different program.' };
+const OP_TEXT_7 = { who: 'You declare it, the typed-text stand-in holding a third input.', what: 'Stores the String 7, a single digit character that converts cleanly to the number 7.', where: 'Top-level code, in the same position the earlier inputs occupied.', when: 'First, before the same if let code below parses it.', why: 'A second good input with a different answer shows the success path is a rule, not a coincidence of the number 42.' };
+const OP_IFLET = { who: 'The if let statement, working with the failable Int initializer from the standard library.', what: 'Tries to convert text to an Int; when it succeeds, the plain Int is bound to number and the first block runs.', where: 'Top-level code; number exists only inside the first block, never in the else block.', when: 'Checked once, at run time, when execution reaches this line.', why: 'if let is the safe way to open an optional: both outcomes have a block, so a failed conversion cannot crash the program.' };
+const OP_PRINT_DOUBLED_IF = { who: 'The print function, reading number, the plain Int that if let unwrapped.', what: 'Doubles the unwrapped value inside the interpolation and prints the result, for example Doubled: 84.', where: 'Inside the success block of the if let, the only place number exists.', when: 'Only on inputs that convert, which in these frames is 42 and later 7.', why: 'Doing the arithmetic inside the block is safe precisely because the box has already been opened.' };
+const OP_ELSE = { who: 'The else clause attached to the if let directly above it.', what: 'Starts the block that runs when the conversion failed and the optional came back nil.', where: 'Between the success block and the failure block, joining the two halves of the if let.', when: 'Entered only when Int(text) returns nil; skipped entirely for good input.', why: 'Handling the empty case on purpose is what makes optionals safe: you decide what the person sees.' };
+const OP_PRINT_NOT_IF = { who: 'The print function, reading the original text constant, which still exists on this path.', what: 'Prints a clear message naming the bad input, for example abc is not a number.', where: 'Inside the else block, where the unwrapped number does not exist and is never touched.', when: 'Only when the conversion failed, which in these frames is the abc input.', why: 'A message that names the input tells the person exactly what to fix, instead of a silent failure or a crash.' };
+const OP_FUNC = { who: 'You declare the function; top-level code below calls it by name.', what: 'Declares report, which takes one String called text; the underscore lets callers pass it without a label.', where: 'At top level, so every call below and the loop at the end can use the same parsing code.', when: 'Compiled ahead of time; its body runs only when a call reaches it.', why: 'Wrapping the parse in a function means the guard logic is written once and reused for every input.' };
+const OP_GUARD = { who: 'The guard statement, which enforces the requirement this function cannot work without.', what: 'Tries to convert text to an Int; on success number is a plain Int for the rest of the function, on failure the else block runs.', where: 'The first statement inside report; unlike if let, the unwrapped number stays in scope below the guard.', when: 'On every call, before any other work in the function happens.', why: 'Checking the requirement first and leaving early keeps the success path on the left edge, unindented and easy to read.' };
+const OP_PRINT_NOT_GUARD = { who: 'The print function, inside the guard else block, reading the text parameter.', what: 'Prints the same clear message as before, naming the input that could not be converted.', where: 'Inside the else block, which can still see text but has no number to read.', when: 'Only on calls whose text cannot be converted, such as the call passing abc.', why: 'The failure message moved into the function with the rest of the parsing, so every caller gets it for free.' };
+const OP_RETURN = { who: 'The return statement, which the compiler requires in a guard else block.', what: 'Leaves report immediately, so the success line below the guard never runs for bad input.', where: 'The last statement of the guard else block inside report.', when: 'Right after the failure message prints, only for inputs that failed to convert.', why: 'If the else block could fall through, the code below would use a number that does not exist, so Swift insists on an exit.' };
+const OP_PRINT_DOUBLED_GUARD = { who: 'The print function, reading number, the plain Int the guard unwrapped at the top of the function.', what: 'Doubles the value inside the interpolation and prints it, for example Doubled: 84.', where: 'The last statement of report, after the guard, on the left edge of the function body.', when: 'At the end of every call whose input converted successfully.', why: 'This is the happy path, and it needs no further unwrapping because the guard already proved the value exists.' };
+const OP_CALL_42 = { who: 'Top-level code, calling the report function with good input.', what: 'Passes the String 42 to report, which converts it, doubles it and prints Doubled: 84.', where: 'Outside the function, in the program main flow, after the function has been declared.', when: 'The first call in this frame, and the moment the function body actually runs.', why: 'Calling the wrapped code with the known good input shows the move into a function changed nothing for the success path.' };
+const OP_CALL_ABC = { who: 'Top-level code, calling report a second time with the bad input.', what: 'Passes the String abc, so the guard inside report prints abc is not a number and returns early.', where: 'Top-level code, directly after the first call; each call runs the function body fresh with its own text.', when: 'The second call, after the first call has completely finished.', why: 'One function now covers both paths, which the two calls side by side make visible in the output.' };
+const OP_INPUTS = { who: 'You declare the canned data, standing in for three things a person typed, one after another.', what: 'Stores an array of three Strings: 42, abc and 7, mixing good and bad input in a fixed order.', where: 'Top-level code, after the report function, where the loop below can read it.', when: 'Runs once, before the loop starts; the values never change afterward.', why: 'A fixed list makes the final output predictable: success, failure, success, in that order, every run.' };
+const OP_FOR_INPUT = { who: 'The for-in loop, which walks the inputs array from first element to last.', what: 'Starts a loop binding each String in turn to the name input, so the body handles one typed value per pass.', where: 'Top-level code; input exists only inside these braces.', when: 'Runs three times, once per element, in array order.', why: 'The loop replaces one call per input, so the same code would handle ten inputs or a hundred unchanged.' };
+const OP_CALL_INPUT = { who: 'The report function, called from inside the loop with the current input.', what: 'Hands this pass input to report, which doubles it or prints the not-a-number message, depending on the value.', where: 'The only statement of the loop body, inside report is where the output for this pass is printed.', when: 'Once per loop pass: three calls, producing the three output lines in order.', why: 'The loop supplies the data and the function supplies the logic; neither repeats the other work.' };
+const OP_TRY_TEXT = { who: 'You declare the try-it input, standing in for typed text.', what: 'Stores the String 21, the value the try-it task asks to triple.', where: 'Top-level code, the first line of the try-it program.', when: 'First, before any parsing or printing happens.', why: 'Starting from text, not a number, is the whole point: the value must be converted before arithmetic is allowed.' };
+const OP_TRY_PRINT_STARTER = { who: 'The print function, handed the String text directly, with no conversion anywhere.', what: 'Prints Tripled: 21, which only looks like an answer; the text was echoed, never multiplied, because a String cannot be tripled.', where: 'The last line of the starter program.', when: 'Last, after the declaration, in place of the parsing code the task asks for.', why: 'The starter shows the trap: interpolation can print a String beside any label, so the output must be checked, not trusted.' };
+const OP_TRY_PRINT_TRIPLED = { who: 'The print function, reading number, the plain Int that if let unwrapped from the text.', what: 'Multiplies the unwrapped 21 by 3 inside the interpolation and prints Tripled: 63.', where: 'Inside the success block of the if let, the only place number exists.', when: 'Only when the conversion of 21 succeeds, which it does in this run.', why: 'Real arithmetic on the unwrapped Int is what separates the solution from the starter echo of the raw text.' };
+
+// Example 3: makeCounter, the closure that remembers (prefix MC_)
+const MC_FUNC = { who: 'You declare the function; its callers receive a closure from it.', what: 'Declares makeCounter, which takes no arguments and returns a closure that takes nothing and returns an Int.', where: 'At top level; the code inside runs only when makeCounter is called, not when it is declared.', when: 'Declared at compile time; the body runs once per counter created below.', why: 'Returning a function makes makeCounter a higher-order function: it manufactures a fresh counter on every call.' };
+const MC_COUNT = { who: 'The body of makeCounter, declaring the state its returned closure will keep using.', what: 'Creates a local variable count starting at 0, fresh on every call to makeCounter.', where: 'A local variable inside makeCounter; normally it would disappear when the function returns.', when: 'On every call to makeCounter, before the closure below is created.', why: 'This is the private state: nothing outside the returned closure can read or change this count.' };
+const MC_RETURN_OPEN = { who: 'makeCounter, handing a closure back to its caller.', what: 'Returns a closure written right here; it has no header, because the return type already says it takes nothing and returns an Int.', where: 'Inside makeCounter, where count is in scope, so the closure captures that very variable.', when: 'At the end of each call to makeCounter, as the function hands its result back.', why: 'Writing the closure where count lives is what lets it capture count instead of receiving it as an argument.' };
+const MC_ADD = { who: 'The returned closure itself, changing the variable it captured.', what: 'Adds one to the captured count, so the value moves 0 to 1 on the first call, 1 to 2 on the second, and so on.', where: 'Inside the closure body; count refers to the captured variable itself, not to a copy of it.', when: 'Every time the returned closure is called, never while makeCounter itself is running.', why: 'Because the closure holds on to the variable, each change survives until the next call to the same counter.' };
+const MC_RETURN_COUNT = { who: 'The returned closure, reporting its own state to whoever called it.', what: 'Hands back the updated count; the body has two statements, so the return must be written out.', where: 'The last line of the closure body, inside makeCounter.', when: 'At the end of every call to the closure, right after the count was increased.', why: 'The implicit return only applies to single-expression bodies; with two statements Swift needs to be told which value to return.' };
+const MC_READY = { who: 'The print function, announcing what the definition above made possible.', what: 'Prints Counter ready, the only output of this frame, because no counter has been created or called yet.', where: 'Top-level code, after the function declaration; declaring a function produces no output by itself.', when: 'Once, as the program reaches its last line.', why: 'It separates defining a machine from using it: the definition alone changes nothing and counts nothing.' };
+const MC_MAKE_A = { who: 'Top-level code, calling makeCounter once to manufacture the first counter.', what: 'Stores the returned closure in the constant counterA; that closure owns its own captured count, currently 0.', where: 'Top-level code, after the definition; counterA is a constant whose value is a function.', when: 'Now, at this statement; this call creates the count variable the closure captures.', why: 'The name reads like the tool it is: calling counterA() is how this program counts one event.' };
+const MC_CREATED = { who: 'The print function, reporting that a counter now exists.', what: 'Prints Counter A created, the only output of this frame, because the new counter has not been called yet.', where: 'Top-level code, directly after counterA was created.', when: 'Once, immediately after the makeCounter call on the line above.', why: 'Creating a counter does not count anything: the captured count is still 0 until the first call, which the next frame makes.' };
+const MC_PRINT_A1 = { who: 'The counterA closure, called through its constant for the first time.', what: 'Raises its captured count from 0 to 1 and prints 1, the value the closure returns.', where: 'Top-level code; the empty parentheses call the stored closure with no arguments.', when: 'The first call to counterA in this program, so its count moves from 0 to 1.', why: 'Calling a stored closure uses the same parentheses as calling a function, because a closure is a function value.' };
+const MC_PRINT_A2 = { who: 'The same counterA closure, called a second time.', what: 'Raises the same captured count from 1 to 2 and prints 2.', where: 'Top-level code, directly after the first call, using the same stored closure.', when: 'The second call to counterA; it starts from the count the first call left behind.', why: 'The different answer from identical code is the proof that the captured variable lives between calls.' };
+const MC_MAKE_B = { who: 'Top-level code, calling makeCounter a second time to manufacture another counter.', what: 'Stores a second, separate closure in counterB; this call created a brand-new count of its own, starting at 0.', where: 'Top-level code, after counterA has already been called twice in this frame.', when: 'Now, between the counterA calls above and the counterB call below.', why: 'Two calls to makeCounter mean two independent captured variables, which is what the next lines demonstrate.' };
+const MC_PRINT_B1 = { who: 'The counterB closure, called through its constant for the first time.', what: 'Raises its own captured count from 0 to 1 and prints 1, even though counterA already reached 2.', where: 'Top-level code, after counterB was created; it calls a different closure from every counterA line.', when: 'The first call to counterB, made after counterA had already counted to 2.', why: 'Starting again at 1 proves the two counters share nothing: each makeCounter call captured a different count.' };
+const MC_PRINT_A3 = { who: 'The counterA closure again, still holding the count it built up earlier.', what: 'Raises its captured count from 2 to 3 and prints 3, resuming exactly where counterA left off.', where: 'The last line of top-level code, after the counterB call, calling the first closure once more.', when: 'The third call to counterA, made after counterB printed its own 1.', why: 'The detour through counterB changed nothing for counterA: its private count waited, untouched, between calls.' };
+const MC_TRY_COUNT = { who: 'You declare the starter variable at top level.', what: 'Creates a plain variable count starting at 0, with no function and no closure anywhere in the starter.', where: 'Top-level code, the first line of the try-it starter program.', when: 'First, before the starter adds to it on the next line.', why: 'The starter counts with a bare variable to set up the contrast: anyone, anywhere in the program, could change this count.' };
+const MC_TRY_ADD = { who: 'The compound assignment operator, acting on the plain top-level variable.', what: 'Adds one to count, so the starter variable becomes 1, its only change in the whole program.', where: 'Top-level code, changing the global variable directly.', when: 'Second, immediately after the declaration.', why: 'It shows the limit of the starter: to count again, more top-level lines like this one would have to be written by hand.' };
+const MC_TRY_PRINT_COUNT = { who: 'The print function, reading the plain top-level count variable.', what: 'Prints 1, the starter output: a single count, with nothing that could produce a 2 on a second call.', where: 'The last line of the starter program.', when: 'Last, after the single addition.', why: 'Printing the value confirms the starter counts once and stops, which is the gap the solution closes.' };
+const MC_TRY_CLICKS = { who: 'Top-level code, calling makeCounter to manufacture the solution counter.', what: 'Stores the returned closure in the constant clicks; the closure owns a private count starting at 0.', where: 'Top-level code, after the makeCounter definition in the solution.', when: 'After the function exists and before either call below.', why: 'The solution reuses the worked example pattern unchanged: the counter, not top-level code, owns the state.' };
+const MC_TRY_PRINT_CLICKS1 = { who: 'The clicks closure, called through its constant for the first time.', what: 'Raises its captured count from 0 to 1 and prints 1.', where: 'Top-level code, as the first of two identical-looking call lines.', when: 'The first call to clicks in the solution program.', why: 'The first call starts the count, exactly as the first call to counterA did in the worked example.' };
+const MC_TRY_PRINT_CLICKS2 = { who: 'The same clicks closure, called a second time.', what: 'Raises the same captured count from 1 to 2 and prints 2, the second line of the solution output.', where: 'Top-level code, directly after the first call, using the same stored closure.', when: 'The second call to clicks; it resumes from the count the first call left.', why: 'Two calls producing 1 then 2 is the behavior the task asks for, and only a captured variable can supply it.' };
+
+// ---------------------------------------------------------------------------
 // Lesson: swift-values
 // ---------------------------------------------------------------------------
 const lessonValues = {
@@ -4608,6 +4682,409 @@ const lessonClosures = {
   ],
 };
 
+// ---------------------------------------------------------------------------
+// Lesson: swift-worked-examples
+// ---------------------------------------------------------------------------
+const lessonSwiftWorkedExamples = {
+  id: 'swift-worked-examples',
+  title: 'Worked Examples',
+  steps: [
+    {
+      kind: 'example',
+      title: 'A grade report with filter, map and reduce',
+      problem: '<p>A class list mixes names and scores. Build a report that keeps only passing scores of 60 or more, turns each score into a letter grade, and finishes with the class average, computed exactly in tenths.</p>',
+      adapter: 'trace',
+      expect: 'Ada: 92 (A)\nBen: 74 (C)\nDan: 85 (B)\nEve: 67 (D)\nClass average: 75.2',
+      frames: [
+        {
+          caption: 'The raw class data comes first: five students with their scores, printed one per line. Nothing is filtered or changed yet, so this is the baseline every later frame is compared with.',
+          expect: 'Ada: 92\nBen: 74\nCleo: 58\nDan: 85\nEve: 67',
+          lines: [
+            ['let students = [', GR_OPEN],
+            ['    (name: "Ada", score: 92), (name: "Ben", score: 74),', GR_PAIR_AB],
+            ['    (name: "Cleo", score: 58), (name: "Dan", score: 85),', GR_PAIR_CD],
+            ['    (name: "Eve", score: 67)', GR_LAST_EVE],
+            [']', null],
+            ['', null],
+            ['for student in students {', GR_FOR_RAW],
+            ['    print("\\(student.name): \\(student.score)")', GR_PRINT_RAW],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'filter keeps only scores of 60 or more, building a new passing array. The same print loop now walks passing, so Cleo, the one score below the line, simply never appears.',
+          expect: 'Ada: 92\nBen: 74\nDan: 85\nEve: 67',
+          lines: [
+            ['let students = [', GR_OPEN],
+            ['    (name: "Ada", score: 92), (name: "Ben", score: 74),', GR_PAIR_AB],
+            ['    (name: "Cleo", score: 58), (name: "Dan", score: 85),', GR_PAIR_CD],
+            ['    (name: "Eve", score: 67)', GR_LAST_EVE],
+            [']', null],
+            ['', null],
+            ['let passing = students.filter { $0.score >= 60 }', GR_PASSING],
+            ['', null],
+            ['for student in passing {', GR_FOR_PASSING],
+            ['    print("\\(student.name): \\(student.score)")', GR_PRINT_PASSING],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'map turns each passing score into a letter, testing the bands from the top down: 90 or more is an A, then B, then C, and a passing score below 70 is a D.',
+          expect: 'Ada: A\nBen: C\nDan: B\nEve: D',
+          lines: [
+            ['let students = [', GR_OPEN],
+            ['    (name: "Ada", score: 92), (name: "Ben", score: 74),', GR_PAIR_AB],
+            ['    (name: "Cleo", score: 58), (name: "Dan", score: 85),', GR_PAIR_CD],
+            ['    (name: "Eve", score: 67)', GR_LAST_EVE],
+            [']', null],
+            ['', null],
+            ['let passing = students.filter { $0.score >= 60 }', GR_PASSING],
+            ['', null],
+            ['let letters = passing.map { student in', GR_MAP_OPEN],
+            ['    student.score >= 90 ? "A" :', GR_TERN_A],
+            ['    student.score >= 80 ? "B" :', GR_TERN_B],
+            ['    student.score >= 70 ? "C" : "D"', GR_TERN_CD],
+            ['}', null],
+            ['', null],
+            ['for (index, student) in passing.enumerated() {', GR_FOR_ENUM],
+            ['    print("\\(student.name): \\(letters[index])")', GR_PRINT_GRADE],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'reduce folds every score in the class, passing or not, into one total of 376. Multiplying by ten before dividing gives the average in whole tenths, ready to print as 75.2.',
+          expect: 'Class average: 75.2',
+          lines: [
+            ['let students = [', GR_OPEN],
+            ['    (name: "Ada", score: 92), (name: "Ben", score: 74),', GR_PAIR_AB],
+            ['    (name: "Cleo", score: 58), (name: "Dan", score: 85),', GR_PAIR_CD],
+            ['    (name: "Eve", score: 67)', GR_LAST_EVE],
+            [']', null],
+            ['', null],
+            ['let total = students.reduce(0) { sum, student in', GR_REDUCE_OPEN],
+            ['    sum + student.score', GR_REDUCE_BODY],
+            ['}', null],
+            ['let averageTenths = total * 10 / students.count', GR_AVG_TENTHS],
+            ['print("Class average: \\(averageTenths / 10).\\(averageTenths % 10)")', GR_PRINT_AVG],
+          ],
+        },
+        {
+          caption: 'The report lines assemble name, score and letter for each passing student on one line. enumerated() supplies the index, so each student picks up the letter map stored at that same position.',
+          expect: 'Ada: 92 (A)\nBen: 74 (C)\nDan: 85 (B)\nEve: 67 (D)',
+          lines: [
+            ['let students = [', GR_OPEN],
+            ['    (name: "Ada", score: 92), (name: "Ben", score: 74),', GR_PAIR_AB],
+            ['    (name: "Cleo", score: 58), (name: "Dan", score: 85),', GR_PAIR_CD],
+            ['    (name: "Eve", score: 67)', GR_LAST_EVE],
+            [']', null],
+            ['', null],
+            ['let passing = students.filter { $0.score >= 60 }', GR_PASSING],
+            ['', null],
+            ['let letters = passing.map { student in', GR_MAP_OPEN],
+            ['    student.score >= 90 ? "A" :', GR_TERN_A],
+            ['    student.score >= 80 ? "B" :', GR_TERN_B],
+            ['    student.score >= 70 ? "C" : "D"', GR_TERN_CD],
+            ['}', null],
+            ['', null],
+            ['for (index, student) in passing.enumerated() {', GR_FOR_ENUM],
+            ['    print("\\(student.name): \\(student.score) (\\(letters[index]))")', GR_PRINT_REPORT],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'The finished report puts the pieces together: filter chose the students, map made their letters, the loop prints one line each, and the reduce average closes the report as its last line.',
+          expect: 'Ada: 92 (A)\nBen: 74 (C)\nDan: 85 (B)\nEve: 67 (D)\nClass average: 75.2',
+          lines: [
+            ['let students = [', GR_OPEN],
+            ['    (name: "Ada", score: 92), (name: "Ben", score: 74),', GR_PAIR_AB],
+            ['    (name: "Cleo", score: 58), (name: "Dan", score: 85),', GR_PAIR_CD],
+            ['    (name: "Eve", score: 67)', GR_LAST_EVE],
+            [']', null],
+            ['', null],
+            ['let passing = students.filter { $0.score >= 60 }', GR_PASSING],
+            ['', null],
+            ['let letters = passing.map { student in', GR_MAP_OPEN],
+            ['    student.score >= 90 ? "A" :', GR_TERN_A],
+            ['    student.score >= 80 ? "B" :', GR_TERN_B],
+            ['    student.score >= 70 ? "C" : "D"', GR_TERN_CD],
+            ['}', null],
+            ['', null],
+            ['let total = students.reduce(0) { sum, student in', GR_REDUCE_OPEN],
+            ['    sum + student.score', GR_REDUCE_BODY],
+            ['}', null],
+            ['let averageTenths = total * 10 / students.count', GR_AVG_TENTHS],
+            ['for (index, student) in passing.enumerated() {', GR_FOR_ENUM],
+            ['    print("\\(student.name): \\(student.score) (\\(letters[index]))")', GR_PRINT_REPORT],
+            ['}', null],
+            ['print("Class average: \\(averageTenths / 10).\\(averageTenths % 10)")', GR_PRINT_AVG],
+          ],
+        },
+      ],
+      tryIt: {
+        task: '<p>Three quiz scores are stored in an array. The starter adds them with reduce and prints the total. Finish the job: compute the class average in tenths, the same way the example does, and print it on one line as Average: 86.0.</p>',
+        lines: [
+          ['let scores = [88, 91, 79]', GR_TRY_SCORES],
+          ['let total = scores.reduce(0, +)', GR_TRY_TOTAL],
+          ['print("Total: \\(total)")', GR_TRY_PRINT_TOTAL],
+        ],
+        solution: [
+          ['let scores = [88, 91, 79]', GR_TRY_SCORES],
+          ['let total = scores.reduce(0, +)', GR_TRY_TOTAL],
+          ['let averageTenths = total * 10 / scores.count', GR_TRY_AVG],
+          ['print("Average: \\(averageTenths / 10).\\(averageTenths % 10)")', GR_TRY_PRINT_AVG],
+        ],
+        expect: 'Average: 86.0',
+      },
+    },
+    {
+      kind: 'example',
+      title: 'Optional input: the success path and the failure path',
+      problem: '<p>Text typed into a field arrives as a String, and some of it is not a number. Parse each input safely: double the numbers, print a clear message for the rest, and never crash on bad text.</p>',
+      adapter: 'trace',
+      expect: 'Doubled: 84\nabc is not a number\nDoubled: 14',
+      frames: [
+        {
+          caption: 'One good input first: the String 42 converts to the number 42, if let binds it to a plain Int, and the block prints the doubled value, 84. This is the success path.',
+          expect: 'Doubled: 84',
+          lines: [
+            ['let text = "42"', OP_TEXT_42],
+            ['if let number = Int(text) {', OP_IFLET],
+            ['    print("Doubled: \\(number * 2)")', OP_PRINT_DOUBLED_IF],
+            ['} else {', OP_ELSE],
+            ['    print("\\(text) is not a number")', OP_PRINT_NOT_IF],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'Now the failure path, with exactly the same code and only the input changed. Int finds no number in abc, returns nil, and the else block prints a clear message instead of crashing.',
+          expect: 'abc is not a number',
+          lines: [
+            ['let text = "abc"', OP_TEXT_ABC],
+            ['if let number = Int(text) {', OP_IFLET],
+            ['    print("Doubled: \\(number * 2)")', OP_PRINT_DOUBLED_IF],
+            ['} else {', OP_ELSE],
+            ['    print("\\(text) is not a number")', OP_PRINT_NOT_IF],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'A second good input confirms the success path is a rule and not a fluke of 42: the String 7 converts, binds, and doubles to 14 through exactly the same lines of code.',
+          expect: 'Doubled: 14',
+          lines: [
+            ['let text = "7"', OP_TEXT_7],
+            ['if let number = Int(text) {', OP_IFLET],
+            ['    print("Doubled: \\(number * 2)")', OP_PRINT_DOUBLED_IF],
+            ['} else {', OP_ELSE],
+            ['    print("\\(text) is not a number")', OP_PRINT_NOT_IF],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'The parsing moves into a function named report, and a guard replaces the if let: bad input leaves early, good input flows straight down. One call with 42 prints the same doubled answer.',
+          expect: 'Doubled: 84',
+          lines: [
+            ['func report(_ text: String) {', OP_FUNC],
+            ['    guard let number = Int(text) else {', OP_GUARD],
+            ['        print("\\(text) is not a number")', OP_PRINT_NOT_GUARD],
+            ['        return', OP_RETURN],
+            ['    }', null],
+            ['    print("Doubled: \\(number * 2)")', OP_PRINT_DOUBLED_GUARD],
+            ['}', null],
+            ['', null],
+            ['report("42")', OP_CALL_42],
+          ],
+        },
+        {
+          caption: 'A second call passes the bad input through the same function. The guard prints the not-a-number message and returns, so both paths now live in one place that any caller can reuse.',
+          expect: 'Doubled: 84\nabc is not a number',
+          lines: [
+            ['func report(_ text: String) {', OP_FUNC],
+            ['    guard let number = Int(text) else {', OP_GUARD],
+            ['        print("\\(text) is not a number")', OP_PRINT_NOT_GUARD],
+            ['        return', OP_RETURN],
+            ['    }', null],
+            ['    print("Doubled: \\(number * 2)")', OP_PRINT_DOUBLED_GUARD],
+            ['}', null],
+            ['', null],
+            ['report("42")', OP_CALL_42],
+            ['report("abc")', OP_CALL_ABC],
+          ],
+        },
+        {
+          caption: 'Finally a loop feeds all three canned inputs through report in order. The output tells the whole story in three lines: a doubled number, a handled failure, and another doubled number.',
+          expect: 'Doubled: 84\nabc is not a number\nDoubled: 14',
+          lines: [
+            ['func report(_ text: String) {', OP_FUNC],
+            ['    guard let number = Int(text) else {', OP_GUARD],
+            ['        print("\\(text) is not a number")', OP_PRINT_NOT_GUARD],
+            ['        return', OP_RETURN],
+            ['    }', null],
+            ['    print("Doubled: \\(number * 2)")', OP_PRINT_DOUBLED_GUARD],
+            ['}', null],
+            ['', null],
+            ['let inputs = ["42", "abc", "7"]', OP_INPUTS],
+            ['for input in inputs {', OP_FOR_INPUT],
+            ['    report(input)', OP_CALL_INPUT],
+            ['}', null],
+          ],
+        },
+      ],
+      tryIt: {
+        task: '<p>The starter stores the typed text 21 and prints it back with a Tripled label, which only echoes the String. Fix it: convert the text with if let, multiply the unwrapped number by 3, and print Tripled: 63, with a not-a-number message in the else block.</p>',
+        lines: [
+          ['let text = "21"', OP_TRY_TEXT],
+          ['print("Tripled: \\(text)")', OP_TRY_PRINT_STARTER],
+        ],
+        solution: [
+          ['let text = "21"', OP_TRY_TEXT],
+          ['if let number = Int(text) {', OP_IFLET],
+          ['    print("Tripled: \\(number * 3)")', OP_TRY_PRINT_TRIPLED],
+          ['} else {', OP_ELSE],
+          ['    print("\\(text) is not a number")', OP_PRINT_NOT_IF],
+          ['}', null],
+        ],
+        expect: 'Tripled: 63',
+      },
+    },
+    {
+      kind: 'example',
+      title: 'makeCounter: the closure that remembers',
+      problem: '<p>Write a function that makes counters. Each counter starts at zero, adds one every time it is called, and remembers its own total between calls, without any other code being able to reach in and change it.</p>',
+      adapter: 'trace',
+      expect: '1\n2\n1\n3',
+      frames: [
+        {
+          caption: 'makeCounter is defined: it declares a local count and returns a closure written where count lives, so the closure captures that variable. Nothing has been counted yet; the ready line is the only output.',
+          expect: 'Counter ready',
+          lines: [
+            ['func makeCounter() -> () -> Int {', MC_FUNC],
+            ['    var count = 0', MC_COUNT],
+            ['    return {', MC_RETURN_OPEN],
+            ['        count += 1', MC_ADD],
+            ['        return count', MC_RETURN_COUNT],
+            ['    }', null],
+            ['}', null],
+            ['', null],
+            ['print("Counter ready")', MC_READY],
+          ],
+        },
+        {
+          caption: 'Calling makeCounter once manufactures counter A: a closure whose private count starts at 0. Creating it counts nothing by itself, which the created line reports; the first real count comes next.',
+          expect: 'Counter A created',
+          lines: [
+            ['func makeCounter() -> () -> Int {', MC_FUNC],
+            ['    var count = 0', MC_COUNT],
+            ['    return {', MC_RETURN_OPEN],
+            ['        count += 1', MC_ADD],
+            ['        return count', MC_RETURN_COUNT],
+            ['    }', null],
+            ['}', null],
+            ['', null],
+            ['let counterA = makeCounter()', MC_MAKE_A],
+            ['print("Counter A created")', MC_CREATED],
+          ],
+        },
+        {
+          caption: 'The first call to counter A runs the captured closure: its count, kept alive after makeCounter returned, rises from 0 to 1, and the closure hands that 1 back to print.',
+          expect: '1',
+          lines: [
+            ['func makeCounter() -> () -> Int {', MC_FUNC],
+            ['    var count = 0', MC_COUNT],
+            ['    return {', MC_RETURN_OPEN],
+            ['        count += 1', MC_ADD],
+            ['        return count', MC_RETURN_COUNT],
+            ['    }', null],
+            ['}', null],
+            ['', null],
+            ['let counterA = makeCounter()', MC_MAKE_A],
+            ['print(counterA())', MC_PRINT_A1],
+          ],
+        },
+        {
+          caption: 'The second call uses exactly the same line of code, yet prints 2: the closure found its captured count still holding 1 from the first call, added one, and remembered the new total.',
+          expect: '1\n2',
+          lines: [
+            ['func makeCounter() -> () -> Int {', MC_FUNC],
+            ['    var count = 0', MC_COUNT],
+            ['    return {', MC_RETURN_OPEN],
+            ['        count += 1', MC_ADD],
+            ['        return count', MC_RETURN_COUNT],
+            ['    }', null],
+            ['}', null],
+            ['', null],
+            ['let counterA = makeCounter()', MC_MAKE_A],
+            ['print(counterA())', MC_PRINT_A1],
+            ['print(counterA())', MC_PRINT_A2],
+          ],
+        },
+        {
+          caption: 'A second call to makeCounter manufactures counter B with its own fresh count. B prints 1 on its first call, even though A already reached 2: the two captured variables are independent.',
+          expect: '1\n2\n1',
+          lines: [
+            ['func makeCounter() -> () -> Int {', MC_FUNC],
+            ['    var count = 0', MC_COUNT],
+            ['    return {', MC_RETURN_OPEN],
+            ['        count += 1', MC_ADD],
+            ['        return count', MC_RETURN_COUNT],
+            ['    }', null],
+            ['}', null],
+            ['', null],
+            ['let counterA = makeCounter()', MC_MAKE_A],
+            ['print(counterA())', MC_PRINT_A1],
+            ['print(counterA())', MC_PRINT_A2],
+            ['', null],
+            ['let counterB = makeCounter()', MC_MAKE_B],
+            ['print(counterB())', MC_PRINT_B1],
+          ],
+        },
+        {
+          caption: 'Calling A once more resumes its own count exactly where it left off, printing 3. The trip through B changed nothing for A, because each closure captured and guards its own private variable.',
+          expect: '1\n2\n1\n3',
+          lines: [
+            ['func makeCounter() -> () -> Int {', MC_FUNC],
+            ['    var count = 0', MC_COUNT],
+            ['    return {', MC_RETURN_OPEN],
+            ['        count += 1', MC_ADD],
+            ['        return count', MC_RETURN_COUNT],
+            ['    }', null],
+            ['}', null],
+            ['', null],
+            ['let counterA = makeCounter()', MC_MAKE_A],
+            ['print(counterA())', MC_PRINT_A1],
+            ['print(counterA())', MC_PRINT_A2],
+            ['', null],
+            ['let counterB = makeCounter()', MC_MAKE_B],
+            ['print(counterB())', MC_PRINT_B1],
+            ['print(counterA())', MC_PRINT_A3],
+          ],
+        },
+      ],
+      tryIt: {
+        task: '<p>The starter counts to 1 with a plain top-level variable and stops. Replace that approach with the makeCounter pattern: define the counter maker, store its closure in a constant named clicks, and call it twice so the program prints 1 and then 2.</p>',
+        lines: [
+          ['var count = 0', MC_TRY_COUNT],
+          ['count += 1', MC_TRY_ADD],
+          ['print(count)', MC_TRY_PRINT_COUNT],
+        ],
+        solution: [
+          ['func makeCounter() -> () -> Int {', MC_FUNC],
+          ['    var count = 0', MC_COUNT],
+          ['    return {', MC_RETURN_OPEN],
+          ['        count += 1', MC_ADD],
+          ['        return count', MC_RETURN_COUNT],
+          ['    }', null],
+          ['}', null],
+          ['', null],
+          ['let clicks = makeCounter()', MC_TRY_CLICKS],
+          ['print(clicks())', MC_TRY_PRINT_CLICKS1],
+          ['print(clicks())', MC_TRY_PRINT_CLICKS2],
+        ],
+        expect: '1\n2',
+      },
+    },
+  ],
+};
+
 export default {
   id: 'swift',
   number: 2,
@@ -4624,5 +5101,6 @@ export default {
     lessonControlFlow,
     lessonFunctions,
     lessonClosures,
+    lessonSwiftWorkedExamples,
   ],
 };

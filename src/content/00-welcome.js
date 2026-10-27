@@ -31,6 +31,174 @@ struct StudyBuddyView: View {
 }
 `;
 
+// Five-part notes shared by the worked examples at the end of this module:
+// the same line appears in many frames, so its note is written once here.
+// Example 1: your first program, line by line (prefix WG_)
+const WG_PRINT_HELLO = n(
+  'The print function from the Swift standard library, which every program gets for free.',
+  'Prints the word Hello! to the console and ends the line.',
+  'Top-level code: this short program is nothing but top-level lines, run in order.',
+  'When the program runs; in the first frame it is the only line, in later frames it runs after the constants above it.',
+  'Printing is how a program talks back. This first version keeps the greeting fixed so there is only one idea on screen.');
+const WG_VISITOR = n(
+  'You, the programmer, declare it; the Swift compiler records its type as String.',
+  'Creates a constant named visitor that holds the text Ada, the name of the person being greeted.',
+  'At the top level of the program, above the print lines, so every later line can use it.',
+  'When the program starts, before any line below it runs.',
+  'let makes a value that never changes. Storing the name in a constant means the greeting lines never repeat the name itself.');
+const WG_PRINT_GREET = n(
+  'The print function, with Swift string interpolation filling in the visitor value.',
+  'Prints Hello, Ada! by placing the value of visitor inside the text where the interpolation marker sits.',
+  'Top-level code; its output appears in the console panel beside the editor.',
+  'After the visitor constant exists, when the program reaches this line.',
+  'Interpolation builds text from values, so changing the stored name changes the greeting without touching this line.');
+const WG_COURSE = n(
+  'You declare it; the compiler infers its type, String, from the quoted text.',
+  'Creates a constant named course that holds the text iOS Development, the name of this course.',
+  'At the top level, next to visitor, with the other values the program will use.',
+  'When the program starts, after visitor and before the greeting is printed.',
+  'The second printed line will need this name, so it is stored now, before that line exists, ready to be interpolated.');
+const WG_PROJECT = n(
+  'You declare it; the compiler infers String from the quoted text.',
+  'Creates a constant named project that holds the text your first iPhone app.',
+  'At the top level, beside visitor and course, the last of the three stored values.',
+  'When the program starts, after course and before the greeting is printed.',
+  'Storing what the course builds in its own constant keeps the final line short and makes the promise of the course one value.');
+const WG_PRINT_BUILD = n(
+  'The print function, with interpolation filling in both course and project.',
+  'Prints In iOS Development, you will build your first iPhone app. as the second line of output.',
+  'Top-level code, directly under the greeting line, so its output lands on the next console line.',
+  'Last, after the greeting, when all three constants hold their values.',
+  'A greeting alone only says hello. This line says what happens next, and it is built entirely from the stored values.');
+const WG_TRY_NAME = n(
+  'You declare the try-it name; the compiler infers String from the quoted text.',
+  'Creates a constant named name that holds the text Sam.',
+  'Top-level code, the first line of the try-it program.',
+  'First, before the print line below reads it.',
+  'The task is to greet this stored name, so the value lives in a constant the print can interpolate.');
+const WG_TRY_PRINT_HELLO = n(
+  'The print function from the standard library.',
+  'Prints Hello! with no name in it at all; the starter never uses the name constant above.',
+  'The last line of the starter program; its output is the only output.',
+  'Last, after the name is stored, which is exactly the gap the task asks you to close.',
+  'The starter shows the starting point plainly: a greeting that ignores its own data is the thing to fix.');
+const WG_TRY_PRINT_GREET = n(
+  'The print function, with interpolation filling in the name constant.',
+  'Prints Hello, Sam! by placing the value of name inside the greeting text.',
+  'The last line of the solution program; its output is the only output.',
+  'Last, after the name exists, when the program reaches this line.',
+  'Using the stored value is the whole fix: change the name once and the greeting follows on its own.');
+
+// Example 2: change the greeting, then make it yours (prefix WP_)
+const WP_IMPORT = n(
+  'The Swift compiler, which loads the SwiftUI framework for this file.',
+  'Makes View, Text, VStack, Image, Button and @State available in this file.',
+  'The first line of the file; an import covers only its own file.',
+  'At compile time, before any of the code below is checked.',
+  'SwiftUI is a separate framework, so every file that describes a screen imports it.');
+const WP_STRUCT = n(
+  'You declare it; SwiftUI creates values of it whenever the greeting screen is shown.',
+  'Declares WelcomeView, a struct that conforms to View and describes the greeting screen.',
+  'At the top level of the file, so the preview at the bottom can create it.',
+  'Compiled once; a fresh value is created whenever a parent or the preview asks for the screen.',
+  'A screen in SwiftUI is a value that describes an interface, which is why the whole example is one struct.');
+const WP_STATE = n(
+  'SwiftUI, which stores the value outside the struct, tied to this screen while it is shown.',
+  'Declares greeting, the text the screen shows, starting as Hello, Ada!; @State makes SwiftUI keep and watch it.',
+  'Inside WelcomeView, marked private because only this screen changes it.',
+  'Created when the screen first appears and kept across every redraw.',
+  'The text below is read from this one value, so when the button changes it, the screen and the data can never disagree.');
+const WP_BODY = n(
+  'SwiftUI calls this property; your code never calls body directly.',
+  'Returns the description of the greeting screen for the current greeting text.',
+  'A computed property inside WelcomeView.',
+  'When the screen appears, and again after every change to the greeting state.',
+  'Describing the screen from the data is the whole SwiftUI idea: change the greeting and the screen follows.');
+const WP_VSTACK = n(
+  'SwiftUI layout system, which measures the children and stacks them.',
+  'Stacks the picture and the greeting text vertically, with 12 points of space between them.',
+  'The root view returned by body, wrapping everything the screen shows.',
+  'Measured and placed again every time body produces a new description.',
+  'A stack states the arrangement once, so the picture sits above the words without any coordinates to manage.');
+const WP_IMAGE = n(
+  'SwiftUI, which looks the name up in the SF Symbols library built into the system.',
+  'Shows the sun.max.fill symbol, a filled sun, as a picture above the greeting.',
+  'The first child of the VStack, so it sits at the top of the screen.',
+  'Drawn every time body runs; the symbol is a template picture the system can size and recolor.',
+  'A symbol gives the screen a picture with no image files to manage, matching the friendly tone of a greeting.');
+const WP_IMAGE_FONT = n(
+  'The font modifier, applied to the Image view directly above it.',
+  'Sets the picture size with the largeTitle text style, so the sun renders big.',
+  'Chained under the Image; modifiers apply to the view written before them.',
+  'Read while body builds the description, before layout measures the picture.',
+  'SF Symbols are drawn like a font, so a text style sizes them, and the size follows the text-size setting of the reader.');
+const WP_TEXT_LITERAL = n(
+  'SwiftUI, which draws the string as a Text view with the system font.',
+  'Shows the fixed greeting text Hello, Ada! exactly as written in the code.',
+  'Inside body; in the early frames it is the only view, later it becomes a child of the VStack.',
+  'Rebuilt every time body runs, although the words never change in these frames.',
+  'Text is the simplest view there is, so the example starts here and adds one idea per frame around it.');
+const WP_TEXT_STATE = n(
+  'SwiftUI, which reads the greeting state while building this Text view.',
+  'Shows whatever the greeting state currently holds, starting with Hello, Ada!, with no words written in this line at all.',
+  'A child of the VStack, under the picture, in the same position the fixed text occupied.',
+  'Rebuilt after every change to greeting, so it always shows the current value.',
+  'Reading the state instead of a fixed string is what lets one button press change the words on screen.');
+const WP_FONT = n(
+  'The font modifier, applied to the Text view directly above it.',
+  'Sets the greeting in the largeTitle text style, the biggest standard style, so it reads as the headline of the screen.',
+  'Chained under the greeting Text; it affects that text and nothing else.',
+  'Applied while the description is built, before the text is measured.',
+  'A greeting is the point of this screen, so it gets the loudest type on it; styles also scale with accessibility settings.');
+const WP_FG = n(
+  'The foregroundStyle modifier, applied to the Text view above it in the chain.',
+  'Colors the greeting blue, so the headline stands apart from plain body text.',
+  'Chained under the font modifier on the greeting Text.',
+  'Applied while the description is built, each time body runs.',
+  'Color is the second half of emphasis: size said the greeting matters most, and color now makes it the first thing seen.');
+const WP_BUTTON = n(
+  'You declare it; the person using the app triggers its action by tapping.',
+  'Creates the Surprise me button; the closure after the title is its action, the code that runs on a tap.',
+  'The last child of the VStack, under the greeting text.',
+  'The button is created each time body runs; its action runs only at the moment of a tap.',
+  'The tap check for this example presses exactly this button, so its title is the promise the screen makes.');
+const WP_ASSIGN = n(
+  'Your code, run by SwiftUI when the button is tapped.',
+  'Replaces the greeting state with the new text Welcome back, Ada!, storing it in the same single place the Text reads.',
+  'Inside the button action closure, the only line in this screen that changes data.',
+  'Once per tap, at the moment of the tap, and never while body is being built.',
+  'Changing the state is the whole action: SwiftUI notices, runs body again, and the greeting text updates by itself.');
+const WP_PREVIEW = n(
+  'Xcode and this page, which render the screen without running a whole app.',
+  'Starts a preview block that shows WelcomeView while you work on it.',
+  'At the bottom of the file, outside the struct.',
+  'Whenever the file is opened or edited; previews are not part of a shipped app.',
+  'Seeing the screen while you build it is how each frame of this example was checked.');
+const WP_CALL = n(
+  'The preview renderer, which creates the view value to display.',
+  'Creates one WelcomeView for the preview to show.',
+  'The only line inside the preview block.',
+  'Each time the preview refreshes.',
+  'The preview needs a value to render; this is the same creation a real app screen would do.');
+const WP_TRY_NAME = n(
+  'You declare the try-it name; the compiler infers String from the quoted text.',
+  'Creates a constant named name that holds the text Ada.',
+  'Top-level code, the first line of the try-it program; this is console Swift, not SwiftUI.',
+  'First, before the print line below reads it.',
+  'The try-it task is the console twin of the screen: a personalized greeting built from a stored name.');
+const WP_TRY_PRINT_HELLO = n(
+  'The print function from the standard library.',
+  'Prints Hello! with no name in it; the starter stores a name and then ignores it.',
+  'The last line of the starter program; its output is the only output.',
+  'Last, after the name is stored, showing the gap the task asks you to close.',
+  'A greeting that could belong to anyone is the starting point; making it personal is the exercise.');
+const WP_TRY_PRINT_GREET = n(
+  'The print function, with interpolation filling in the name constant.',
+  'Prints Hello, Ada! Ready to build? by placing the value of name inside the sentence.',
+  'The last line of the solution program; its output is the only output.',
+  'Last, after the name exists, when the program reaches this line.',
+  'One stored name now drives the whole line, so changing the constant changes the greeting everywhere it appears.');
+
 export default {
   id: 'welcome',
   number: 0,
@@ -419,6 +587,234 @@ export default {
               explain: '<p>Color assumptions break in Dark Mode, fixed sizes break at large text sizes, and tight layouts break on small screens. Repeating the same conditions on another large phone, or zooming into a screenshot of them, shows you the same healthy layout. The preview toolbar lets you test all three in seconds.</p>',
             },
           ],
+        },
+      ],
+    },
+    {
+      id: 'welcome-worked-examples',
+      title: 'Worked Examples',
+      steps: [
+        {
+          kind: 'example',
+          title: 'Your first program, line by line',
+          problem: '<p>Your very first program prints a greeting. Step through the frames first: each one adds a single line or a single idea. Then press Play and watch the finished run greet Ada by name and say what she will build.</p>',
+          adapter: 'trace',
+          expect: 'Hello, Ada!\nIn iOS Development, you will build your first iPhone app.',
+          frames: [
+            {
+              caption: 'The whole program is one line: print shows Hello! in the console. There is nothing else yet, no stored values and no name, which is exactly why it is a good place to start.',
+              expect: 'Hello!',
+              lines: [
+                ['print("Hello!")', WG_PRINT_HELLO],
+              ],
+            },
+            {
+              caption: 'A constant named visitor now stores the name Ada above the print. The greeting has not changed yet, because no line uses the new value; storing a value and using it are two separate steps.',
+              expect: 'Hello!',
+              lines: [
+                ['let visitor = "Ada"', WG_VISITOR],
+                ['', null],
+                ['print("Hello!")', WG_PRINT_HELLO],
+              ],
+            },
+            {
+              caption: 'The print line now builds its text from the stored name: interpolation places the value of visitor inside the greeting, so the console shows Hello, Ada! without the name being typed twice.',
+              expect: 'Hello, Ada!',
+              lines: [
+                ['let visitor = "Ada"', WG_VISITOR],
+                ['', null],
+                ['print("Hello, \\(visitor)!")', WG_PRINT_GREET],
+              ],
+            },
+            {
+              caption: 'A second constant stores the course name, iOS Development, ready for the line that is coming. The output still shows only the greeting, because storing a value never prints anything by itself.',
+              expect: 'Hello, Ada!',
+              lines: [
+                ['let visitor = "Ada"', WG_VISITOR],
+                ['let course = "iOS Development"', WG_COURSE],
+                ['', null],
+                ['print("Hello, \\(visitor)!")', WG_PRINT_GREET],
+              ],
+            },
+            {
+              caption: 'A third constant stores what the course will build: your first iPhone app. All three values the finished program needs are now in place, and the greeting line still works exactly as before.',
+              expect: 'Hello, Ada!',
+              lines: [
+                ['let visitor = "Ada"', WG_VISITOR],
+                ['let course = "iOS Development"', WG_COURSE],
+                ['let project = "your first iPhone app"', WG_PROJECT],
+                ['', null],
+                ['print("Hello, \\(visitor)!")', WG_PRINT_GREET],
+              ],
+            },
+            {
+              caption: 'A second print line joins the program and uses the two stored values at once. The finished run prints both lines in order: the greeting first, then what Ada will build in this course.',
+              expect: 'Hello, Ada!\nIn iOS Development, you will build your first iPhone app.',
+              lines: [
+                ['let visitor = "Ada"', WG_VISITOR],
+                ['let course = "iOS Development"', WG_COURSE],
+                ['let project = "your first iPhone app"', WG_PROJECT],
+                ['', null],
+                ['print("Hello, \\(visitor)!")', WG_PRINT_GREET],
+                ['print("In \\(course), you will build \\(project).")', WG_PRINT_BUILD],
+              ],
+            },
+          ],
+          tryIt: {
+            task: '<p>The starter stores the name Sam, then prints a plain Hello! that ignores it. Change the print line so it greets the stored name by interpolation, and the program prints Hello, Sam!</p>',
+            lines: [
+              ['let name = "Sam"', WG_TRY_NAME],
+              ['print("Hello!")', WG_TRY_PRINT_HELLO],
+            ],
+            solution: [
+              ['let name = "Sam"', WG_TRY_NAME],
+              ['print("Hello, \\(name)!")', WG_TRY_PRINT_GREET],
+            ],
+            expect: 'Hello, Sam!',
+          },
+        },
+        {
+          kind: 'example',
+          title: 'Change the greeting, then make it yours',
+          problem: '<p>Make a greeting screen you can change. Start with one line of text, style it, add a picture above it, then store the greeting in state so a button can swap in a brand-new greeting.</p>',
+          adapter: 'phone',
+          check: { tap: 'Surprise me', expectText: 'Welcome back, Ada!' },
+          frames: [
+            {
+              caption: 'The screen starts as a single line of text: the greeting, drawn by a Text view inside body. A preview at the bottom shows the struct, and every later frame adds one idea to this view.',
+              lines: [
+                ['import SwiftUI', WP_IMPORT],
+                ['', null],
+                ['struct WelcomeView: View {', WP_STRUCT],
+                ['    var body: some View {', WP_BODY],
+                ['        Text("Hello, Ada!")', WP_TEXT_LITERAL],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview {', WP_PREVIEW],
+                ['    WelcomeView()', WP_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'A font modifier goes under the text and makes the greeting a large title. Modifiers wrap the view written above them, so this one changes only the greeting and nothing else on the screen.',
+              lines: [
+                ['import SwiftUI', WP_IMPORT],
+                ['', null],
+                ['struct WelcomeView: View {', WP_STRUCT],
+                ['    var body: some View {', WP_BODY],
+                ['        Text("Hello, Ada!")', WP_TEXT_LITERAL],
+                ['            .font(.largeTitle)', WP_FONT],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview {', WP_PREVIEW],
+                ['    WelcomeView()', WP_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'A second modifier joins the chain and colors the greeting blue. The text is now big and colored, the two halves of emphasis, while the words themselves have not changed at all.',
+              lines: [
+                ['import SwiftUI', WP_IMPORT],
+                ['', null],
+                ['struct WelcomeView: View {', WP_STRUCT],
+                ['    var body: some View {', WP_BODY],
+                ['        Text("Hello, Ada!")', WP_TEXT_LITERAL],
+                ['            .font(.largeTitle)', WP_FONT],
+                ['            .foregroundStyle(.blue)', WP_FG],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview {', WP_PREVIEW],
+                ['    WelcomeView()', WP_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'A VStack now wraps the screen, and an Image showing a sun from SF Symbols takes the top spot. The greeting keeps its size and color, and the stack places the picture above the words.',
+              lines: [
+                ['import SwiftUI', WP_IMPORT],
+                ['', null],
+                ['struct WelcomeView: View {', WP_STRUCT],
+                ['    var body: some View {', WP_BODY],
+                ['        VStack(spacing: 12) {', WP_VSTACK],
+                ['            Image(systemName: "sun.max.fill")', WP_IMAGE],
+                ['                .font(.largeTitle)', WP_IMAGE_FONT],
+                ['            Text("Hello, Ada!")', WP_TEXT_LITERAL],
+                ['                .font(.largeTitle)', WP_FONT],
+                ['                .foregroundStyle(.blue)', WP_FG],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview {', WP_PREVIEW],
+                ['    WelcomeView()', WP_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'The greeting text moves into @State, and the Text view now shows that state instead of fixed words. The screen looks identical, but the words now live in one stored value the screen reads.',
+              lines: [
+                ['import SwiftUI', WP_IMPORT],
+                ['', null],
+                ['struct WelcomeView: View {', WP_STRUCT],
+                ['    @State private var greeting = "Hello, Ada!"', WP_STATE],
+                ['    var body: some View {', WP_BODY],
+                ['        VStack(spacing: 12) {', WP_VSTACK],
+                ['            Image(systemName: "sun.max.fill")', WP_IMAGE],
+                ['                .font(.largeTitle)', WP_IMAGE_FONT],
+                ['            Text(greeting)', WP_TEXT_STATE],
+                ['                .font(.largeTitle)', WP_FONT],
+                ['                .foregroundStyle(.blue)', WP_FG],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview {', WP_PREVIEW],
+                ['    WelcomeView()', WP_CALL],
+                ['}', null],
+              ],
+            },
+            {
+              caption: 'A Button joins the bottom of the stack. Its action replaces the greeting state with Welcome back, Ada!, and because the Text reads that same state, tapping Surprise me redraws the greeting on its own.',
+              lines: [
+                ['import SwiftUI', WP_IMPORT],
+                ['', null],
+                ['struct WelcomeView: View {', WP_STRUCT],
+                ['    @State private var greeting = "Hello, Ada!"', WP_STATE],
+                ['    var body: some View {', WP_BODY],
+                ['        VStack(spacing: 12) {', WP_VSTACK],
+                ['            Image(systemName: "sun.max.fill")', WP_IMAGE],
+                ['                .font(.largeTitle)', WP_IMAGE_FONT],
+                ['            Text(greeting)', WP_TEXT_STATE],
+                ['                .font(.largeTitle)', WP_FONT],
+                ['                .foregroundStyle(.blue)', WP_FG],
+                ['            Button("Surprise me") {', WP_BUTTON],
+                ['                greeting = "Welcome back, Ada!"', WP_ASSIGN],
+                ['            }', null],
+                ['        }', null],
+                ['    }', null],
+                ['}', null],
+                ['', null],
+                ['#Preview {', WP_PREVIEW],
+                ['    WelcomeView()', WP_CALL],
+                ['}', null],
+              ],
+            },
+          ],
+          tryIt: {
+            task: '<p>Back in plain console Swift, the starter stores the name Ada and prints a greeting that ignores it. Change the print line so it uses the stored name and prints Hello, Ada! Ready to build?</p>',
+            lines: [
+              ['let name = "Ada"', WP_TRY_NAME],
+              ['print("Hello!")', WP_TRY_PRINT_HELLO],
+            ],
+            solution: [
+              ['let name = "Ada"', WP_TRY_NAME],
+              ['print("Hello, \\(name)! Ready to build?")', WP_TRY_PRINT_GREET],
+            ],
+            expect: 'Hello, Ada! Ready to build?',
+          },
         },
       ],
     },

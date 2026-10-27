@@ -4435,6 +4435,609 @@ const lessonParadigms = {
   ],
 };
 
+// ---------------------------------------------------------------------------
+// Lesson: Worked Examples (shared five-part notes for its steps)
+// ---------------------------------------------------------------------------
+const VR_STRUCT = N('You declare it; the compiler records the shape.', 'Starts Settings, a struct holding a volume and a dark-mode flag.', 'At the top of the program, before any value is created.', 'Compile time; declaring the type runs no code.', 'Settings is plain data that gets copied around, which is what structs are for.');
+const VR_VOL = N('Every Settings value, which stores its own volume.', 'Declares the stored volume property.', 'Inside each Settings value.', 'Set by the memberwise initializer when a value is created.', 'A var, because the copy below changes its volume.');
+const VR_DARK = N('Every Settings value, which stores its own flag.', 'Declares the stored darkMode property.', 'Inside each Settings value, beside volume.', 'Set by the memberwise initializer.', 'Keeping both settings in one type keeps them together when copied.');
+const VR_A = N('The memberwise initializer Swift synthesized for Settings.', 'Creates the first settings value, volume 5 and dark mode off, and stores it in a.', 'A top-level variable holding the struct value itself.', 'At run time, when execution reaches this line.', 'a holds the value directly, not a reference to an object.');
+const VR_PA = N('The print function, reading a.', 'Prints the volume stored in a: 5.', 'Top-level code, writing to the console.', 'Right after a is created, and again after the copy changes.', 'This is the baseline the copy experiment compares against.');
+const VR_B = N('Assignment, copying the struct value.', 'Copies the whole Settings value from a into a new variable b.', 'A second top-level variable; a and b now hold independent copies.', 'At run time, after a exists.', 'Struct assignment copies, so b starts equal to a but shares nothing with it.');
+const VR_PB = N('The print function, reading b.', 'Prints the volume stored in b.', 'Top-level code, writing to the console.', 'Right after the copy is made, and again after b changes.', 'Equal values at first make the later difference meaningful.');
+const VR_BSET = N('Your code, changing only the copy.', 'Sets the volume of b to 9. The value in a is untouched.', 'Changes the struct stored in b, in place.', 'After both prints of the starting value.', 'This is the experiment: if assignment copied, a keeps 5; if it shared, a would change too.');
+const VR_CLASS = N('You declare it; instances live on the heap.', 'Starts Profile, a class holding a name.', 'Under the struct part of the program.', 'Compile time; the class is declared before its first instance.', 'A profile has identity that several names can share, which is what classes are for.');
+const VR_NAME = N('Every Profile object, which stores its own name on the heap.', 'Declares the stored name property the initializer fills.', 'Inside each Profile object.', 'Assigned once in init, changeable later through any reference.', 'A var, because the sharing experiment renames through the second reference.');
+const VR_INIT = N('You write it; classes get no memberwise initializer.', 'Creates a Profile by copying the name argument into the object.', 'Inside the class, on one line like the Account example in this module.', 'Each time Profile(name:) is called.', 'self.name is the property; name alone is the parameter.');
+const VR_FIRST = N('Your initializer, plus ARC counting the new reference.', 'Creates one Profile object for Ana and stores a reference to it in first.', 'A top-level constant holding a reference, not the object itself.', 'At run time, when execution reaches this line.', 'let fixes the reference; the object it points at can still change.');
+const VR_PF = N('The print function, reading through first.', 'Prints the name on the shared object: Ana at first, Ana Maria at the end.', 'Top-level code, writing to the console.', 'Right after the object is created, and again at the very end.', 'Reading through first is how the final frame proves the rename is shared.');
+const VR_SECOND = N('Assignment, copying a reference.', 'Makes second point at the very same Profile object as first. No new object is created.', 'A second top-level constant; the heap still holds one object.', 'At run time, after first exists.', 'This single line is the class counterpart of the struct copy above.');
+const VR_PS = N('The print function, reading through second.', 'Prints the name seen through the second reference.', 'Top-level code, writing to the console.', 'Right after second is created, and again at the very end.', 'Both references read the same object, so both prints always agree.');
+const VR_RENAME = N('Your code, changing the object through second.', 'Sets the shared object name to Ana Maria through the second reference.', 'Changes the one Profile object on the heap.', 'After both references exist and have printed.', 'If references share the object, first must see this change too; the next prints test that.');
+const VT_STRUCT = N('You declare it; the compiler records the shape.', 'Starts Point, a struct with a single x coordinate.', 'At the top of the program.', 'Compile time; no code runs.', 'A one-property struct keeps the copy experiment unmistakable.');
+const VT_X = N('Every Point value, which stores its own x.', 'Declares the stored x property.', 'Inside each Point value.', 'Set by the memberwise initializer.', 'A var, because the copy changes its x below.');
+const VT_P1 = N('The memberwise initializer Swift synthesized for Point.', 'Creates a point at x 1 and stores it in p1.', 'A top-level variable holding the value itself.', 'At run time, when execution reaches this line.', 'p1 holds the value directly, so copying it copies the number.');
+const VT_P2 = N('Assignment, copying the struct value.', 'Copies the point from p1 into p2.', 'A second top-level variable with its own copy.', 'At run time, after p1 exists.', 'This copy is what the task asks you to test.');
+const VT_SET = N('Your code, changing only the copy.', 'Sets the copy x to 7; p1 keeps its own 1.', 'Changes the value stored in p2.', 'After the copy is made.', 'If structs copied, p1 still prints 1; the solution prints both to prove it.');
+const VT_PRINT1 = N('The print function, reading p1.', 'Prints the x of the original point.', 'Top-level code.', 'After the copy was changed.', 'Printing the original is the evidence the copy is independent.');
+const VT_PRINT2 = N('The print function, reading p2.', 'Prints the x of the changed copy: 7.', 'The last line of the solution.', 'After the original has printed.', 'Together the two lines show one change and one untouched original.');
+const OS_ENUM = N('You declare it; the compiler records the states.', 'Starts OrderState, an enum for the life of one order.', 'At the top of the program, before the function that uses it.', 'Compile time; declaring it runs no code.', 'An enum makes an order exactly one of the listed states, never a typo.');
+const OS_CASES1 = N('The OrderState type, listing its first states.', 'Names placed and paid, the two states the first frame needs.', 'The only line inside the enum, for now.', 'Compile time; the list grows in the next frame.', 'Starting with two states keeps the first frame about the starting state alone.');
+const OS_VAR = N('Your top-level code; the calls below reassign it.', 'Creates an order in the placed state.', 'Top-level code, under the function.', 'At run time, before any move is requested.', 'A var, because every request call reassigns it with the returned state.');
+const OS_PRINT = N('The print function, reading the caller variable.', 'Prints the state the order is in after the last request.', 'Top-level code, after each request call.', 'After the call above it, so it shows the result.', 'Printing after each request pairs every move or refusal with the state it left behind.');
+const OS_CASES2 = N('The OrderState type, completing its list.', 'Names all four states in life order: placed, paid, shipped, delivered.', 'The only line inside the enum.', 'Compile time; the function below is written against this full list.', 'The full list is what makes illegal moves, like shipped back to paid, expressible and refusable.');
+const OS_FUNC = N('You declare it; the call sites below run it.', 'Declares request, which tries to move an order from one state to a requested next state and returns the resulting state.', 'Under the enum, before any call.', 'Compiled first; the body runs once per call.', 'One function guarding every move means no call site can skip the legality check.');
+const OS_ALLOWED1 = N('The request function, working out legality.', 'Starts the allowed test: placed may go to paid, or paid may go to shipped.', 'The first line inside request.', 'At the start of every request call.', 'Writing the legal moves as conditions keeps the machine rules in one place.');
+const OS_ALLOWED2 = N('The same allowed test, continued on the next line.', 'Adds another legal move pairing to the test: paid to shipped on this line, then shipped to delivered on the last one.', 'A continuation line of the allowed expression.', 'Read as part of the same expression, at the start of each call.', 'Only three pairings make allowed true; every other pairing, including going backwards, is refused.');
+const OS_IF = N('The request function, branching on the test.', 'Opens the branch taken when the requested move is legal.', 'Inside request, after the allowed test.', 'Once per call, when allowed is true.', 'Legal moves share one path: print the move, then return the new state.');
+const OS_MOVED = N('The print function, inside the legal branch.', 'Prints the move that just happened, naming the old and new states.', 'Inside the if in request.', 'At the moment a legal move is accepted.', 'Logging accepted moves builds the order history the final frame shows.');
+const OS_RETNEXT = N('The request function, handing back the result.', 'Returns the requested state, so the caller variable advances.', 'The last line of the legal branch.', 'Once per accepted move.', 'Returning the new state makes the call site a simple assignment.');
+const OS_REFUSED = N('The print function, on the refusal path.', 'Prints that the move was refused, naming both states so the reason is visible.', 'Inside request, after the if block.', 'Once per call whose move is illegal.', 'A refusal is a normal outcome here, printed and handled, not an error that stops the program.');
+const OS_RETSTATE = N('The request function, handing back the unchanged result.', 'Returns the original state, so the caller variable stays where it was.', 'The last line of request.', 'Once per refused move.', 'Returning the same state makes a refused move a no-op for the caller.');
+const OS_CALL_PAID = N('Your top-level code, calling request.', 'Requests a move to paid and stores the returned state back in order.', 'Top-level code, at a request call site.', 'At run time, each time this line runs.', 'The assignment writes back whatever request returned, so a refusal leaves the order unchanged.');
+const OS_CALL_SHIP = N('Your top-level code, calling request.', 'Requests the move from paid to shipped and stores the result.', 'Top-level code, the second request.', 'After the order has been paid.', 'Paying first is what makes this move legal.');
+const OS_CALL_DELIVER = N('Your top-level code, calling request.', 'Requests the final move from shipped to delivered and stores the result.', 'Top-level code, the last request.', 'After the refused attempt, in story order.', 'Delivered is the end of the machine: no move out of it is legal.');
+const OT_ENUM = N('You declare it; the compiler records the states.', 'Starts a small order enum for the tryIt.', 'At the top of the program.', 'Compile time; no code runs.', 'The tryIt reuses the frame machine in miniature.');
+const OT_CASES = N('The OrderState type, listing its states.', 'Names the states this small program uses.', 'The only line inside the enum.', 'Compile time; the solution list has one more case.', 'The starter lists two states; the solution adds shipped.');
+const OT_VAR = N('Your top-level code; the next lines reassign it.', 'Creates an order in the placed state.', 'Top-level code.', 'At run time, before the moves.', 'A var, because the move lines reassign it.');
+const OT_MOVE1 = N('Your top-level code, moving the order directly.', 'Assigns the paid state to the order.', 'Top-level code, under the creation line.', 'At run time, once.', 'The tryIt moves the value by hand to keep the starter tiny.');
+const OT_PRINT = N('The print function, reading the order.', 'Prints the state the order ended in.', 'The last line of the program.', 'After the moves.', 'The printed state is the proof the moves happened in order.');
+const OT_MOVE2 = N('Your top-level code, moving the order again.', 'Assigns the shipped state to the order.', 'Top-level code, in the solution only.', 'At run time, after the paid move.', 'The second move is the step the task asks you to add.');
+const SG_PROTO = N('You declare it; conforming types implement it.', 'Starts the Summarizable protocol: anything describable in one line.', 'At the top of the program, before the types that adopt it.', 'Compile time; a protocol has no code of its own to run.', 'A protocol names a capability, so the generic helper later can rely on it.');
+const SG_REQ = N('The Summarizable protocol, stating its one requirement.', 'Requires a readable summary property of type String, with no body.', 'The only line inside the protocol.', 'Compile time; conforming types are checked against it.', 'One small requirement is easy to adopt and enough for the helper to do its job.');
+const SG_BOOK = N('You declare it; the values below are Books.', 'Starts Book, a struct adopting Summarizable.', 'Under the protocol.', 'Compile time; the compiler checks the summary property exists.', 'A book is plain data, so a struct that also gains the shared capability.');
+const SG_BTITLE = N('Every Book value, which stores its own title.', 'Declares the stored title property the summary reads.', 'Inside each Book value.', 'Set by the memberwise initializer.', 'The summary is built from the title, so the title is the stored fact.');
+const SG_BPAGES = N('Every Book value, which stores its own page count.', 'Declares the stored pages property the summary reads.', 'Inside each Book value, beside title.', 'Set by the memberwise initializer.', 'Storing the count, not a formatted string, keeps the data reusable.');
+const SG_BSUM = N('The Book type, fulfilling the protocol requirement.', 'Computes the summary from title and pages in one expression: Dune, 412 pages.', 'Inside Book, as a computed property.', 'Each time summary is read.', 'A single-expression body returns its value without writing return.');
+const SG_LETBOOK = N('The memberwise initializer Swift synthesized for Book.', 'Creates the Dune book with 412 pages.', 'A top-level constant.', 'At run time, when execution reaches this line.', 'A let, because this program never changes the book.');
+const SG_PBOOK = N('The print function, reading the computed property.', 'Prints the book summary through the protocol requirement.', 'Top-level code.', 'After the values exist; in the tryIt it follows the book creation.', 'Printing directly first proves each conformer works before the helper exists.');
+const SG_POD = N('You declare it; the values below are Podcasts.', 'Starts Podcast, a second struct adopting Summarizable.', 'Under Book.', 'Compile time; checked against the same requirement.', 'A second, unrelated type with the same capability is what makes the helper worthwhile.');
+const SG_PTITLE = N('Every Podcast value, which stores its own title.', 'Declares the stored title property the summary reads.', 'Inside each Podcast value.', 'Set by the memberwise initializer.', 'The same property name as the Book title, by design: both types describe media.');
+const SG_PMIN = N('Every Podcast value, which stores its own length.', 'Declares the stored minutes property the summary reads.', 'Inside each Podcast value, beside title.', 'Set by the memberwise initializer.', 'Minutes are the podcast counterpart of the book pages.');
+const SG_PSUM = N('The Podcast type, fulfilling the protocol requirement.', 'Computes the summary from title and minutes: Swift Talk, 45 minutes.', 'Inside Podcast, as a computed property.', 'Each time summary is read.', 'Each type formats its own facts; the protocol only demands the result.');
+const SG_LETPOD = N('The memberwise initializer Swift synthesized for Podcast.', 'Creates the Swift Talk podcast with 45 minutes.', 'A top-level constant, under the book.', 'At run time, after the book exists.', 'Two values of two different types, ready for the shared helper.');
+const SG_FUNC = N('You declare it; the call sites below run it.', 'Declares announce, a generic function whose item may be any Summarizable type, marked by the constraint after the name.', 'Under the values, before its call sites.', 'Compiled first; the body runs once per call.', 'The constraint T: Summarizable is the whole trick: one function, every conforming type, fully type-checked.');
+const SG_FBODY = N('The announce function, reading through the protocol.', 'Prints the item summary with a Now showing prefix.', 'The only line inside announce.', 'Once per call.', 'The body only touches summary, the one thing the constraint guarantees.');
+const SG_ABOOK = N('Your top-level code, calling the generic helper.', 'Calls announce with a book; the compiler fixes T to Book for this call.', 'Top-level code, at an announce call site.', 'At run time, after the function is declared.', 'No type name is written at the call: Swift infers it from the argument.');
+const SG_APOD = N('Your top-level code, calling the generic helper again.', 'Calls announce with the podcast; here T is Podcast.', 'Top-level code, the second announce call.', 'Right after the book call.', 'Same function, different concrete type: that reuse is the point of generics.');
+const SG_SHELF = N('Your top-level code, building the mixed collection.', 'Builds an array of any Summarizable holding the book and the podcast together.', 'Top-level code, after the announce calls.', 'At run time, once.', 'The any keyword boxes each value as the protocol type, so unlike types can share one array.');
+const SG_FOR = N('The for-in loop, visiting the shelf.', 'Starts a loop over the mixed array, binding each boxed value to item.', 'Top-level code, under the shelf line.', 'At run time; the body runs once per element.', 'Looping the box works because every element promises a summary.');
+const SG_PITEM = N('The print function, reading through the protocol.', 'Prints the summary of whichever conformer item holds this visit.', 'Inside the loop.', 'Once per element, in shelf order.', 'The same line prints book and podcast lines in turn, through the one protocol promise.');
+const SG_LETNOVEL = N('The memberwise initializer Swift synthesized for Book.', 'Creates a second book, Emma with 320 pages.', 'A top-level constant, just before the shelf.', 'At run time, after the podcast exists.', 'A third value shows the shelf mixing not just types but counts of them.');
+const SG_SHELF2 = N('Your top-level code, rebuilding the mixed collection.', 'Builds the shelf again with all three values: two books around one podcast.', 'Top-level code, replacing the two-item shelf line.', 'At run time, once.', 'The loop below does not change at all, which is the payoff of the protocol.');
+const ST_BOOK = N('You declare it; the value below is a Book.', 'Starts a small Book struct adopting Summarizable.', 'Under the protocol.', 'Compile time; checked against the requirement.', 'The tryIt keeps one conformer so the helper is the only new idea.');
+const ST_BTITLE = N('Every Book value, which stores its own title.', 'Declares the stored title the summary reads.', 'Inside each Book value.', 'Set by the memberwise initializer.', 'One stored fact is enough for this summary.');
+const ST_BSUM = N('The Book type, fulfilling the protocol requirement.', 'Computes the summary as the title plus the words a book.', 'Inside Book, on one line.', 'Each time summary is read.', 'A fixed suffix keeps the tryIt output easy to predict.');
+const ST_LET = N('The memberwise initializer Swift synthesized for Book.', 'Creates the Dune book.', 'A top-level constant.', 'At run time, when execution reaches this line.', 'A let, because the program never changes it.');
+
+const lessonWorkedExamples = {
+  id: 'types-worked-examples',
+  title: 'Worked Examples',
+  steps: [
+    {
+      kind: 'example',
+      title: 'Struct copy versus class sharing, side by side',
+      problem: '<p>Two assignments look identical but behave oppositely. Assign a settings struct to a second name and change the copy; then assign a profile class instance to a second name and change it. The prints and the diagram show which one shares.</p>',
+      adapter: 'diagram',
+      diagram: 'value-reference',
+      frames: [
+        {
+          caption: 'A Settings struct is declared and its first value, a, is created with volume 5. The diagram shows one value box; the b box is empty because no copy exists yet.',
+          diagram: { aTitle: 'a: Settings', a: ['volume: 5', 'darkMode: false'], bTitle: 'b: Settings', b: [], heap: null, note: 'One struct value exists so far.' },
+          expect: 'a volume: 5',
+          lines: [
+            ['struct Settings {', VR_STRUCT],
+            ['    var volume: Int', VR_VOL],
+            ['    var darkMode: Bool', VR_DARK],
+            ['}', null],
+            ['var a = Settings(volume: 5, darkMode: false)', VR_A],
+            ['print("a volume: \\(a.volume)")', VR_PA],
+          ],
+        },
+        {
+          caption: 'Assigning a to b copies the whole struct: two independent boxes now hold volume 5. The print from b matches a, so the change in the next frame will be meaningful.',
+          diagram: { aTitle: 'a: Settings', a: ['volume: 5', 'darkMode: false'], bTitle: 'b: Settings', b: ['volume: 5', 'darkMode: false'], heap: null, note: 'Two independent copies, equal for now.' },
+          expect: 'a volume: 5\nb volume: 5',
+          lines: [
+            ['struct Settings {', VR_STRUCT],
+            ['    var volume: Int', VR_VOL],
+            ['    var darkMode: Bool', VR_DARK],
+            ['}', null],
+            ['var a = Settings(volume: 5, darkMode: false)', VR_A],
+            ['print("a volume: \\(a.volume)")', VR_PA],
+            ['var b = a', VR_B],
+            ['print("b volume: \\(b.volume)")', VR_PB],
+          ],
+        },
+        {
+          caption: 'Only the copy changes: b moves to volume 9 while a stays at 5, and the prints prove it. The diagram highlights the b box as the one that changed.',
+          diagram: { aTitle: 'a: Settings', a: ['volume: 5', 'darkMode: false'], bTitle: 'b: Settings', b: ['volume: 9', 'darkMode: false'], heap: null, changed: 'b', note: 'Only the copy changed; a is untouched.' },
+          expect: 'a volume: 5\nb volume: 5\na volume: 5\nb volume: 9',
+          lines: [
+            ['struct Settings {', VR_STRUCT],
+            ['    var volume: Int', VR_VOL],
+            ['    var darkMode: Bool', VR_DARK],
+            ['}', null],
+            ['var a = Settings(volume: 5, darkMode: false)', VR_A],
+            ['print("a volume: \\(a.volume)")', VR_PA],
+            ['var b = a', VR_B],
+            ['print("b volume: \\(b.volume)")', VR_PB],
+            ['b.volume = 9', VR_BSET],
+            ['print("a volume: \\(a.volume)")', VR_PA],
+            ['print("b volume: \\(b.volume)")', VR_PB],
+          ],
+        },
+        {
+          caption: 'A Profile class joins the program and one object is created on the heap for Ana. The diagram switches shape: first is a reference, and the object lives in the heap box.',
+          diagram: { aTitle: 'first: Profile', a: ['points to the heap object'], heapTitle: 'Heap: Profile', heap: ['name: "Ana"'], shared: false, note: 'One object on the heap, one reference so far.' },
+          expect: 'a volume: 5\nb volume: 5\na volume: 5\nb volume: 9\nfirst: Ana',
+          lines: [
+            ['struct Settings {', VR_STRUCT],
+            ['    var volume: Int', VR_VOL],
+            ['    var darkMode: Bool', VR_DARK],
+            ['}', null],
+            ['var a = Settings(volume: 5, darkMode: false)', VR_A],
+            ['print("a volume: \\(a.volume)")', VR_PA],
+            ['var b = a', VR_B],
+            ['print("b volume: \\(b.volume)")', VR_PB],
+            ['b.volume = 9', VR_BSET],
+            ['print("a volume: \\(a.volume)")', VR_PA],
+            ['print("b volume: \\(b.volume)")', VR_PB],
+            ['class Profile {', VR_CLASS],
+            ['    var name: String', VR_NAME],
+            ['    init(name: String) { self.name = name }', VR_INIT],
+            ['}', null],
+            ['var first = Profile(name: "Ana")', VR_FIRST],
+            ['print("first: \\(first.name)")', VR_PF],
+          ],
+        },
+        {
+          caption: 'Assigning first to second copies the reference, not the object: the diagram shows both names pointing at one heap box, and the print through second reads the same name.',
+          diagram: { aTitle: 'first + second: Profile', a: ['both point to the heap object'], heapTitle: 'Heap: Profile', heap: ['name: "Ana"'], shared: true, note: 'Two references, one object.' },
+          expect: 'a volume: 5\nb volume: 5\na volume: 5\nb volume: 9\nfirst: Ana\nsecond: Ana',
+          lines: [
+            ['struct Settings {', VR_STRUCT],
+            ['    var volume: Int', VR_VOL],
+            ['    var darkMode: Bool', VR_DARK],
+            ['}', null],
+            ['var a = Settings(volume: 5, darkMode: false)', VR_A],
+            ['print("a volume: \\(a.volume)")', VR_PA],
+            ['var b = a', VR_B],
+            ['print("b volume: \\(b.volume)")', VR_PB],
+            ['b.volume = 9', VR_BSET],
+            ['print("a volume: \\(a.volume)")', VR_PA],
+            ['print("b volume: \\(b.volume)")', VR_PB],
+            ['class Profile {', VR_CLASS],
+            ['    var name: String', VR_NAME],
+            ['    init(name: String) { self.name = name }', VR_INIT],
+            ['}', null],
+            ['var first = Profile(name: "Ana")', VR_FIRST],
+            ['print("first: \\(first.name)")', VR_PF],
+            ['var second = first', VR_SECOND],
+            ['print("second: \\(second.name)")', VR_PS],
+          ],
+        },
+        {
+          caption: 'Renaming through second changes the heap object, so reading through first shows Ana Maria too. One object, two names: the exact opposite of the struct copy above.',
+          diagram: { aTitle: 'first + second: Profile', a: ['both point to the heap object'], heapTitle: 'Heap: Profile', heap: ['name: "Ana Maria"'], shared: true, changed: 'heap', note: 'The rename through second changed the one object.' },
+          expect: 'a volume: 5\nb volume: 5\na volume: 5\nb volume: 9\nfirst: Ana\nsecond: Ana\nfirst: Ana Maria\nsecond: Ana Maria',
+          lines: [
+            ['struct Settings {', VR_STRUCT],
+            ['    var volume: Int', VR_VOL],
+            ['    var darkMode: Bool', VR_DARK],
+            ['}', null],
+            ['var a = Settings(volume: 5, darkMode: false)', VR_A],
+            ['print("a volume: \\(a.volume)")', VR_PA],
+            ['var b = a', VR_B],
+            ['print("b volume: \\(b.volume)")', VR_PB],
+            ['b.volume = 9', VR_BSET],
+            ['print("a volume: \\(a.volume)")', VR_PA],
+            ['print("b volume: \\(b.volume)")', VR_PB],
+            ['class Profile {', VR_CLASS],
+            ['    var name: String', VR_NAME],
+            ['    init(name: String) { self.name = name }', VR_INIT],
+            ['}', null],
+            ['var first = Profile(name: "Ana")', VR_FIRST],
+            ['print("first: \\(first.name)")', VR_PF],
+            ['var second = first', VR_SECOND],
+            ['print("second: \\(second.name)")', VR_PS],
+            ['second.name = "Ana Maria"', VR_RENAME],
+            ['print("first: \\(first.name)")', VR_PF],
+            ['print("second: \\(second.name)")', VR_PS],
+          ],
+        },
+      ],
+      tryIt: {
+        task: '<p>The starter copies a Point into p2 and changes the copy to x 7, then prints only the original. Add the missing print so the output proves both halves of the experiment: the original still at 1 and the copy at 7.</p>',
+        lines: [
+          ['struct Point {', VT_STRUCT],
+          ['    var x: Int', VT_X],
+          ['}', null],
+          ['var p1 = Point(x: 1)', VT_P1],
+          ['var p2 = p1', VT_P2],
+          ['p2.x = 7', VT_SET],
+          ['print("p1: \\(p1.x)")', VT_PRINT1],
+        ],
+        solution: [
+          ['struct Point {', VT_STRUCT],
+          ['    var x: Int', VT_X],
+          ['}', null],
+          ['var p1 = Point(x: 1)', VT_P1],
+          ['var p2 = p1', VT_P2],
+          ['p2.x = 7', VT_SET],
+          ['print("p1: \\(p1.x)")', VT_PRINT1],
+          ['print("p2: \\(p2.x)")', VT_PRINT2],
+        ],
+        expect: 'p1: 1\np2: 7',
+      },
+    },
+    {
+      kind: 'example',
+      title: 'An order state machine that refuses bad moves',
+      problem: '<p>An order may only move forward: placed to paid to shipped to delivered. Build a state machine that accepts each legal move, refuses the illegal one it is handed, and logs everything, so a full order history reads from the console.</p>',
+      adapter: 'trace',
+      expect: 'State: placed\nMoved: placed -> paid\nState: paid\nMoved: paid -> shipped\nState: shipped\nRefused: shipped -> paid\nState: shipped\nMoved: shipped -> delivered\nState: delivered',
+      frames: [
+        {
+          caption: 'The machine starts with two states and one new order sitting in placed. The print confirms the starting state; no moves have been requested yet, so nothing can be refused.',
+          expect: 'State: placed',
+          lines: [
+            ['enum OrderState {', OS_ENUM],
+            ['    case placed, paid', OS_CASES1],
+            ['}', null],
+            ['var order = OrderState.placed', OS_VAR],
+            ['print("State: \\(order)")', OS_PRINT],
+          ],
+        },
+        {
+          caption: 'The enum gains shipped and delivered, and the request function arrives with its three legal moves. The order has not moved: this frame installs the rules, not the journey.',
+          expect: 'State: placed',
+          lines: [
+            ['enum OrderState {', OS_ENUM],
+            ['    case placed, paid, shipped, delivered', OS_CASES2],
+            ['}', null],
+            ['func request(_ state: OrderState, to next: OrderState) -> OrderState {', OS_FUNC],
+            ['    let allowed = (state == .placed && next == .paid)', OS_ALLOWED1],
+            ['        || (state == .paid && next == .shipped)', OS_ALLOWED2],
+            ['        || (state == .shipped && next == .delivered)', OS_ALLOWED2],
+            ['    if allowed {', OS_IF],
+            ['        print("Moved: \\(state) -> \\(next)")', OS_MOVED],
+            ['        return next', OS_RETNEXT],
+            ['    }', null],
+            ['    print("Refused: \\(state) -> \\(next)")', OS_REFUSED],
+            ['    return state', OS_RETSTATE],
+            ['}', null],
+            ['var order = OrderState.placed', OS_VAR],
+            ['print("State: \\(order)")', OS_PRINT],
+          ],
+        },
+        {
+          caption: 'The first request moves the order from placed to paid, and the log prints the accepted move. The state print after it confirms the variable advanced to paid.',
+          expect: 'State: placed\nMoved: placed -> paid\nState: paid',
+          lines: [
+            ['enum OrderState {', OS_ENUM],
+            ['    case placed, paid, shipped, delivered', OS_CASES2],
+            ['}', null],
+            ['func request(_ state: OrderState, to next: OrderState) -> OrderState {', OS_FUNC],
+            ['    let allowed = (state == .placed && next == .paid)', OS_ALLOWED1],
+            ['        || (state == .paid && next == .shipped)', OS_ALLOWED2],
+            ['        || (state == .shipped && next == .delivered)', OS_ALLOWED2],
+            ['    if allowed {', OS_IF],
+            ['        print("Moved: \\(state) -> \\(next)")', OS_MOVED],
+            ['        return next', OS_RETNEXT],
+            ['    }', null],
+            ['    print("Refused: \\(state) -> \\(next)")', OS_REFUSED],
+            ['    return state', OS_RETSTATE],
+            ['}', null],
+            ['var order = OrderState.placed', OS_VAR],
+            ['print("State: \\(order)")', OS_PRINT],
+            ['order = request(order, to: .paid)', OS_CALL_PAID],
+            ['print("State: \\(order)")', OS_PRINT],
+          ],
+        },
+        {
+          caption: 'The second request moves the order from paid to shipped, the only legal way forward. Two moves in, the machine is halfway through its one allowed path.',
+          expect: 'State: placed\nMoved: placed -> paid\nState: paid\nMoved: paid -> shipped\nState: shipped',
+          lines: [
+            ['enum OrderState {', OS_ENUM],
+            ['    case placed, paid, shipped, delivered', OS_CASES2],
+            ['}', null],
+            ['func request(_ state: OrderState, to next: OrderState) -> OrderState {', OS_FUNC],
+            ['    let allowed = (state == .placed && next == .paid)', OS_ALLOWED1],
+            ['        || (state == .paid && next == .shipped)', OS_ALLOWED2],
+            ['        || (state == .shipped && next == .delivered)', OS_ALLOWED2],
+            ['    if allowed {', OS_IF],
+            ['        print("Moved: \\(state) -> \\(next)")', OS_MOVED],
+            ['        return next', OS_RETNEXT],
+            ['    }', null],
+            ['    print("Refused: \\(state) -> \\(next)")', OS_REFUSED],
+            ['    return state', OS_RETSTATE],
+            ['}', null],
+            ['var order = OrderState.placed', OS_VAR],
+            ['print("State: \\(order)")', OS_PRINT],
+            ['order = request(order, to: .paid)', OS_CALL_PAID],
+            ['print("State: \\(order)")', OS_PRINT],
+            ['order = request(order, to: .shipped)', OS_CALL_SHIP],
+            ['print("State: \\(order)")', OS_PRINT],
+          ],
+        },
+        {
+          caption: 'Now a bad move: the program asks to go from shipped back to paid. The request refuses, prints why in the log, and the order stays exactly where it was.',
+          expect: 'State: placed\nMoved: placed -> paid\nState: paid\nMoved: paid -> shipped\nState: shipped\nRefused: shipped -> paid\nState: shipped',
+          lines: [
+            ['enum OrderState {', OS_ENUM],
+            ['    case placed, paid, shipped, delivered', OS_CASES2],
+            ['}', null],
+            ['func request(_ state: OrderState, to next: OrderState) -> OrderState {', OS_FUNC],
+            ['    let allowed = (state == .placed && next == .paid)', OS_ALLOWED1],
+            ['        || (state == .paid && next == .shipped)', OS_ALLOWED2],
+            ['        || (state == .shipped && next == .delivered)', OS_ALLOWED2],
+            ['    if allowed {', OS_IF],
+            ['        print("Moved: \\(state) -> \\(next)")', OS_MOVED],
+            ['        return next', OS_RETNEXT],
+            ['    }', null],
+            ['    print("Refused: \\(state) -> \\(next)")', OS_REFUSED],
+            ['    return state', OS_RETSTATE],
+            ['}', null],
+            ['var order = OrderState.placed', OS_VAR],
+            ['print("State: \\(order)")', OS_PRINT],
+            ['order = request(order, to: .paid)', OS_CALL_PAID],
+            ['print("State: \\(order)")', OS_PRINT],
+            ['order = request(order, to: .shipped)', OS_CALL_SHIP],
+            ['print("State: \\(order)")', OS_PRINT],
+            ['order = request(order, to: .paid)', OS_CALL_PAID],
+            ['print("State: \\(order)")', OS_PRINT],
+          ],
+        },
+        {
+          caption: 'The final request completes the path: shipped to delivered. The finished log shows three accepted moves and one refusal, which is the whole machine behaving as designed.',
+          expect: 'State: placed\nMoved: placed -> paid\nState: paid\nMoved: paid -> shipped\nState: shipped\nRefused: shipped -> paid\nState: shipped\nMoved: shipped -> delivered\nState: delivered',
+          lines: [
+            ['enum OrderState {', OS_ENUM],
+            ['    case placed, paid, shipped, delivered', OS_CASES2],
+            ['}', null],
+            ['func request(_ state: OrderState, to next: OrderState) -> OrderState {', OS_FUNC],
+            ['    let allowed = (state == .placed && next == .paid)', OS_ALLOWED1],
+            ['        || (state == .paid && next == .shipped)', OS_ALLOWED2],
+            ['        || (state == .shipped && next == .delivered)', OS_ALLOWED2],
+            ['    if allowed {', OS_IF],
+            ['        print("Moved: \\(state) -> \\(next)")', OS_MOVED],
+            ['        return next', OS_RETNEXT],
+            ['    }', null],
+            ['    print("Refused: \\(state) -> \\(next)")', OS_REFUSED],
+            ['    return state', OS_RETSTATE],
+            ['}', null],
+            ['var order = OrderState.placed', OS_VAR],
+            ['print("State: \\(order)")', OS_PRINT],
+            ['order = request(order, to: .paid)', OS_CALL_PAID],
+            ['print("State: \\(order)")', OS_PRINT],
+            ['order = request(order, to: .shipped)', OS_CALL_SHIP],
+            ['print("State: \\(order)")', OS_PRINT],
+            ['order = request(order, to: .paid)', OS_CALL_PAID],
+            ['print("State: \\(order)")', OS_PRINT],
+            ['order = request(order, to: .delivered)', OS_CALL_DELIVER],
+            ['print("State: \\(order)")', OS_PRINT],
+          ],
+        },
+      ],
+      tryIt: {
+        task: '<p>The starter walks an order from placed to paid by direct assignment. Extend it: add the shipped case to the enum, move the order on to shipped, and let the final print show the new end state.</p>',
+        lines: [
+          ['enum OrderState {', OT_ENUM],
+          ['    case placed, paid', OT_CASES],
+          ['}', null],
+          ['var order = OrderState.placed', OT_VAR],
+          ['order = .paid', OT_MOVE1],
+          ['print("State: \\(order)")', OT_PRINT],
+        ],
+        solution: [
+          ['enum OrderState {', OT_ENUM],
+          ['    case placed, paid, shipped', OT_CASES],
+          ['}', null],
+          ['var order = OrderState.placed', OT_VAR],
+          ['order = .paid', OT_MOVE1],
+          ['order = .shipped', OT_MOVE2],
+          ['print("State: \\(order)")', OT_PRINT],
+        ],
+        expect: 'State: shipped',
+      },
+    },
+    {
+      kind: 'example',
+      title: 'One helper for many types: protocol plus generics',
+      problem: '<p>Books and podcasts are different types, but a shelf should announce either one. Define a protocol with a summary property, adopt it in both types, write one generic helper constrained to the protocol, and loop a mixed collection with it.</p>',
+      adapter: 'trace',
+      expect: 'Dune, 412 pages\nNow showing: Dune, 412 pages\nNow showing: Swift Talk, 45 minutes\nDune, 412 pages\nSwift Talk, 45 minutes\nEmma, 320 pages',
+      frames: [
+        {
+          caption: 'The Summarizable protocol asks for one summary property, and Book adopts it, computing its line from title and pages. The print shows the promise kept for the first type.',
+          expect: 'Dune, 412 pages',
+          lines: [
+            ['protocol Summarizable {', SG_PROTO],
+            ['    var summary: String { get }', SG_REQ],
+            ['}', null],
+            ['struct Book: Summarizable {', SG_BOOK],
+            ['    let title: String', SG_BTITLE],
+            ['    let pages: Int', SG_BPAGES],
+            ['    var summary: String { "\\(title), \\(pages) pages" }', SG_BSUM],
+            ['}', null],
+            ['let book = Book(title: "Dune", pages: 412)', SG_LETBOOK],
+            ['print(book.summary)', SG_PBOOK],
+          ],
+        },
+        {
+          caption: 'Podcast adopts the same protocol with different facts: title and minutes. Both values now exist, but nothing prints the podcast yet; the helper will be its first showcase.',
+          expect: 'Dune, 412 pages',
+          lines: [
+            ['protocol Summarizable {', SG_PROTO],
+            ['    var summary: String { get }', SG_REQ],
+            ['}', null],
+            ['struct Book: Summarizable {', SG_BOOK],
+            ['    let title: String', SG_BTITLE],
+            ['    let pages: Int', SG_BPAGES],
+            ['    var summary: String { "\\(title), \\(pages) pages" }', SG_BSUM],
+            ['}', null],
+            ['struct Podcast: Summarizable {', SG_POD],
+            ['    let title: String', SG_PTITLE],
+            ['    let minutes: Int', SG_PMIN],
+            ['    var summary: String { "\\(title), \\(minutes) minutes" }', SG_PSUM],
+            ['}', null],
+            ['let book = Book(title: "Dune", pages: 412)', SG_LETBOOK],
+            ['let podcast = Podcast(title: "Swift Talk", minutes: 45)', SG_LETPOD],
+            ['print(book.summary)', SG_PBOOK],
+          ],
+        },
+        {
+          caption: 'The generic helper arrives: announce accepts any type constrained to Summarizable and prints its summary. Calling it with the book fixes its type parameter to Book for that call.',
+          expect: 'Dune, 412 pages\nNow showing: Dune, 412 pages',
+          lines: [
+            ['protocol Summarizable {', SG_PROTO],
+            ['    var summary: String { get }', SG_REQ],
+            ['}', null],
+            ['struct Book: Summarizable {', SG_BOOK],
+            ['    let title: String', SG_BTITLE],
+            ['    let pages: Int', SG_BPAGES],
+            ['    var summary: String { "\\(title), \\(pages) pages" }', SG_BSUM],
+            ['}', null],
+            ['struct Podcast: Summarizable {', SG_POD],
+            ['    let title: String', SG_PTITLE],
+            ['    let minutes: Int', SG_PMIN],
+            ['    var summary: String { "\\(title), \\(minutes) minutes" }', SG_PSUM],
+            ['}', null],
+            ['let book = Book(title: "Dune", pages: 412)', SG_LETBOOK],
+            ['let podcast = Podcast(title: "Swift Talk", minutes: 45)', SG_LETPOD],
+            ['print(book.summary)', SG_PBOOK],
+            ['func announce<T: Summarizable>(_ item: T) {', SG_FUNC],
+            ['    print("Now showing: \\(item.summary)")', SG_FBODY],
+            ['}', null],
+            ['announce(book)', SG_ABOOK],
+          ],
+        },
+        {
+          caption: 'The same helper now takes the podcast, and its type parameter becomes Podcast. One function body serves both types, with the compiler checking each call separately.',
+          expect: 'Dune, 412 pages\nNow showing: Dune, 412 pages\nNow showing: Swift Talk, 45 minutes',
+          lines: [
+            ['protocol Summarizable {', SG_PROTO],
+            ['    var summary: String { get }', SG_REQ],
+            ['}', null],
+            ['struct Book: Summarizable {', SG_BOOK],
+            ['    let title: String', SG_BTITLE],
+            ['    let pages: Int', SG_BPAGES],
+            ['    var summary: String { "\\(title), \\(pages) pages" }', SG_BSUM],
+            ['}', null],
+            ['struct Podcast: Summarizable {', SG_POD],
+            ['    let title: String', SG_PTITLE],
+            ['    let minutes: Int', SG_PMIN],
+            ['    var summary: String { "\\(title), \\(minutes) minutes" }', SG_PSUM],
+            ['}', null],
+            ['let book = Book(title: "Dune", pages: 412)', SG_LETBOOK],
+            ['let podcast = Podcast(title: "Swift Talk", minutes: 45)', SG_LETPOD],
+            ['print(book.summary)', SG_PBOOK],
+            ['func announce<T: Summarizable>(_ item: T) {', SG_FUNC],
+            ['    print("Now showing: \\(item.summary)")', SG_FBODY],
+            ['}', null],
+            ['announce(book)', SG_ABOOK],
+            ['announce(podcast)', SG_APOD],
+          ],
+        },
+        {
+          caption: 'Both values join one array of any Summarizable, and a loop prints each summary in order. Unlike types now share one collection without losing the shared promise.',
+          expect: 'Dune, 412 pages\nNow showing: Dune, 412 pages\nNow showing: Swift Talk, 45 minutes\nDune, 412 pages\nSwift Talk, 45 minutes',
+          lines: [
+            ['protocol Summarizable {', SG_PROTO],
+            ['    var summary: String { get }', SG_REQ],
+            ['}', null],
+            ['struct Book: Summarizable {', SG_BOOK],
+            ['    let title: String', SG_BTITLE],
+            ['    let pages: Int', SG_BPAGES],
+            ['    var summary: String { "\\(title), \\(pages) pages" }', SG_BSUM],
+            ['}', null],
+            ['struct Podcast: Summarizable {', SG_POD],
+            ['    let title: String', SG_PTITLE],
+            ['    let minutes: Int', SG_PMIN],
+            ['    var summary: String { "\\(title), \\(minutes) minutes" }', SG_PSUM],
+            ['}', null],
+            ['let book = Book(title: "Dune", pages: 412)', SG_LETBOOK],
+            ['let podcast = Podcast(title: "Swift Talk", minutes: 45)', SG_LETPOD],
+            ['print(book.summary)', SG_PBOOK],
+            ['func announce<T: Summarizable>(_ item: T) {', SG_FUNC],
+            ['    print("Now showing: \\(item.summary)")', SG_FBODY],
+            ['}', null],
+            ['announce(book)', SG_ABOOK],
+            ['announce(podcast)', SG_APOD],
+            ['let shelf: [any Summarizable] = [book, podcast]', SG_SHELF],
+            ['for item in shelf {', SG_FOR],
+            ['    print(item.summary)', SG_PITEM],
+            ['}', null],
+          ],
+        },
+        {
+          caption: 'A second book joins the shelf and the same loop prints three summaries. Nothing in the loop changed: adding a conformer is adding data, not code.',
+          expect: 'Dune, 412 pages\nNow showing: Dune, 412 pages\nNow showing: Swift Talk, 45 minutes\nDune, 412 pages\nSwift Talk, 45 minutes\nEmma, 320 pages',
+          lines: [
+            ['protocol Summarizable {', SG_PROTO],
+            ['    var summary: String { get }', SG_REQ],
+            ['}', null],
+            ['struct Book: Summarizable {', SG_BOOK],
+            ['    let title: String', SG_BTITLE],
+            ['    let pages: Int', SG_BPAGES],
+            ['    var summary: String { "\\(title), \\(pages) pages" }', SG_BSUM],
+            ['}', null],
+            ['struct Podcast: Summarizable {', SG_POD],
+            ['    let title: String', SG_PTITLE],
+            ['    let minutes: Int', SG_PMIN],
+            ['    var summary: String { "\\(title), \\(minutes) minutes" }', SG_PSUM],
+            ['}', null],
+            ['let book = Book(title: "Dune", pages: 412)', SG_LETBOOK],
+            ['let podcast = Podcast(title: "Swift Talk", minutes: 45)', SG_LETPOD],
+            ['print(book.summary)', SG_PBOOK],
+            ['func announce<T: Summarizable>(_ item: T) {', SG_FUNC],
+            ['    print("Now showing: \\(item.summary)")', SG_FBODY],
+            ['}', null],
+            ['announce(book)', SG_ABOOK],
+            ['announce(podcast)', SG_APOD],
+            ['let novel = Book(title: "Emma", pages: 320)', SG_LETNOVEL],
+            ['let shelf: [any Summarizable] = [book, podcast, novel]', SG_SHELF2],
+            ['for item in shelf {', SG_FOR],
+            ['    print(item.summary)', SG_PITEM],
+            ['}', null],
+          ],
+        },
+      ],
+      tryIt: {
+        task: '<p>The starter defines Summarizable and a small Book that adopts it, then prints the book summary directly. Add the generic announce helper from the frames and call it with the book, so the output gains the Now showing line.</p>',
+        lines: [
+          ['protocol Summarizable {', SG_PROTO],
+          ['    var summary: String { get }', SG_REQ],
+          ['}', null],
+          ['struct Book: Summarizable {', ST_BOOK],
+          ['    let title: String', ST_BTITLE],
+          ['    var summary: String { "\\(title), a book" }', ST_BSUM],
+          ['}', null],
+          ['let book = Book(title: "Dune")', ST_LET],
+          ['print(book.summary)', SG_PBOOK],
+        ],
+        solution: [
+          ['protocol Summarizable {', SG_PROTO],
+          ['    var summary: String { get }', SG_REQ],
+          ['}', null],
+          ['struct Book: Summarizable {', ST_BOOK],
+          ['    let title: String', ST_BTITLE],
+          ['    var summary: String { "\\(title), a book" }', ST_BSUM],
+          ['}', null],
+          ['let book = Book(title: "Dune")', ST_LET],
+          ['print(book.summary)', SG_PBOOK],
+          ['func announce<T: Summarizable>(_ item: T) {', SG_FUNC],
+          ['    print("Now showing: \\(item.summary)")', SG_FBODY],
+          ['}', null],
+          ['announce(book)', SG_ABOOK],
+        ],
+        expect: 'Dune, a book\nNow showing: Dune, a book',
+      },
+    },
+  ],
+};
+
 export default {
   id: 'types',
   number: 3,
@@ -4452,5 +5055,6 @@ export default {
     lessonErrors,
     lessonConcurrency,
     lessonParadigms,
+    lessonWorkedExamples,
   ],
 };
