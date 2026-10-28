@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework 1 — iOS Development Studio (Modules 1–4)</title>
+<style>
+:root{
+  --bg:#0b1020; --panel:#131a2e; --panel2:#182238; --ink:#eef1ff; --muted:#a7b0cc;
+  --line:#2a3557; --accent:#ff9f0a; --accent2:#64d2ff; --good:#30d158; --bad:#ff453a;
+  --warn:#ffd60a; --code-bg:#0a0e1a; --radius:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0b1020,#0d1330 40%,#0b1020);color:var(--ink);line-height:1.55}
+a{color:var(--accent2)}
+header.hero{padding:34px 20px 10px;max-width:1020px;margin:0 auto}
+.kicker{color:var(--accent);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:.78rem}
+h1{font-size:2rem;margin:.3rem 0 .4rem;line-height:1.15}
+.sub{color:var(--muted);max-width:760px}
+main{max-width:1020px;margin:0 auto;padding:10px 20px 70px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin:18px 0;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.card h2{margin:.1rem 0 .5rem;font-size:1.3rem}
+.card h3{margin:.2rem 0 .4rem;font-size:1.08rem}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.18rem .55rem;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:.4rem;vertical-align:middle}
+.tag.mod{color:#0b1020;background:var(--accent2);border-color:transparent}
+.tag.bonus{color:#0b1020;background:var(--warn);border-color:transparent}
+.tag.write{color:#0b1020;background:var(--good);border-color:transparent}
+.pts{float:right;color:var(--accent);font-weight:700;white-space:nowrap}
+pre.code{background:var(--code-bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:.92rem;line-height:1.5}
+pre.code code,code.inline{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+code.inline{background:var(--code-bg);padding:.08rem .35rem;border-radius:6px;border:1px solid var(--line);font-size:.88em}
+.tok-k{color:#ff7eb6}.tok-s{color:#a5d6a7}.tok-n{color:#82aaff}.tok-c{color:#697098;font-style:italic}
+.sticky{position:sticky;top:0;z-index:50;background:rgba(11,16,32,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.sticky-in{max-width:1020px;margin:0 auto;padding:10px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.progresswrap{flex:1;min-width:180px}
+.progressbar{height:10px;background:var(--panel2);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.progressbar>div{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+.scorebox{font-weight:700}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:.55rem 1rem}
+button:hover{border-color:var(--accent2)}
+button.primary{background:var(--accent);color:#14100a;border-color:transparent;font-weight:700}
+button.primary:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{background:transparent}
+button.small{padding:.3rem .7rem;font-size:.9rem}
+.choices{display:grid;gap:10px;margin:12px 0}
+.choice{text-align:left;width:100%;padding:.7rem .9rem;display:flex;gap:.6rem;align-items:flex-start}
+.choice.sel{border-color:var(--accent);background:#1d2a4a}
+.choice.correct{border-color:var(--good);background:rgba(48,209,88,.12)}
+.choice.wrong{border-color:var(--bad);background:rgba(255,69,58,.10)}
+.choice:disabled{cursor:default;opacity:1}
+.feedback{border-radius:12px;padding:12px 14px;margin:12px 0;display:none}
+.feedback.show{display:block}
+.feedback.good{border:1px solid var(--good);background:rgba(48,209,88,.10)}
+.feedback.bad{border:1px solid var(--bad);background:rgba(255,69,58,.08)}
+.feedback.info{border:1px solid var(--accent2);background:rgba(100,210,255,.08)}
+.hintbox{display:none;border-left:4px solid var(--warn);background:rgba(255,214,10,.07);padding:10px 14px;margin:10px 0;border-radius:0 10px 10px 0}
+.hintbox.show{display:block}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+input[type=text],textarea,select{font:inherit;background:var(--code-bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem}
+textarea.codein{width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92rem;min-height:96px}
+input.typed{width:110px}
+input.namein{width:min(420px,100%);font-size:1.05rem;padding:.7rem .9rem}
+select{max-width:100%}
+.parsons-bank,.parsons-zone{display:grid;gap:8px;margin:10px 0}
+.parsons-line{text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;width:100%}
+.parsons-line.inzone{border-color:var(--accent2)}
+.parsons-line.distractor-used{border-color:var(--bad)}
+.zone-label{color:var(--muted);font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.debugline{display:block;width:100%;text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;margin:4px 0;background:var(--code-bg)}
+.debugline.sel{border-color:var(--accent)}
+.debugline.correct{border-color:var(--good)}
+.debugline.wrong{border-color:var(--bad)}
+.phone{width:270px;max-width:88vw;margin:14px auto;background:#000;border:3px solid #39466e;border-radius:38px;padding:16px 14px 22px;min-height:340px;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.phone .notch{width:110px;height:20px;background:#39466e;border-radius:0 0 12px 12px;margin:-16px auto 12px}
+.phone .screen{display:grid;gap:12px;align-content:start;justify-items:center;text-align:center}
+.pill-demo{font-weight:700;color:#111}
+.state-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+.state-table th,.state-table td{border:1px solid var(--line);padding:.45rem .6rem;text-align:left}
+.state-table th{background:var(--panel2)}
+.timeline{display:grid;gap:8px;margin:12px 0}
+.tl-row{display:flex;align-items:center;gap:10px}
+.tl-label{width:120px;color:var(--muted);font-size:.88rem}
+.tl-track{flex:1;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;height:26px;position:relative;overflow:hidden}
+.tl-fill{position:absolute;top:0;bottom:0;border-radius:6px}
+.checklist{list-style:none;padding:0;margin:10px 0;display:grid;gap:8px}
+.checklist li{padding:.55rem .8rem;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.checklist li.ok{border-color:var(--good)}
+.checklist li.no{border-color:var(--bad)}
+.mini{font-size:.88rem;color:var(--muted)}
+.scoregrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.scorecell{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+.scorecell b{font-size:1.25rem;display:block}
+#summaryList{display:grid;gap:8px}
+footer{max-width:1020px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:.9rem}
+@media print{
+  body{background:#fff;color:#000}
+  .sticky,.no-print{display:none!important}
+  .card{border:1px solid #bbb;box-shadow:none;background:#fff;break-inside:avoid}
+  pre.code{background:#f4f4f4;border-color:#bbb}
+  .feedback{display:none}
+  #printSummary{display:block!important}
+}
+#printSummary{display:none}
+</style>
+</head>
+<body>
+<div class="sticky no-print"><div class="sticky-in">
+  <div class="scorebox">Homework 1</div>
+  <div class="progresswrap"><div class="progressbar"><div id="progressFill"></div></div><div class="mini" id="progressText">0 of 0 points</div></div>
+  <div class="scorebox" id="scoreBox">Score: 0 / 100</div>
+  <button class="small" onclick="scrollToId('finish')">Finish &amp; results ↓</button>
+</div></div>
+
+<header class="hero">
+  <div class="kicker">iOS Development Studio · Homework 1</div>
+  <h1>Predict it. Debug it. Build it.</h1>
+  <p class="sub">This homework is built from the course in the
+  <a href="https://github.com/joepangallo/ios" target="_blank" rel="noopener">joepangallo/ios</a> repo
+  (live course: <a href="https://joepangallo.github.io/ios/" target="_blank" rel="noopener">joepangallo.github.io/ios</a>).
+  The <strong>graded core (100 points)</strong> covers the first four modules as the course numbers them:
+  <strong>Module 0</strong> Start Here, <strong>Module 1</strong> The Apple Platform and Its Ecosystem,
+  <strong>Module 2</strong> Swift Fundamentals, and <strong>Module 3</strong> Types, Protocols and Programming Paradigms.
+  Because many classes count “the first four modules” starting at Module 1, a <strong>Module 4 SwiftUI extension (25 points)</strong>
+  is included at the end and <strong>scored separately</strong> — your instructor’s counting decides whether it counts; either way, nothing here tests material the course hasn’t taught.</p>
+  <div class="card">
+    <h3>How this works — read this first (2 minutes)</h3>
+    <ul>
+      <li><strong>Time:</strong> about 75 minutes for the graded core, plus about 20 minutes if you do the Module 4 extension. <strong>Core total:</strong> 100 points. The extension is scored separately out of 25, and clearly-marked <em>bonus</em> items (up to +4) can never hurt your grade.</li>
+      <li><strong>Learn while you work:</strong> almost every item asks you to <em>commit to a prediction before anything is revealed</em>. Guessing after you see the answer teaches nothing — predicting first is where the learning happens. Your first prediction is kept in your results, so you can see what your instincts got right.</li>
+      <li><strong>Feedback explains why</strong>, not just right/wrong. If you miss, read the explanation — it names the exact lesson to revisit.</li>
+      <li><strong>Second tries:</strong> on questions with 4+ choices and on typed / built / written answers, a correct second try earns half credit. On 2–3 choice questions there is no second-try credit (elimination would make it free). Multi-part items earn credit per correct part.</li>
+      <li><strong>Hints are free.</strong> Hint 1 is a concept reminder; Hint 2 is a bigger nudge. Using hints is recorded in your results (so your instructor can see where the class got stuck), but it never lowers your score — being stuck and using help is part of learning.</li>
+      <li><strong>Simulated vs. real:</strong> the little phone previews in the extension are simulations with fixed, known outcomes that match the course’s SwiftUI preview for exactly the cases shown. The written-Swift checks test the language rules taught in the lessons, not a full compiler.</li>
+      <li><strong>Your work saves automatically</strong> in this browser. At the end, use <em>Download results</em> or <em>Print</em> to turn it in, exactly as your instructor directs.</li>
+      <li><strong>You will actually write Swift</strong> in three places. Spelling of keywords matters; spacing doesn't. Equivalent correct Swift is accepted.</li>
+    </ul>
+    <label for="studentName"><strong>Your name:</strong></label><br>
+    <input class="namein" type="text" id="studentName" placeholder="First and last name" autocomplete="name">
+    <span class="mini" id="saveNote">Progress saves automatically on this device.</span>
+  </div>
+</header>
+<main id="app"></main>
+
+<section class="card" id="finish">
+  <h2>Finish &amp; results</h2>
+  <p>When every section shows as complete, review what you missed below — each miss names the module and lesson to revisit in the course. Then turn this in the way your instructor directed.</p>
+  <div class="scoregrid" id="sectionScores"></div>
+  <div class="scorebox" id="finalScore" style="font-size:1.2rem"></div>
+  <h3>Review what you missed</h3>
+  <div id="summaryList"><p class="mini">Nothing missed yet — or nothing attempted yet. Items you attempt will be summarized here.</p></div>
+  <div class="row no-print">
+    <button class="primary" onclick="downloadResults()">Download results (.txt)</button>
+    <button onclick="window.print()">Print / save as PDF</button>
+    <button onclick="copyBackup()">Copy backup code</button>
+    <button onclick="restoreBackup()">Restore from backup code</button>
+    <button class="ghost" onclick="resetAll()">Reset everything</button>
+  </div>
+  <p class="mini no-print">Honesty note: this page grades in your browser and its answers live in the page source, like every take-home practice file. Your downloaded result includes your attempts, hints used, and a timestamp — that's the record to turn in.</p>
+  <div id="printSummary"></div>
+</section>
+<footer>Built from the iOS Development Studio course (Modules 0–4) · Homework 1 · Predict → Trace → Debug → Build</footer>
+
+<script>
+"use strict";
+/* ============ tiny helpers ============ */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function hl(code){ // very small Swift highlighter for display snippets
+  let e=esc(code);
+  e=e.replace(/(\/\/[^\n]*)/g,'<span class="tok-c">$1</span>');
+  e=e.replace(/(&quot;[^&]*?&quot;|"(?:[^"\\]|\\.)*")/g,'<span class="tok-s">$1</span>');
+  e=e.replace(/\b(import|struct|class|enum|protocol|func|var|let|return|if|else|guard|switch|case|default|for|while|repeat|in|break|continue|try|catch|do|throws|async|await|some|any|mutating|static|private|true|false|nil|self|super|init|extension|where|inout|defer|typealias)\b/g,'<span class="tok-k">$1</span>');
+  e=e.replace(/\b(\d+(?:\.\d+)?)\b/g,'<span class="tok-n">$1</span>');
+  return e;
+}
+const norm=s=>String(s).toLowerCase().replace(/\s+/g," ").trim();
+const normCode=s=>String(s).replace(/\/\/[^\n]*/g,"").replace(/\s+/g," ").trim();
+function scrollToId(id){document.getElementById(id)?.scrollIntoView({behavior:"smooth"});}
+
+/* ============ state ============ */
+const LS_KEY="ios-hw1-v1";
+let state={name:"",items:{},finishedAt:null};
+try{const raw=localStorage.getItem(LS_KEY); if(raw) state=JSON.parse(raw);}catch(e){}
+function save(){ try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){} renderProgress(); }
+function itemState(id){ if(!state.items[id]) state.items[id]={attempts:0,hint1:false,hint2:false,awarded:0,done:false,answers:[]}; return state.items[id]; }
+
+/* ============ scoring core ============
+   grade(id, fraction, detail): fraction = share of the item answered correctly (0..1).
+   Attempt factor: 1st graded try x1; 2nd try x0.5 when def.secondTryCredit (or the item is
+   multi-part / typed / written / built), otherwise x0 and the item locks after one try.
+   def.attemptFactors overrides this (capstone builder: [1, .5, .25], max 3 checks).
+   Hints are FREE (never reduce the score); hint use is logged for the instructor.
+   Partial credit: multi-part items keep the best fraction earned across tries. */
+function maxAttempts(def){ return def.attemptFactors? def.attemptFactors.length : (def.secondTryCredit?2:1); }
+function attemptFactor(def,attempt){
+  if(def.attemptFactors) return def.attemptFactors[Math.min(attempt-1,def.attemptFactors.length-1)];
+  if(attempt===1) return 1;
+  return def.secondTryCredit? 0.5 : 0;
+}
+function grade(id,fraction,detail){
+  const def=ITEMS[id]; const st=itemState(id);
+  if(st.done) return st.awarded;
+  fraction=Math.max(0,Math.min(1,fraction));
+  st.attempts++;
+  st.answers.push(detail||("fraction="+fraction));
+  if(st.attempts===1) st.firstAnswer=detail||("fraction="+fraction);
+  const f=attemptFactor(def,st.attempts);
+  const earned=Math.round(def.points*fraction*f*100)/100;
+  if(earned>st.awarded) st.awarded=earned;
+  st.bestFraction=Math.max(st.bestFraction||0,fraction);
+  if(fraction>=1 || st.attempts>=maxAttempts(def)) st.done=true;
+  save(); renderItemFeedback(id,fraction,st.awarded); renderSummary();
+  return st.awarded;
+}
+function useHint(id,n){
+  const st=itemState(id); if(n===1)st.hint1=true; if(n===2)st.hint2=true; save();
+  const box=$("#hint"+n+"-"+id); if(box) box.classList.add("show");
+  const b=$("#hintbtn"+n+"-"+id); if(b) b.disabled=true;
+}
+function triesLeft(id){ const def=ITEMS[id]; const st=itemState(id); if(st.done)return 0; return def.secondTryCredit? Math.max(0,2-st.attempts): Math.max(0,1-st.attempts); }
+
+/* ============ ITEMS registry (renderers fill this) ============ */
+const ITEMS={}; const SECTIONS=[];
+function registerSection(sec){ SECTIONS.push(sec); }
+function registerItem(def){ ITEMS[def.id]=def; }
+
+/* feedback renderer: every item has #fb-<id> */
+function renderItemFeedback(id,fraction,awarded){
+  const def=ITEMS[id]; const st=itemState(id); const fb=$("#fb-"+id); if(!fb)return;
+  const full=fraction>=1, label=def.bonus?`Bonus earned: +${awarded} pts`:`Score so far on this item: ${awarded} / ${def.points} pts`;
+  fb.className="feedback show "+(full?"good":(st.done?"bad":"info"));
+  if(full){
+    fb.innerHTML=`<strong>✓ Correct — ${label}.</strong><br>${def.explain}`;
+  } else if(st.done){
+    fb.innerHTML=`<strong>${st.bestFraction>0?"◐ Partially there":"✗ Not quite"} — ${label}.</strong><br>${def.explain}<br><span class="mini">Revisit: ${esc(def.revisit)}</span>`;
+  } else {
+    fb.innerHTML=`<strong>◐ Not fully there yet (${Math.round((st.bestFraction||0)*100)}% of this item so far).</strong> You have another try — a fully correct second try earns half credit on this item. Re-read carefully${st.hint1?"":" — Hint 1 is free"}.`;
+  }
+  if(st.done){ $$("[data-lock='"+id+"']").forEach(el=>{el.disabled=true;}); const c=$("#check-"+id); if(c)c.disabled=true; }
+}
+</script>
+<script>
+"use strict";
+/* ============ renderers ============ */
+const app=document.getElementById("app");
+function tagsHTML(def){
+  let t=`<span class="tag mod">${esc(def.mod)}</span>`;
+  if(def.extension) t+=`<span class="tag">Extension · scored separately</span>`;
+  if(def.bonus) t+=`<span class="tag bonus">Bonus · can't hurt you</span>`;
+  if(def.type==="write") t+=`<span class="tag write">You write the Swift</span>`;
+  if(def.type==="parsons") t+=`<span class="tag write">Build the code</span>`;
+  if(def.type==="builder") t+=`<span class="tag write">Capstone builder</span>`;
+  return t;
+}
+function cardShell(def){
+  const sec=document.createElement("section"); sec.className="card"; sec.id="card-"+def.id;
+  sec.innerHTML=`<span class="pts">${def.bonus?"+":""}${def.points} pts</span>${tagsHTML(def)}
+    <h3>${esc(def.title)}</h3>
+    <div class="prompt">${def.prompt||""}</div>
+    ${def.code?`<pre class="code"><code>${hl(def.code)}</code></pre>`:""}
+    <div id="body-${def.id}"></div>
+    <div id="notes-${def.id}"></div>
+    ${(def.hint1||def.hint2)?`<div class="row no-print">
+      ${def.hint1?`<button class="small" id="hintbtn1-${def.id}" onclick="useHint('${def.id}',1)">Hint 1 (free)</button>`:""}
+      ${def.hint2?`<button class="small" id="hintbtn2-${def.id}" onclick="useHint('${def.id}',2)">Hint 2 (free, bigger nudge)</button>`:""}
+    </div>
+    ${def.hint1?`<div class="hintbox" id="hint1-${def.id}"><strong>Hint 1:</strong> ${def.hint1}</div>`:""}
+    ${def.hint2?`<div class="hintbox" id="hint2-${def.id}"><strong>Hint 2:</strong> ${def.hint2}</div>`:""}`:""}
+    <div class="row no-print"><button class="primary" id="check-${def.id}" onclick="checkItem('${def.id}')">${def.checkLabel||"Commit &amp; check"}</button>
+    <span class="mini" id="tries-${def.id}"></span></div>
+    <div class="feedback" id="fb-${def.id}"></div>`;
+  return sec;
+}
+function sectionHeader(sec){
+  const d=document.createElement("div"); d.innerHTML=`<h2 style="margin:26px 4px 4px">${esc(sec.title)}</h2><p class="mini" style="margin:0 4px">${sec.desc||""}</p>`; return d;
+}
+function renderSection(sec){
+  registerSection(sec); app.appendChild(sectionHeader(sec));
+  for(const def of sec.items){ registerItem(def); app.appendChild(cardShell(def)); buildBody(def); }
+}
+function choicesHTML(id,partIdx,choices){
+  return `<div class="choices" id="choices-${id}-${partIdx}">`+choices.map((c,i)=>
+    `<button class="choice" data-lock="${id}" onclick="pickChoice('${id}',${partIdx},${i},this)"><span>○</span><span>${c}</span></button>`).join("")+`</div>`;
+}
+const picks={}; // id -> {partIdx: choiceIndex}
+function pickChoice(id,partIdx,i,btn){
+  if(itemState(id).done) return;
+  picks[id]=picks[id]||{}; picks[id][partIdx]=i;
+  $$( "#choices-"+id+"-"+partIdx+" .choice").forEach((b,j)=>{ b.classList.toggle("sel",j===i); b.querySelector("span").textContent=j===i?"●":"○"; });
+}
+function buildBody(def){
+  const body=$("#body-"+def.id); if(!body) return;
+  if(def.type==="mc"){ body.innerHTML=choicesHTML(def.id,0,def.choices); }
+  else if(def.type==="multi"){
+    body.innerHTML=def.parts.map((p,pi)=>`<div style="margin:14px 0"><p><strong>Part ${pi+1}.</strong> ${p.prompt||""}</p>
+      ${p.code?`<pre class="code"><code>${hl(p.code)}</code></pre>`:""}
+      ${p.type==="typed"?`<input type="text" class="typed" data-lock="${def.id}" id="typed-${def.id}-${pi}" placeholder="${esc(p.placeholder||"type here")}"> ${esc(p.suffix||"")}`
+        : choicesHTML(def.id,pi,p.choices)}</div>`).join("");
+  }
+  else if(def.type==="typed"){
+    body.innerHTML=def.fields.map((f,fi)=>`<p>${f.label} <input type="text" class="typed" data-lock="${def.id}" id="typed-${def.id}-${fi}" placeholder="${esc(f.placeholder||"")}"> ${esc(f.suffix||"")}</p>`).join("");
+  }
+  else if(def.type==="write"){
+    body.innerHTML=`${def.before||""}<textarea class="codein" data-lock="${def.id}" id="code-${def.id}" spellcheck="false">${esc(def.starter||"")}</textarea>
+      <p class="mini">Spacing doesn't matter. Equivalent correct Swift is accepted. Your code is saved into your results.</p>`;
+    const ta=$("#code-"+def.id); ta.addEventListener("input",()=>{ itemState(def.id).code=ta.value; save(); });
+  }
+  else if(def.type==="parsons"){
+    const order=def.lines.map((_,i)=>i); // deterministic shuffle
+    let seed=[...def.id].reduce((a,c)=>a+c.charCodeAt(0),0);
+    for(let i=order.length-1;i>0;i--){ seed=(seed*31+7)%997; const j=seed%(i+1); [order[i],order[j]]=[order[j],order[i]]; }
+    const all=def.lines.map((t,i)=>({t,correct:i})); if(def.distractor) all.push({t:def.distractor,correct:-1});
+    const bankOrder=[...all]; for(let i=bankOrder.length-1;i>0;i--){ seed=(seed*31+13)%997; const j=seed%(i+1); [bankOrder[i],bankOrder[j]]=[bankOrder[j],bankOrder[i]]; }
+    body.innerHTML=`<p class="mini">Tap a line to move it into your program (tap again in the program to send it back). Keyboard: Tab to a line, press Enter. One line below is a distractor — a real program won't use it.</p>
+      <div class="zone-label">Line bank</div><div class="parsons-bank" id="bank-${def.id}">
+      ${bankOrder.map((o,k)=>`<button class="parsons-line" data-lock="${def.id}" data-correct="${o.correct}" onclick="parsonsMove('${def.id}',this)">${esc(o.t)}</button>`).join("")}</div>
+      <div class="zone-label">Your program</div><div class="parsons-zone" id="zone-${def.id}"></div>`;
+  }
+  else if(def.type==="debug"){
+    body.innerHTML=`<p><strong>Step 1:</strong> tap the line that causes the problem.</p>`+
+      def.lines.map((l,i)=>`<button class="debugline" data-lock="${def.id}" onclick="pickDebugLine('${def.id}',${i},this)">${esc(l)}</button>`).join("")+
+      `<p style="margin-top:12px"><strong>Step 2:</strong> pick the fix.</p>`+choicesHTML(def.id,0,def.fixes);
+  }
+  else if(def.type==="builder"){
+    body.innerHTML=def.groups.map((g,gi)=>`<div style="margin:14px 0"><p><strong>${esc(g.label)}</strong></p>${choicesHTML(def.id,gi,g.options)}</div>`).join("")+
+      `<div class="phone" aria-label="Simulated phone preview"><div class="notch"></div><div class="screen" id="phone-${def.id}"></div></div>
+       <p class="mini" style="text-align:center">Simulated preview — fixed outcomes for the choices above.</p>
+       <div class="zone-label">Live checklist (feedback only — your choices are what's graded)</div><ul class="checklist" id="checklist-${def.id}"></ul>`;
+    updateBuilder(def.id);
+  }
+  else if(def.type==="custom"){ CUSTOM_BUILD[def.custom](def,body); }
+}
+function parsonsMove(id,btn){
+  if(itemState(id).done) return;
+  const bank=$("#bank-"+id), zone=$("#zone-"+id);
+  if(btn.parentElement===bank){ zone.appendChild(btn); btn.classList.add("inzone"); }
+  else { bank.appendChild(btn); btn.classList.remove("inzone"); }
+}
+let debugPick={};
+function pickDebugLine(id,i,btn){
+  if(itemState(id).done) return; debugPick[id]=i;
+  $$("#body-"+id+" .debugline").forEach((b,j)=>b.classList.toggle("sel",j===i));
+}
+function updateBuilder(id){
+  const def=ITEMS[id]; const sel=picks[id]||{};
+  const phone=$("#phone-"+id); if(phone&&def.preview) phone.innerHTML=def.preview(sel);
+  const cl=$("#checklist-"+id);
+  if(cl) cl.innerHTML=def.groups.map((g,gi)=>{ const ok=sel[gi]===g.answer; const chosen=sel[gi]!==undefined;
+    return `<li class="${chosen?(ok?"ok":"no"):""}">${chosen?(ok?"✓":"✗"):"•"} ${esc(g.checkText)}</li>`; }).join("");
+}
+/* generic check dispatcher */
+function checkItem(id){
+  const def=ITEMS[id]; const st=itemState(id); if(st.done) return;
+  if(def.type==="mc"){
+    const sel=(picks[id]||{})[0]; if(sel===undefined){ note(id,"Pick an answer first — commit to a prediction, then check."); return; }
+    grade(id, sel===def.answer?1:0, "chose: "+stripTags(def.choices[sel]));
+  }
+  else if(def.type==="multi"){
+    let got=0,log=[];
+    def.parts.forEach((p,pi)=>{
+      if(p.type==="typed"){ const v=norm($("#typed-"+id+"-"+pi).value); const ok=p.accept.map(norm).includes(v); if(ok)got++; log.push(`part${pi+1}:${ok?"✓":"✗ '"+v+"'"}`); }
+      else { const sel=(picks[id]||{})[pi]; const ok=sel===p.answer; if(ok)got++; log.push(`part${pi+1}:${ok?"✓":"✗"}`); }
+    });
+    if(log.some(l=>l.includes("undefined"))) {}
+    grade(id, got/def.parts.length, log.join(" "));
+  }
+  else if(def.type==="typed"){
+    let got=0,log=[];
+    def.fields.forEach((f,fi)=>{ const v=norm($("#typed-"+id+"-"+fi).value); const ok=f.accept.map(norm).includes(v); if(ok)got++; log.push(`${f.short}:${ok?"✓":"✗ '"+v+"'"}`); });
+    grade(id, got/def.fields.length, log.join(" "));
+  }
+  else if(def.type==="write"){
+    const ta=$("#code-"+id); const res=CHECKERS[def.checker](ta.value);
+    st.code=ta.value;
+    note(id,res.notes);
+    grade(id, res.fraction, "code: "+ta.value.replace(/\n/g," ⏎ "));
+  }
+  else if(def.type==="parsons"){
+    const zone=$$("#zone-"+id+" .parsons-line");
+    if(zone.length===0){ note(id,"Move lines into Your program first."); return; }
+    let posOK=0; zone.forEach((b,i)=>{ if(parseInt(b.dataset.correct)===i) posOK++; });
+    const exact = zone.length===def.lines.length && zone.every((b,i)=>parseInt(b.dataset.correct)===i);
+    grade(id, exact?1:posOK/def.lines.length, "order: "+zone.map(b=>b.dataset.correct).join(","));
+  }
+  else if(def.type==="debug"){
+    const line=debugPick[id]; const fix=(picks[id]||{})[0];
+    if(line===undefined||fix===undefined){ note(id,"Do both steps: tap the buggy line AND pick a fix."); return; }
+    const frac=(line===def.bugLine?0.5:0)+(fix===def.fixAnswer?0.5:0);
+    $$("#body-"+id+" .debugline").forEach((b,j)=>{ if(j===def.bugLine) b.classList.add("correct"); });
+    grade(id, frac, `line:${line} fix:${stripTags(def.fixes[fix])}`);
+  }
+  else if(def.type==="builder"){
+    const sel=picks[id]||{};
+    if(Object.keys(sel).length<def.groups.length){ note(id,"Choose one option in every group first — the checklist shows what's still open."); return; }
+    let got=0; def.groups.forEach((g,gi)=>{ if(sel[gi]===g.answer) got++; });
+    grade(id, got/def.groups.length, "builder groups correct: "+got+"/"+def.groups.length);
+    updateBuilder(id);
+  }
+  else if(def.type==="custom"){ CUSTOM_CHECK[def.custom](def); }
+  const t=$("#tries-"+id); const st2=itemState(id);
+  if(t) t.textContent = st2.done? "" : (triesLeft(id)>0? triesLeft(id)+" try left":"");
+}
+function note(id,html){ const n=$("#notes-"+id); if(n) n.innerHTML=`<div class="feedback show info">${html}</div>`; }
+function stripTags(s){ const d=document.createElement("div"); d.innerHTML=s; return d.textContent; }
+/* builder picks also refresh preview */
+const _pick=pickChoice;
+pickChoice=function(id,partIdx,i,btn){ _pick(id,partIdx,i,btn); if(ITEMS[id]&&ITEMS[id].type==="builder") updateBuilder(id); };
+
+/* ============ progress / summary / export ============ */
+function totals(){
+  let core=0,coreDone=0,ext=0,bonus=0,attempted=0,doneCount=0,totalItems=0;
+  for(const id in ITEMS){ const def=ITEMS[id], st=state.items[id]; totalItems++;
+    if(st&&st.attempts>0)attempted++; if(st&&st.done)doneCount++;
+    if(!st) continue;
+    if(def.bonus) bonus+=st.awarded; else if(def.extension) ext+=st.awarded; else core+=st.awarded;
+  }
+  return {core:Math.round(core*100)/100,ext:Math.round(ext*100)/100,bonus:Math.round(bonus*100)/100,attempted,doneCount,totalItems};
+}
+function renderProgress(){
+  const t=totals();
+  $("#progressFill").style.width=Math.min(100,t.core)+"%";
+  $("#progressText").textContent=`${t.doneCount} of ${t.totalItems} items finished`;
+  $("#scoreBox").textContent=`Core: ${t.core} / 100 · Ext: ${t.ext} / 25 · Bonus: +${t.bonus}`;
+  const fs=$("#finalScore"); if(fs) fs.textContent=`Core score (Modules 0–3): ${t.core} / 100`+(t.ext>0||t.bonus>0?` · Module 4 extension: ${t.ext} / 25 · Bonus: +${t.bonus}`:"");
+  const sg=$("#sectionScores");
+  if(sg){ sg.innerHTML=SECTIONS.map(sec=>{ let got=0,max=0; for(const def of sec.items){ if(def.bonus)continue; max+=def.points; const st=state.items[def.id]; if(st)got+=st.awarded; }
+    return `<div class="scorecell"><span class="mini">${esc(sec.title)}</span><b>${Math.round(got*100)/100} / ${max}</b></div>`; }).join(""); }
+}
+function renderSummary(){
+  renderProgress();
+  const list=$("#summaryList"); if(!list) return;
+  const missed=[];
+  for(const sec of SECTIONS) for(const def of sec.items){ const st=state.items[def.id];
+    if(st&&st.attempts>0&&(st.bestFraction||0)<1) missed.push({def,st});
+  }
+  if(!missed.length){ list.innerHTML=`<p class="mini">Nothing missed yet — or nothing attempted yet. Items you attempt will be summarized here.</p>`; return; }
+  list.innerHTML=missed.map(({def,st})=>`<div class="feedback show info"><strong>${esc(def.title)}</strong> — ${st.awarded} / ${def.points} pts after ${st.attempts} ${st.attempts===1?"try":"tries"}${st.hint1||st.hint2?" · used a hint":""}.<br><span class="mini">Revisit: ${esc(def.revisit)}</span></div>`).join("");
+  const ps=$("#printSummary");
+  if(ps) ps.innerHTML="<h3>Results summary</h3>"+list.innerHTML;
+}
+function resultsText(){
+  const t=totals(); const lines=[];
+  lines.push("iOS Development Studio — Homework 1 (Modules 0–4)");
+  lines.push("Name: "+(state.name||"(not entered)"));
+  lines.push("Exported: "+new Date().toLocaleString());
+  lines.push(`Core score (Modules 0-3): ${t.core} / 100`);
+  lines.push(`Module 4 extension: ${t.ext} / 25`);
+  lines.push(`Bonus: +${t.bonus}`);
+  lines.push("");
+  for(const sec of SECTIONS){ lines.push("== "+sec.title+" ==");
+    for(const def of sec.items){ const st=state.items[def.id];
+      if(!st||st.attempts===0){ lines.push(`- ${def.title}: not attempted (0/${def.points})`); continue; }
+      lines.push(`- ${def.title}: ${st.awarded}/${def.points} pts, ${st.attempts} ${st.attempts===1?"try":"tries"}, hints: ${st.hint1?"1":"-"}${st.hint2?"+2":""}`);
+      if(st.firstAnswer) lines.push(`    first answer: ${st.firstAnswer}`);
+      if(st.code) lines.push(`    submitted code:\n      ${st.code.replace(/\n/g,"\n      ")}`);
+      if(st.answers&&st.answers.length>1) lines.push(`    all attempts: ${st.answers.join(" | ")}`);
+    } lines.push("");
+  }
+  return lines.join("\n");
+}
+function downloadResults(){
+  state.name=$("#studentName").value; save();
+  const blob=new Blob([resultsText()],{type:"text/plain"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="ios-homework-1-results-"+(state.name||"student").replace(/\s+/g,"-").toLowerCase()+".txt"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function copyBackup(){
+  const code=btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  if(navigator.clipboard) navigator.clipboard.writeText(code).then(()=>alert("Backup code copied. Keep it somewhere safe — pasting it into Restore brings your work back on any device."));
+  else prompt("Copy your backup code:",code);
+}
+function restoreBackup(){
+  const code=prompt("Paste your backup code:"); if(!code) return;
+  try{ state=JSON.parse(decodeURIComponent(escape(atob(code.trim())))); save(); location.reload(); }
+  catch(e){ alert("That code didn't work — check you pasted the whole thing."); }
+}
+function resetAll(){ if(confirm("Erase all answers and scores on this device and start over?")){ localStorage.removeItem(LS_KEY); location.reload(); } }
+</script>
+<script>
+"use strict";
+/* STUDENT EDITION — self-grading uses salted hash checks; this file contains no readable answer key. */
+
+function sha256hex(ascii){function rr(v,a){return (v>>>a)|(v<<(32-a));}
+var maxWord=Math.pow(2,32),i,j,result='';var words=[],asciiBitLength=ascii.length*8;
+var hash=sha256hex.h=sha256hex.h||[],k=sha256hex.k=sha256hex.k||[];
+var primeCounter=k.length,isComposite={};
+for(var candidate=2;primeCounter<64;candidate++){if(!isComposite[candidate]){
+for(i=0;i<313;i+=candidate){isComposite[i]=candidate;}
+hash[primeCounter]=(Math.pow(candidate,.5)*maxWord)|0;k[primeCounter++]=(Math.pow(candidate,1/3)*maxWord)|0;}}
+ascii+='\x80';while(ascii.length%64-56)ascii+='\x00';
+for(i=0;i<ascii.length;i++){var code=ascii.charCodeAt(i);if(code>255)return sha256hex(unescape(encodeURIComponent(ascii)));
+words[i>>2]|=code<<((3-i)%4)*8;}
+words[words.length]=(asciiBitLength/maxWord)|0;words[words.length]=(asciiBitLength);
+for(j=0;j<words.length;){var w=words.slice(j,j+=16);var oldHash=hash;hash=hash.slice(0,8);
+for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2];var a=hash[0],e=hash[4];
+var temp1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]
++(w[i]=(i<16)?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);
+var temp2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+hash=[(temp1+temp2)|0].concat(hash);hash[4]=(hash[4]+temp1)|0;}
+for(i=0;i<8;i++){hash[i]=(hash[i]+oldHash[i])|0;}}
+for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;result+=((b<16)?0:'')+b.toString(16);}}
+return result;}
+const HKEY=(...p)=>sha256hex("hwkey-v1|"+p.join("|"));
+
+let labSwapped={};
+function drawLab(id,swapped){
+  labSwapped[id]=swapped;
+  const pill=$("#lab-pill-"+id), code=$("#lab-code-"+id); if(!pill) return;
+  if(!swapped){ code.textContent='Text("Sale").padding(20).background(.yellow)';
+    pill.innerHTML=`<div class="pill-demo" style="background:#ffd60a;padding:20px 26px;border-radius:10px">Sale</div><div class="mini" style="color:#a7b0cc">yellow covers text + padding</div>`;
+  } else { code.textContent='Text("Sale").background(.yellow).padding(20)';
+    pill.innerHTML=`<div style="padding:20px 26px;border:1px dashed #39466e;border-radius:10px"><span class="pill-demo" style="background:#ffd60a;padding:2px 8px;border-radius:6px">Sale</span></div><div class="mini" style="color:#a7b0cc">yellow hugs the letters; padding (dashed) stays clear</div>`;
+  }
+}
+function toggleLab(id){ drawLab(id,!labSwapped[id]); }
+
+const CHECKERS={
+"guardGreeting": function guardGreeting(text){
+    const t=normCode(text).toLowerCase();
+    let f=0; const missing=[];
+    if(/guard let name( = name)? else/.test(t)) f+=0.4; else missing.push("use <code>guard let name else { … }</code> to unwrap and exit early");
+    if(/return "hello, guest"/.test(t)) f+=0.3; else missing.push('the else block must <code>return "Hello, guest"</code>');
+    const u=t.replace(/\\/g,"");
+    if(/return "hello, \(name\)"/.test(u)||/return "hello, \(name!\)"/.test(u)) f+=0.3; else missing.push('finish with <code>return "Hello, \(name)"</code> using string interpolation');
+    return {fraction:Math.round(f*100)/100, notes: f>=1? "<strong>That compiles the way the lesson intends:</strong> guard unwraps once, the sad path leaves early, and the happy path reads top-to-bottom." : "Still missing: "+missing.join("; ")+"."};
+  },
+"compactMapLine": function compactMapLine(text){
+    const t=normCode(text).toLowerCase();
+    let f=0; const missing=[];
+    if(t.includes("compactmap")) f+=0.34; else missing.push("use <code>compactMap</code> — it transforms <em>and</em> drops the failures in one pass");
+    if(/int\(\$0\)/.test(t)||/int\.init/.test(t)||/\{\s*[a-z_][a-z0-9_]*\s+in\s+int\(\s*[a-z_][a-z0-9_]*\s*\)\s*\}/.test(t)) f+=0.33; else missing.push("the closure must convert each string with <code>Int($0)</code> (or a named parameter)");
+    if(/(let|var) nums =/.test(t)&&t.includes("inputs")) f+=0.33; else missing.push("assign the result: <code>let nums = inputs.compactMap { … }</code>");
+    return {fraction:Math.round(f*100)/100, notes: f>=1? "<strong>Exactly right:</strong> <code>Int(\"four\")</code> is nil, and compactMap throws nils away, leaving the plain <code>[Int]</code> array [4, 8]." : "Still missing: "+missing.join("; ")+"."};
+  },
+"transferTotal": function transferTotal(text){
+    const t=normCode(text).toLowerCase();
+    let f=0; const missing=[];
+    if(/guard let order( = order)? else/.test(t)) f+=0.3; else missing.push("start with <code>guard let order else { return 0 }</code> — a missing order costs nothing");
+    if(/return 0/.test(t)) f+=0.2; else missing.push("the nil case must <code>return 0</code>");
+    if(/order\.qty \* order\.pricecents/.test(t)||/order\.pricecents \* order\.qty/.test(t)) f+=0.3; else missing.push("the total is <code>order.qty * order.priceCents</code>");
+    if(/return/.test(t)&&f>=0.5) f+=0.2; else if(!/return/.test(t)) missing.push("return the total at the end");
+    return {fraction:Math.round(Math.min(f,1)*100)/100, notes: f>=1? "<strong>Clean transfer:</strong> you combined a supplied model, safe unwrapping, and arithmetic — the three skills of Modules 2–3 in five lines." : "Still missing: "+missing.join("; ")+"."};
+  }
+};
+const CUSTOM_BUILD={ modifierLab: function modifierLab(def,body){
+    body.innerHTML=`<p><strong>Part 1 — predict first.</strong> This code runs: <code class="inline">Text("Sale").padding(20).background(.yellow)</code>. Where is the yellow?</p>
+      ${choicesHTML(def.id,0,def.partChoices[0])}
+      <div class="phone"><div class="notch"></div><div class="screen">
+        <div class="mini" id="lab-code-${def.id}" style="color:#a7b0cc">Text("Sale").padding(20).background(.yellow)</div>
+        <div id="lab-pill-${def.id}"></div>
+        <button class="small" onclick="toggleLab('${def.id}')">Swap the modifier order</button>
+        <div class="mini" style="color:#a7b0cc">Simulated preview — tap to compare both orders, as often as you like. Exploring is free; only your two answers are graded.</div>
+      </div></div>
+      <p><strong>Part 2 — now judge the reverse order.</strong> <code class="inline">Text("Sale").background(.yellow).padding(20)</code> — the padding area in this version is…</p>
+      ${choicesHTML(def.id,1,def.partChoices[1])}`;
+    drawLab(def.id,false);
+  } };
+const CUSTOM_CHECK={ modifierLab(def){
+      const sel=picks[def.id]||{};
+      if(sel[0]===undefined||sel[1]===undefined){ note(def.id,"Answer both parts — your prediction (Part 1) and your judgment of the reverse order (Part 2)."); return; }
+      const frac=(HKEY('mc',def.id,0,sel[0])===def.phashes[0]?0.5:0)+(HKEY('mc',def.id,1,sel[1])===def.phashes[1]?0.5:0);
+      grade(def.id,frac,'part1:'+sel[0]+' part2:'+sel[1]);
+    }};
+const DEFS={"w1":{"id":"w1","mod":"Module 0 · Welcome to iOS Development","type":"mc","points":2,"secondTryCredit":true,"title":"Predict: var becomes let","prompt":"<p>Your first Swift program used <code class=\"inline\">var<\/code>. Your friend changes line 1 to <code class=\"inline\">let<\/code> and keeps everything else. <strong>Commit to a prediction:<\/strong> what happens now?<\/p>","code":"let weeksLeft = 4\nweeksLeft = 3\nprint(weeksLeft)","choices":["It prints 3 — same as with var","It prints 4 — <code>let<\/code> quietly ignores line 2","The program won't compile: you can't assign a new value to a <code>let<\/code> constant","It compiles, then crashes when line 2 runs"],"hint1":"<code>var<\/code> declares a variable — its value can change. <code>let<\/code> declares a constant — it can't.","hint2":"Swift checks this before the program ever runs. Assigning to a constant is a compile-time error, not a crash.","explain":"<code>let<\/code> makes <code>weeksLeft<\/code> a constant, so line 2 is refused by the compiler: the program never runs at all. That's Swift protecting you early — a whole class of 'value changed by accident' bugs becomes impossible. Rule of thumb from the lesson: start with <code>let<\/code>, switch to <code>var<\/code> only when the value truly must change.","revisit":"Module 0, lesson 'Welcome to iOS Development' — and Module 2, 'Values, Types and Your First Program'.","ahash":"9b31582711b8ce960c106d8cceab56632e10aa90b7cf4c109263f006d65c46ce"},"w2":{"id":"w2","mod":"Module 0 · Welcome to iOS Development","type":"multi","points":3,"secondTryCredit":true,"title":"Predict: the @State tap counter","prompt":"<p>This is the first SwiftUI screen from Module 0, shortened. Predict both answers before checking.<\/p>","code":"struct CounterView: View {\n    @State private var taps = 0\n    var body: some View {\n        VStack {\n            Text(\"Button tapped \\(taps) times\")\n            Button(\"Tap me\") { taps += 1 }\n        }\n    }\n}","parts":[{"prompt":"The button is tapped 3 times. What does the Text show?","choices":["Button tapped 0 times — the screen never changes","Button tapped 1 times","Button tapped 3 times","Nothing — SwiftUI views can't count"],"ahash":"fc4e6ad9023cec5fd4f71e1a1f1ac6fa34bf0421fb08ef9ea92a7f981034c3c2"},{"prompt":"Why does the counter need <code>@State<\/code> instead of a plain <code>var taps = 0<\/code> inside the struct?","choices":["Because a view is a struct — a value that gets recreated — so a plain stored <code>var<\/code> can't be mutated from inside <code>body<\/code>, and nothing would tell SwiftUI to re-run <code>body<\/code>. <code>@State<\/code> stores the value outside the struct and triggers a re-run when it changes","Because <code>var<\/code> is banned in SwiftUI files","Because <code>@State<\/code> is what makes the button tappable","Because plain <code>var<\/code> values reset every second"],"ahash":"efec5cc909edd963dfce78af5035735156834bad80ddd7c26f77a09355dff0a9"}],"hint1":"Part 2 is the key idea of the whole course: SwiftUI re-runs <code>body<\/code> whenever state it depends on changes, and rebuilds the screen from the new values.","hint2":"For Part 1: if @State works as designed, the screen always shows the current value of <code>taps<\/code>.","explain":"Each tap runs <code>taps += 1<\/code>; because <code>taps<\/code> is <code>@State<\/code>, SwiftUI re-runs <code>body<\/code> and the Text is rebuilt with the new count — after 3 taps it reads 'Button tapped 3 times'. A plain <code>var<\/code> inside the struct couldn't even be changed (structs are values; their methods and computed properties can't mutate stored properties), and SwiftUI would have no signal to redraw. State drives the screen — you'll meet this again in the Module 4 extension.","revisit":"Module 0, lesson 'Welcome to iOS Development' (Your first SwiftUI screen)."},"a1":{"id":"a1","mod":"Module 1 · One Swift Codebase, Many Screens","type":"typed","points":5,"secondTryCredit":true,"title":"Points, pixels, and scale factors — you do the math","prompt":"<p>SwiftUI layouts are measured in <strong>points<\/strong>. Screens render them at a scale factor: <strong>@2x<\/strong> means 1 point = 2×2 pixels, <strong>@3x<\/strong> means 1 point = 3×3 pixels. A designer hands you an icon that must appear at <strong>30 × 30 points<\/strong>, and a screenshot from a @3x iPhone.<\/p>","fields":[{"label":"1) The 30-point icon at @2x needs an image","placeholder":"?","suffix":"pixels wide","short":"icon@2x","ahashes":["7470ba756875f9d80bd221d1ba2f073a6aa21ebc161377460ffe04f281c5f752","652f3f829e3a891426355a3852286a298e6857210d72ed75cffd410d15c42abe","2051bbffa4c09e83c515a18729205dd37f891caa7271b7617ffb37442adcb5cc","03f1d0e6b205d3fe85019d048c6826f0cc6cdf6ecea524ac442ed49b466f30c2","61d72301e5e14ce5affcb5601ec09517ac407f3086f3b48fc89aa949e8f62a56","cbb88d59c8c73eeaf72e1ef08179b90db700a4ce8a1f368029b98275e9a11391","9281e6f874d9c3f33c0b531f39f2f20a5c063a484e2d8a8862b8e84c1d69e967"]},{"label":"2) The same icon at @3x needs an image","placeholder":"?","suffix":"pixels wide","short":"icon@3x","ahashes":["6f636b05f2e2405b8c5f6b7f462a56141c99238727528add5a88d45948c188ca","821d4dacb6fb007c60b6085a9ee360357db608974acbd985fa114971c366de63","511bea91207b40bb6b0d4b7f3ab414cad8e10796d3efcd8dcf2416eefea279fc","cc364d2bdfbff2e6ddcaacb67d4a5723eab585cd5d3a7cd2caca7550c0699733","82035829d2b8cb15ecfe3a6a9906ec5cb926bec9f44516cffc0f679e7a1a08c8","46f49e5028ddb15487cc4915b30c5429afa58edf08bf2c0963d8139457f3e526","623cb3d05eb8644b342c16debf6305499cef95f7c76531a41dfe7d2473edf8ba"]},{"label":"3) A button measures 132 pixels wide in the @3x screenshot. In your SwiftUI code it is","placeholder":"?","suffix":"points wide","short":"buttonPt","ahashes":["d1aa5796abcb76e5b1f3e05a1c6a2ec020fde3f4b3f6c0623c3f24b758056a6d","9fc3025f3d5f216e67d9ba2e95ef815b7b33063d93d523263f69915b02116b75","99d8b51fe0465f7435c3877754228f21a25eafa3c2fa5025fc9af8d7641e45f0","80271305e94c04e7f63c74543779bee80d4e9e2a96e5b6110c1134c4d340c111","beca984d67f687acbd1ea5b1b8a20342aa6a3f31764febeb78c7a51589ecabed","dbc1994a55b28c7b90d08a046d28b55a196e10d12e4f5ae00a5e7054285e73a9"]}],"checkLabel":"Check my math","hint1":"Pixels = points × scale. Points = pixels ÷ scale.","hint2":"132 ÷ 3 — and notice the answer is a number you'll meet again as the minimum comfortable touch-target size.","explain":"30 pt × 2 = <strong>60 px<\/strong> for @2x; 30 pt × 3 = <strong>90 px<\/strong> for @3x — ship both, or the icon looks blurry on sharper screens. And 132 px ÷ 3 = <strong>44 pt<\/strong>: you always write layout in points and let the scale factor handle the hardware.","revisit":"Module 1, lesson 'One Swift Codebase, Many Screens'."},"a2":{"id":"a2","mod":"Module 1 · Anatomy of a SwiftUI App / SDLC","type":"multi","points":5,"secondTryCredit":true,"title":"Fix the project: three things a beginner broke","prompt":"<p>Three separate projects, three separate mistakes. Pick the correct diagnosis or fix for each.<\/p>","parts":[{"prompt":"You delete the <code>@main<\/code> line above <code>HelloWorldApp<\/code> and build. What happens?","choices":["The app still launches — Xcode finds the App struct by name","The build fails: with no <code>@main<\/code>, the app has no entry point","Xcode quietly adds <code>@main<\/code> back on the next build","The app launches to a black screen"],"ahash":"b2be6e64a73566da7f052b01cc15f946433940d81d515f62c5a2ba1dd6531b59"},{"prompt":"Your trail app needs the user's location, and you want the permission prompt to say “Shows trails near you.” Where does that sentence belong?","choices":["As a <code>Text<\/code> in ContentView, shown before the map","In the Info.plist purpose string (usage description) for location","Inside the bundle identifier","In a comment at the top of the file"],"ahash":"c0abb15ddfad367125ebcaf7e1c8d4f2ec11f8bb943a82c8dd9032f22c6f2d1e"},{"prompt":"Version 1.2.0, build 14 is already on TestFlight. You find a typo and re-upload the fix. The new upload must be:","choices":["Version 1.2.0, build 15 — same version, build number goes up","Version 1.2.1, build 14 — patch version up, build stays","Version 1.2.0, build 14 — just replace the file","Version 2.0.0, build 1 — start fresh"],"ahash":"585fe20e56676c59d5eda37108a66edcc4932ad5a3f612e044b86cbe9086004b"}],"hint1":"Part 1: <code>@main<\/code> is how Swift knows where the program starts. Part 3: every upload to the same version needs a build number higher than the last.","explain":"(1) No <code>@main<\/code> = no entry point = build failure. (2) iOS shows the permission prompt itself, and it reads the reason from the <strong>Info.plist purpose string<\/strong> — your UI never gets to explain first. (3) TestFlight identifies uploads by version + build; a fixed typo is the same version (<strong>1.2.0<\/strong>) with the next build (<strong>15<\/strong>). Re-uploading build 14 is rejected.","revisit":"Module 1, lessons 'Anatomy of a SwiftUI App' and 'The Software Development Life Cycle'."},"a3":{"id":"a3","mod":"Module 1 · The App Lifecycle","type":"multi","points":5,"secondTryCredit":true,"title":"Lifecycle & storage: what happens, and where things live","prompt":"<p>Three moments from a real app's life. Pick what the system does — and what your code should have done.<\/p>","parts":[{"prompt":"A user types a note, swipes up to the Home Screen, and forgets the app. An hour later iOS reclaims its memory. For the note to survive, your code should have…","choices":["Kept the app running in the background so it couldn't be reclaimed","Saved the note as it changed (or when the scene left the active state) — an app in the background can be terminated without running any more of your code","Shown a 'Don't forget to save!' alert when the app launched","Stored the note only in a <code>@State<\/code> variable"],"ahash":"8548f7f1877b4b2a3c40d140f03b00c126e974a3bf65446a3ba0e4966559cb6f"},{"prompt":"A system alert — say, a permission prompt — appears over your app. What scene phase is your app in while it's on screen?","choices":["<code>.active<\/code> — the alert is part of the app","<code>.inactive<\/code> — visible but not receiving events","<code>.background<\/code> — alerts push the app to the background","The app is terminated until the prompt is answered"],"ahash":"36a9e1bc9babb72d144d3f809c881b899e59696660cf1c5007f9cf1b89aa94e6"},{"prompt":"Your app shows photo thumbnails it downloads from a server and can download again at any time. Which sandbox folder fits them best?","choices":["Documents — so they are backed up forever","Caches — the system may purge it under storage pressure, and that's fine for re-downloadable data","The app bundle — next to the executable","They must go in an App Group or they won't load"],"ahash":"8bd9d373f1f305e25e46dc02eb7ff3a823e7bc194cb247f081a78fd0ba7026a5"}],"hint1":"Part 3: ask 'would the user be angry if this vanished?' Thumbnails: no. The note in Part 1: yes — that's why it can't live only in memory.","explain":"Background apps can be terminated <em>without notice<\/em>, so anything that matters must already be saved — you don't get a last chance. A system alert leaves the app visible but <strong>.inactive<\/strong>. And re-creatable downloads belong in <strong>Caches<\/strong>: Documents is for user data that must be backed up, and filling it with disposable files wastes the user's backup space.","revisit":"Module 1, lesson 'The App Lifecycle'."},"a4":{"id":"a4","mod":"Module 1 · Xcode & Kinds of Apps","type":"multi","points":5,"secondTryCredit":true,"title":"Right tool, right structure","prompt":"<p>Four jobs. Pick the tool or structure the course matches to each.<\/p>","parts":[{"prompt":"You want to use an open-source charting library and keep it updated as it improves. Which tool manages it?","choices":["Instruments","Swift Package Manager — it downloads the library, resolves a compatible version, and links it into the build","Copy the library's files into your project folder","The Simulator"],"ahash":"527a9b392c2fc4b36d1d80cd76b3632daff24726a6a33c60587025dcb3765540"},{"prompt":"Your layout must work on an iPad mini, but you only own an iPhone. Quickest check?","choices":["Buy an iPad mini","Run the app in the Simulator with an iPad mini destination","Ship it and wait for user reports","Only previews can do this — and only on a Mac you don't have"],"ahash":"4df72ca9144e2d407f1208bd96f4c9cad782009a124322258bd0dd1317242db0"},{"prompt":"You're building a sketching app where every drawing is a file the user can open from the Files app. Which scene type fits?","choices":["WindowGroup","DocumentGroup — windows tied to files the user creates, opens and saves","MenuBarExtra","ImmersiveSpace"],"ahash":"fdc192bd4cf024313de32577c9e9d0d93b82446d45ee0fd0e69cee00bde47e34"},{"prompt":"Which of these <em>cannot<\/em> be changed after you upload a build to App Store Connect?","choices":["The display name","The version number","The bundle identifier — it's the app's permanent unique ID","The app icon"],"ahash":"6234742d6aca7efe39b2ffa7ea47d3a8352580efffca53e39012fedb918b5930"}],"hint1":"Part 4: it's in reverse-domain form, like <code>com.example.HelloWorld<\/code>, and the whole store ecosystem keys off it.","explain":"Libraries are managed by <strong>Swift Package Manager<\/strong> (copied files go stale instantly). The <strong>Simulator<\/strong> exists precisely so one device can stand in for many. File-based apps use <strong>DocumentGroup<\/strong>. And the <strong>bundle identifier<\/strong> is forever — changing it means a brand-new app as far as the store is concerned.","revisit":"Module 1, lessons 'Xcode and the Developer Toolbox', 'Anatomy of a SwiftUI App', and 'Kinds of Apps and Extensions'."},"b1":{"id":"b1","mod":"Module 2 · Optionals","type":"mc","points":5,"secondTryCredit":true,"title":"Predict: an optional, safely handled","prompt":"<p>Trace it line by line. <code class=\"inline\">Int(\"12\")<\/code> doesn't return an <code class=\"inline\">Int<\/code> — it returns an <code class=\"inline\">Int?<\/code>, because some strings aren't numbers.<\/p>","code":"let input = \"12\"\nlet count = Int(input) ?? 0\nprint(count + 1)","choices":["12","13","0 — the conversion failed, so the fallback was used","It won't compile: you can't add 1 to something that came from a failable conversion"],"hint1":"<code>??<\/code> reads as 'if there's a value, use it; if it's nil, use this instead.' The result is a plain, non-optional Int.","hint2":"Did <code>Int(\"12\")<\/code> succeed or fail? That one fact decides everything.","explain":"<code>Int(\"12\")<\/code> succeeds with the value 12, so <code>?? 0<\/code> unwraps it to a plain <code>Int<\/code> 12 (the fallback is only for failure), and 12 + 1 prints <strong>13<\/strong>. The <code>??<\/code> operator is how you cross from 'might be missing' back to normal arithmetic — safely.","revisit":"Module 2, lesson 'Optionals: Values That Might Be Missing'.","ahash":"0d52acdca2647e8f225e160a39563dfe9027ea70e82c8d9c01cd6ebe4c5a6b6e"},"b2":{"id":"b2","mod":"Module 2 · Collections & Value Semantics","type":"multi","points":5,"secondTryCredit":true,"title":"Predict: copy an array, then append","prompt":"<p>The single most important trace in Module 2. Arrays are <strong>value types<\/strong> — assigning one copies it.<\/p>","code":"var a = [1, 2, 3]\nvar b = a\nb.append(4)","parts":[{"prompt":"After this runs, <code>print(a.count)<\/code> prints…","choices":["3","4","7","0"],"ahash":"a84e8571a1f0cf8f72b63ae20225b332caa81e3fa4b64e4df30321d79e5d9e44"},{"prompt":"And <code>print(b.count)<\/code> prints…","choices":["3","4","7","It won't compile — arrays can't change size"],"ahash":"b595ea12ba429dda113add589a19f183d163898c1626aaa5b37790700614f76c"}],"hint1":"<code>b.append(4)<\/code> touches only one of the two arrays. Which one owns the copy?","explain":"<code>var b = a<\/code> copies the array. Appending to <code>b<\/code> grows only <code>b<\/code>: <code>a.count<\/code> stays <strong>3<\/strong>, <code>b.count<\/code> becomes <strong>4<\/strong>. This is value semantics — the same rule that will explain structs in Section C. (Swift is smart about it: the copy is cheap copy-on-write until one side actually changes.)","revisit":"Module 2, lesson 'Arrays, Dictionaries and Sets'."},"b3":{"id":"b3","mod":"Module 2 · Optionals — You Write It","type":"write","points":6,"secondTryCredit":true,"checker":"guardGreeting","title":"Write it: a greeting that can't crash","prompt":"<p>Complete the function body. Rules taught in the lesson: use <strong><code class=\"inline\">guard let<\/code><\/strong> to unwrap the optional and leave early when it's missing. If <code class=\"inline\">name<\/code> is nil, return <code class=\"inline\">\"Hello, guest\"<\/code>. Otherwise return <code class=\"inline\">\"Hello, \"<\/code> plus the name, using string interpolation.<\/p>","starter":"func greeting(for name: String?) -> String {\n    // unwrap name with guard let; if it's nil, return \"Hello, guest\"\n    // otherwise return \"Hello, \\(name)\"\n}","checkLabel":"Check my Swift","hint1":"Shape: <code>guard let name else { return … }<\/code> on one line, then the happy-path return below it — no nesting needed.","hint2":"After the guard, <code>name<\/code> is a plain <code>String<\/code>. Interpolate it exactly like the course examples: <code>\\(name)<\/code> inside the quotes.","explain":"The model solution is <code>guard let name else { return \"Hello, guest\" }<\/code> followed by <code>return \"Hello, \\(name)\"<\/code>. Guard is the lesson's preferred pattern when a function 'needs this value to do anything useful': the failure path leaves immediately, and the rest of the function works with a guaranteed value — no force-unwrap, no pyramid of <code>if let<\/code>.","revisit":"Module 2, lesson 'Optionals: Values That Might Be Missing'."},"b4":{"id":"b4","mod":"Module 2 · Functions","type":"parsons","points":6,"secondTryCredit":true,"title":"Build the function: assemble pour()","prompt":"<p>Tap the lines in the right order to build a working function. It pours a drink: it takes a drink name and a cup count (default 1), builds a label, adds “(batch)” for more than one cup, and returns the label. One bank line is a distractor that doesn't belong.<\/p>","lines":["func pour(_ drink: String, cups: Int = 1) -> String {","    return label","        label += \" (batch)\"","    }","    if cups > 1 {","}","    var label = \"\\(drink) x\\(cups)\""],"distractor":"    cups = 0","checkLabel":"Check my program","hint1":"A function starts with its declaration and ends with its closing brace. The <code>return<\/code> comes after everything that builds the value.","hint2":"The distractor tries to assign to <code>cups<\/code> — function parameters are constants, so that line can never compile.","explain":"Declaration → build the label → conditional tweak → return → close. Note the two Module 2 ideas baked in: <code>cups: Int = 1<\/code> is a <strong>default value<\/strong> (so <code>pour(\"tea\")<\/code> works), and <code>_ drink<\/code> uses an underscore so the call reads <code>pour(\"tea\", cups: 2)<\/code> with no label on the first argument. And parameters are <code>let<\/code> — which is why <code>cups = 0<\/code> is the distractor.","revisit":"Module 2, lesson 'Functions'.","prank":[0,5,3,4,2,6,1]},"b5":{"id":"b5","mod":"Module 2 · Optionals — Debug","type":"debug","points":5,"secondTryCredit":true,"title":"Debug: the optional that won't multiply","prompt":"<p>This program fails to compile. The error points at the last line — but the real cause is one line earlier. Tap the line where the problem is <em>created<\/em>, then pick the fix the lesson would endorse.<\/p>","lines":["let scores = [8, 5, 9]","let top = scores.max()","print(top * 2)"],"fixes":["Unwrap it safely at the source: <code>let top = scores.max() ?? 0<\/code>","Turn <code>scores<\/code> into a Set so max() isn't optional","Force it: <code>print(top! * 2)<\/code> — it compiles, and that's what matters","Move the multiplication: <code>print(top) * 2<\/code>"],"checkLabel":"Check my diagnosis","hint1":"<code>max()<\/code> on an array returns an optional — what would it return for an <em>empty<\/em> array? That 'might be missing' quality travels into <code>top<\/code>.","hint2":"The fix belongs on the line that created the optional, not on the line where the compiler noticed it.","explain":"<code>scores.max()<\/code> returns <code>Int?<\/code> — nil for an empty array — so <code>top<\/code> is optional and <code>top * 2<\/code> can't compile. The endorsed fix unwraps at the source with a sensible fallback (<code>?? 0<\/code>). Force-unwrapping (<code>top!<\/code>) does compile — and crashes the day the array is empty, which is exactly the bug pattern this lesson exists to prevent.","revisit":"Module 2, lesson 'Optionals: Values That Might Be Missing'.","lhash":"9f5883e2b5ab296a530e762e97931272f719d254f0729acfdd5a511519d35d60","fhash":"334ec3494ecdaa51b26e61c55de128c4c51472553f0ebe4d3ea6b39fe159a587"},"b6":{"id":"b6","mod":"Module 2 · Decisions and Loops","type":"multi","points":6,"secondTryCredit":true,"title":"Predict: switch order and loop control","prompt":"<p>Two short traces. Both test whether you know who wins: the <em>first<\/em> matching case, and <code class=\"inline\">continue<\/code> vs <code class=\"inline\">break<\/code>.<\/p>","parts":[{"prompt":"What does this print?","code":"let speed = 15\nswitch speed {\ncase 10...20: print(\"Moderate\")\ncase 15:       print(\"Exactly fifteen\")\ndefault:       print(\"Fast\")\n}","choices":["Moderate — the first matching case wins, and Swift never falls through","Exactly fifteen — the most specific case wins","Both lines — Swift runs every matching case","It won't compile — two cases can match 15"],"ahash":"0f9e669bc749dfa26ed3e8fad233ebb51d3e25563bb52a9c38e357557d04c200"},{"prompt":"What does this print? (Note the trailing space from <code>terminator<\/code>.)","code":"for n in 1...6 {\n    if n == 2 { continue }\n    if n == 5 { break }\n    print(n, terminator: \" \")\n}","choices":["1 3 4 ","1 3 4 5 6","1 2 3 4","3 4 6"],"ahash":"15064c84c3c9a7d5161c4647fa1887865c8a31c63bf6eb4821e47a82b812dc0f"}],"hint1":"Swift's <code>switch<\/code> is not C's: it stops at the first match. In the loop, <code>continue<\/code> skips one number; <code>break<\/code> ends the whole loop.","explain":"Switch: 15 is inside <code>10...20<\/code>, that case comes first, and Swift executes exactly one case — <strong>Moderate<\/strong>. (The unreachable-looking second case is legal; it's just shadowed for this value.) Loop: 1 prints, 2 is skipped by <code>continue<\/code>, 3 and 4 print, 5 hits <code>break<\/code> and the loop ends before 6 — output <strong>1 3 4 <\/strong>.","revisit":"Module 2, lesson 'Decisions and Loops'."},"b7a":{"id":"b7a","mod":"Module 2 · Closures","type":"mc","points":3,"secondTryCredit":true,"title":"Predict: filter, then map","prompt":"<p>Read the pipeline left to right: first <code class=\"inline\">filter<\/code> keeps some elements, then <code class=\"inline\">map<\/code> transforms the survivors.<\/p>","code":"let nums = [1, 2, 3, 4]\nlet result = nums.filter { $0 % 2 == 0 }.map { $0 * 10 }\nprint(result)","choices":["[20, 40]","[2, 4]","[10, 20, 30, 40]","[40, 20] — map reverses as it goes"],"hint1":"<code>$0<\/code> is the closure's first argument. <code>% 2 == 0<\/code> means 'even'.","explain":"Filter keeps the evens [2, 4]; map multiplies each by 10 → <strong>[20, 40]<\/strong>, order preserved. Chained closures like this are the functional style you'll see again in Module 3's paradigms.","revisit":"Module 2, lesson 'Closures and Higher-Order Functions'.","ahash":"8370b9c73477bce53ec6d39fe7f5275f29b3f5deaadef0f7eecb02d9ac2853d2"},"b7b":{"id":"b7b","mod":"Module 2 · Closures — You Write It","type":"write","points":4,"secondTryCredit":true,"checker":"compactMapLine","title":"Write it: keep only the numbers that parse","prompt":"<p>Given <code class=\"inline\">let inputs = [\"4\", \"four\", \"8\"]<\/code>, write the <strong>one line<\/strong> that produces <code class=\"inline\">nums<\/code>, a plain <code class=\"inline\">[Int]<\/code> holding only the valid numbers: <code class=\"inline\">[4, 8]<\/code>. The lesson has a higher-order function made exactly for 'transform, and drop the ones that come back nil.'<\/p>","starter":"let inputs = [\"4\", \"four\", \"8\"]\nlet nums = ","checkLabel":"Check my Swift","hint1":"It's not <code>map<\/code> — map would give you <code>[Int?]<\/code> with a nil in the middle. Its sibling throws the nils away.","hint2":"The line ends with a trailing closure: <code>{ Int($0) }<\/code>.","explain":"<code>let nums = inputs.compactMap { Int($0) }<\/code>. <code>map { Int($0) }<\/code> would produce <code>[Optional(4), nil, Optional(8)]<\/code>; <code>compactMap<\/code> unwraps the successes and discards the nil, giving a clean <code>[Int]<\/code>. Choosing between map / filter / compactMap is a core Module 2 judgment call.","revisit":"Module 2, lesson 'Closures and Higher-Order Functions'."},"c1":{"id":"c1","mod":"Module 3 · Structs vs Classes","type":"multi","points":6,"secondTryCredit":true,"title":"Predict the pair: copy vs shared reference","prompt":"<p>Two tiny programs that look almost identical. They print <em>opposite<\/em> results — and the difference is the whole lesson.<\/p>","parts":[{"prompt":"Program 1 — a <code>struct<\/code>. What prints?","code":"struct Counter {\n    var value = 0\n}\nvar a = Counter()\nvar b = a\nb.value = 5\nprint(a.value)","choices":["0 — b is an independent copy; changing it leaves a alone","5 — b and a are the same counter","It won't compile — structs can't be copied"],"ahash":"95c4d1e111d4ab01e01d0a08b4f60be1ac3db4ed600550d344c6b47b218064c1"},{"prompt":"Program 2 — a <code>class<\/code>. What prints?","code":"class Light {\n    var isOn = false\n}\nlet a = Light()\nlet b = a\nb.isOn = true\nprint(a.isOn)","choices":["false — b is an independent copy","true — a and b are two names for the same object, so the change shows through both","It won't compile — you can't mutate through a <code>let<\/code>"],"ahash":"a2ae13b616090d4c75ff67b48e807d8a6654a08522d5d1903638fbe6da6439ab"}],"hint1":"One of these types is a <em>value<\/em> (assignment copies it). The other is a <em>reference<\/em> (assignment shares it). Also notice: the class version mutates happily through <code>let<\/code> — the constant is the reference, not the object.","explain":"Structs are value types: <code>var b = a<\/code> copies, so <code>a.value<\/code> stays <strong>0<\/strong> — the same rule as the array in B2. Classes are reference types: <code>let b = a<\/code> copies only the <em>reference<\/em>, both names point at one object, and <code>a.isOn<\/code> reads <strong>true<\/strong>. That's why the lesson's default is 'reach for a struct; use a class when you need shared identity or inheritance.'","revisit":"Module 3, lessons 'Structs: Your Own Value Types' and 'Classes and Reference Semantics'."},"c2":{"id":"c2","mod":"Module 3 · Enums","type":"multi","points":6,"secondTryCredit":true,"title":"Model the state: enums make illegal states impossible","prompt":"<p>A download screen can be idle, loading, finished (with the file's data), or failed (with a message). Three designs are on the table.<\/p>","parts":[{"prompt":"Which design is best — and why does the lesson insist on it?","choices":["An enum <code>LoadState<\/code> with associated values — exactly one case can be true at a time, and each case carries only its own data","Three Bools — <code>isLoading<\/code>, <code>hasError<\/code>, <code>hasData<\/code> — simple and flexible","A String like <code>\"loading\"<\/code> — easiest to print","An Int code — 0, 1, 2, 3 — fastest"],"ahash":"0347775ac41edb50bd9015f31ca2e671e3531c10bcc98257b3e47e9d67a591a8"},{"prompt":"In the winning design, what should the <code>.success<\/code> case carry as its associated value?","choices":["The downloaded data itself — the payload the next screen needs","A Bool saying success happened","Nothing — associated values are only for failures","The user's password, for convenience"],"ahash":"ae8167ca714fa3ec1fe165dd6cc0bd9ec61e2e1649afd9c203b67db145d8bb8f"},{"prompt":"Your enum <code>CoffeeSize<\/code> gains a new case, <code>extraLarge<\/code>. An existing <code>switch<\/code> over sizes has no <code>default<\/code>. What happens at the next build?","choices":["Nothing — switches ignore new cases","It compiles, but crashes if extraLarge is selected","The build fails until the switch handles the new case — exhaustiveness turns 'forgot a case' into a compile error","Swift adds a default for you"],"ahash":"92c20b8c61c6518cdae0834edb398a6bf6eabc5a89e68f2357878e319d4dc82b"}],"hint1":"With three Bools there are 8 combinations — how many of them make sense? (What does isLoading AND hasError AND hasData even mean?)","explain":"Three Bools allow impossible states (loading <em>and<\/em> failed <em>and<\/em> done). An <strong>enum with associated values<\/strong> makes the state exactly one thing, with each case carrying precisely its own payload — data for success, a message for failure. And because Swift <code>switch<\/code> must be <strong>exhaustive<\/strong>, adding a case breaks the build everywhere it's unhandled: the compiler becomes your checklist instead of your users becoming your testers.","revisit":"Module 3, lesson 'Enums: Modeling Choices and State'."},"c3":{"id":"c3","mod":"Module 3 · Protocols","type":"multi","points":5,"secondTryCredit":true,"title":"Protocols: promises a type makes","parts":[{"prompt":"Which protocol must a struct adopt so its values can be stored in a <code>Set<\/code>?","choices":["Hashable — sets identify elements by their hash","Comparable","Identifiable","Codable"],"ahash":"90060249bc1b5ed198767bf685d4c2f94dcc3e87ed10f0a0c558cba93eaee06c"},{"prompt":"A protocol requires <code>var price: Double { get }<\/code>. A type provides <code>let price = 4.50<\/code>. Does it satisfy the requirement?","choices":["Yes — <code>{ get }<\/code> only promises the value can be read, and a <code>let<\/code> constant can always be read","No — the protocol says <code>var<\/code>, so the type must use <code>var<\/code>","No — protocol properties must be computed","Only if the type is a class"],"ahash":"7caff12bdded52ea97adea72bb0c3acd54a758610e5680e131288cf3aa91572a"},{"prompt":"A protocol extension provides a default <code>shareText<\/code>. One type writes its <em>own<\/em> <code>shareText<\/code>. When that type shares, which text is used?","choices":["The type's own — a concrete implementation always beats the default","The default — extensions can't be overridden","Both, one after the other","It won't compile — providing your own is an error"],"ahash":"f263880636623e2236a1b11dc87480aa07c4020b2b74c6a229c1efc4b7d4c2f2"}],"hint1":"Part 2: read <code>{ get }<\/code> as a promise about <em>reading<\/em>, not about how the value is stored.","explain":"Sets need <strong>Hashable<\/strong>. A <code>{ get }<\/code> requirement is a read promise — a stored <code>let<\/code>, a stored <code>var<\/code>, or a computed getter all keep it. And protocol-extension defaults are fallbacks: a type's own implementation always wins. Together these are Swift's protocol-oriented design: share behavior by default, specialize where it matters.","revisit":"Module 3, lesson 'Protocols and Protocol-Oriented Design'."},"c4":{"id":"c4","mod":"Module 3 · Error Handling","type":"multi","points":5,"secondTryCredit":true,"title":"Errors: defer, try?, and useful failures","parts":[{"prompt":"What does this print, and in what order?","code":"func save() {\n    defer { print(\"A\") }\n    print(\"B\")\n}\nsave()","choices":["B, then A — <code>defer<\/code> runs when the scope exits, after everything else in it","A, then B — defer runs immediately","Only B — defer is documentation","Only A"],"ahash":"6a696ada9c32b395f79f45ff979579a5cef8cce3f55e9c4cc48ea630bf7c8294"},{"prompt":"<code>parseTip(\"abc\")<\/code> throws (the text isn't a number). What is <code>let tip = try? parseTip(\"abc\")<\/code>?","choices":["nil — <code>try?<\/code> turns a throw into an optional","The program crashes — try? can't catch","0 — try? substitutes zero","\"abc\" — the input passes through"],"ahash":"16e4a49f8cb6606866828db3e20785bd68f75a07c980c294dfeb9cfc64027dee"},{"prompt":"Which error design gives callers the most useful failures?","choices":["A typed error enum whose cases callers can <code>switch<\/code> over and react to differently","Printing 'error!' inside the function and returning -1","Crashing — errors should be impossible to ignore","Returning an empty string so the UI just looks blank"],"ahash":"f4d09872c0f107332ceedc325a28da733a98f2dccfafe29d2a40134daf2bd515"}],"hint1":"<code>defer<\/code> means 'when we leave this scope, whenever and however that happens' — perfect for cleanup like closing a file.","explain":"<code>defer<\/code> runs at scope exit: <strong>B, then A<\/strong>. <code>try?<\/code> converts failure into <strong>nil<\/strong> — right when the caller only cares 'did it work?', wrong when they need to know <em>why<\/em>. And typed, switchable errors beat sentinel values (-1, \"\") because the compiler can force callers to handle them. Choose per call site: <code>do/catch<\/code> to react, <code>try?<\/code> to shrug safely, <code>try!<\/code> almost never.","revisit":"Module 3, lesson 'Error Handling'."},"c5":{"id":"c5","mod":"Module 3 · Concurrency","type":"multi","points":5,"secondTryCredit":true,"title":"Concurrency timing: sequential vs async let","prompt":"<p>Three independent downloads take <strong>1s, 2s, and 1s<\/strong>. They don't depend on each other.<\/p>\n  <div class=\"timeline\">\n    <div class=\"tl-row\"><div class=\"tl-label\">Sequential<\/div><div class=\"tl-track\"><div class=\"tl-fill\" style=\"left:0;width:25%;background:#ff9f0a\"><\/div><div class=\"tl-fill\" style=\"left:25%;width:50%;background:#64d2ff\"><\/div><div class=\"tl-fill\" style=\"left:75%;width:25%;background:#30d158\"><\/div><\/div><\/div>\n    <div class=\"tl-row\"><div class=\"tl-label\">async let<\/div><div class=\"tl-track\"><div class=\"tl-fill\" style=\"left:0;width:50%;background:linear-gradient(90deg,#ff9f0a,#64d2ff,#30d158)\"><\/div><\/div><\/div>\n  <\/div>\n  <p class=\"mini\">Bars are drawn to scale. The second bar's total length is the question.<\/p>","parts":[{"prompt":"Run one after another with plain <code>await<\/code>s, the total time is about…","choices":["4 seconds — the times add up","2 seconds — the longest one","1 second — they overlap anyway"],"ahash":"413ae41b0119f40a383a304bd25564dcc8b7002e8e3b31a1dfed5c4177ec619d"},{"prompt":"Started together with <code>async let<\/code>, the total time is about…","choices":["4 seconds — concurrency changes nothing","2 seconds — they run in parallel, so the longest download decides","12 seconds — parallel work is slower"],"ahash":"1cd3c3aa03f44675cd6dc07466502d39654378f551c5576a799a1a4e7ff10297"}],"hint1":"Sequential time is a sum. Parallel time is a maximum.","explain":"Sequential awaits add: 1 + 2 + 1 = <strong>4s<\/strong>. With <code>async let<\/code> all three start together and run concurrently, so you're done when the slowest finishes: <strong>about 2s<\/strong>. The rule: <code>await<\/code> one-by-one for dependent steps; <code>async let<\/code> when steps are independent. (Deeper machinery — actors, Sendable — is this homework's bonus, not its core.)","revisit":"Module 3, lesson 'Concurrency: async/await and Actors'."},"c6":{"id":"c6","mod":"Module 3 · Transfer — You Write It","type":"write","points":5,"secondTryCredit":true,"checker":"transferTotal","title":"Transfer task: finish the receipt total","prompt":"<p>New situation, same skills — this is the point of a transfer task. You're given this model from the course:<\/p>\n  <pre class=\"code\"><code>struct Order {\n    var item: String\n    var qty: Int\n    var priceCents: Int\n}<\/code><\/pre>\n  <p>Complete <code class=\"inline\">totalCents(for:)<\/code>: it receives an <strong>optional<\/strong> Order. No order means the total is <strong>0<\/strong>. Otherwise the total is <code class=\"inline\">qty × priceCents<\/code>. Use <code class=\"inline\">guard<\/code> for the missing case, like you did in B3.<\/p>","starter":"func totalCents(for order: Order?) -> Int {\n    // guard against nil first, then compute and return the total\n}","checkLabel":"Check my Swift","hint1":"It's B3's shape wearing new clothes: guard-let, early return for the sad path, one expression for the happy path.","hint2":"Happy path: <code>return order.qty * order.priceCents<\/code> — after the guard, <code>order<\/code> is a real Order, no <code>?<\/code> needed.","explain":"Model solution: <code>guard let order else { return 0 }<\/code> then <code>return order.qty * order.priceCents<\/code>. If you got this right, you didn't just memorize — you transferred: a supplied model (Module 3 structs), safe unwrapping (Module 2 optionals), and early-exit structure, combined in code you'd never seen before. That's the skill the whole homework is measuring.","revisit":"Module 3, lesson 'Structs' + Module 2, lesson 'Optionals' — transfer lives between lessons."},"c7":{"id":"c7","mod":"Module 3 · Transfer — Predict","type":"multi","points":3,"secondTryCredit":true,"title":"Predict your own function","prompt":"<p>Assuming <code class=\"inline\">totalCents(for:)<\/code> from the previous item works exactly as specified, predict its results. (If you struggled there, use the model solution in its feedback — predicting correctly still counts.)<\/p>","parts":[{"prompt":"Ordinary input: <code>totalCents(for: Order(item: \"Latte\", qty: 3, priceCents: 250))<\/code> returns…","choices":["750","250","3","0"],"ahash":"207523c9b7fabe2304b0173a5f468b172de716328a4dbeb5f369f80f3527ca07"},{"prompt":"Edge case: <code>totalCents(for: nil)<\/code> returns…","choices":["0 — the guard's early return","It crashes — nil can't be passed","750","It never returns"],"ahash":"a916b089a21ace67b7c8eb60c9ad69db82fd1e694fa21236dbd1deb65e3c5d53"}],"hint1":"Edge cases are where designs prove themselves: what did you tell the function to do when there's no order at all?","explain":"3 × 250 = <strong>750<\/strong> cents. And the edge case returns <strong>0<\/strong> by design — the guard makes 'no order' a normal, handled situation instead of a crash. Testing an ordinary input <em>and<\/em> an edge input is the professional habit this pair of items is really grading.","revisit":"Module 3, lesson 'Structs' + Module 2, lesson 'Optionals'."},"cb":{"id":"cb","mod":"Module 3 · Concurrency — Bonus","type":"mc","points":2,"bonus":true,"secondTryCredit":true,"title":"Bonus: why the actor always lands on exactly 1000","prompt":"<p>A <code class=\"inline\">LikeCounter<\/code> is an <strong>actor<\/strong>. A thousand tasks each tell it to add 1, all at the same time. The final count is always exactly 1000 — never 998, never 1001. Why?<\/p>","choices":["The actor runs only one task's access at a time — increments queue up instead of interleaving, so no update is lost","Actors make the CPU faster","The tasks secretly run one after another because Swift concurrency is fake","1000 is just the most common outcome"],"hint1":"Without protection, two tasks can both read 41, both add 1, and both write 42 — one like vanishes. What does the actor do to that interleaving?","explain":"That's the data-race problem actors exist to solve: an actor <strong>serializes<\/strong> access to its state, so each increment completes before the next begins. No lost updates, exactly 1000, every run. (Full actor/Sendable rules are beyond this homework — recognizing the problem they solve is the takeaway.)","revisit":"Module 3, lesson 'Concurrency: async/await and Actors'.","ahash":"0128a47aa5a02987485f979a45c951b201ed2e12605b15a9b457403d9e7ff506"},"d1":{"id":"d1","mod":"Module 4 · Views and Modifiers","type":"custom","custom":"modifierLab","points":5,"extension":true,"secondTryCredit":true,"title":"Modifier order lab: padding vs background","prompt":"<p>Modifiers wrap the view one at a time, in the order written — so order changes the result. <strong>Commit your Part 1 prediction before you touch the phone<\/strong>: predicting first, then checking against the simulation, is the exercise.<\/p>","partChoices":[["Only directly behind the letters — backgrounds never cover padding","Behind the letters <em>and<\/em> across the padded area — padding was applied first, so the background paints everything inside it","Across the whole screen width","Nowhere — two modifiers in a row is an error"],["Also yellow — order between these two doesn't matter","Clear — the background was painted when the view was still letter-sized; the padding added afterward sits outside it","Blue — padding has a default color","The text disappears"]],"hint1":"Read the chain inside-out: each modifier receives the view produced by the one before it, and returns a slightly bigger view.","explain":"<code>padding<\/code> first makes a bigger view (text + clear space); <code>background<\/code> then paints that whole area yellow. Reversed, the background paints only the letter-sized view, and the padding added later is transparent space around it. Same words, different order, different picture — the signature SwiftUI gotcha, and the reason you read modifier chains carefully.","revisit":"Module 4, lesson 'Views and Modifiers'.","phashes":["39aaef457257a7c5e1dc3702dcb3642d2bb5c9433ec31c0d6ce23a61226c53e5","95077042068770a95447f6b317ed25b0f3b44425e7df0e302e586dda1b5ebcf3"]},"d2":{"id":"d2","mod":"Module 4 · Stacks, Frames, and Grids","type":"multi","points":4,"extension":true,"secondTryCredit":true,"title":"Layout reasoning: Spacer and the stingy background","prompt":"<p>The phone in the course preview would show a row: <code class=\"inline\">HStack { Text(\"Total\"); Spacer(); Text(\"$42\") }<\/code> inside a full-width bar.<\/p>","parts":[{"prompt":"Where do the two texts end up?","choices":["“Total” pinned left, “$42” pushed to the right edge — Spacer expands to fill the gap","Both centered together","Both at the left — Spacer is just a fixed 8-point gap","“$42” disappears off-screen"],"ahash":"f0da1d03b5b5ed6645c78734210ae1a4c54d74a32988ab82f72ab513dd8ee67b"},{"prompt":"<code>Text(\"Save\").background(.blue).frame(maxWidth: .infinity)<\/code> stretches across the screen — but the blue still only covers the word. Why?","choices":["The background was applied <em>before<\/em> the frame, so it painted the text's original size; the frame grew the view afterward","Blue backgrounds ignore frames","Frames only work inside a VStack","The preview is broken — real iPhones paint it fully"],"ahash":"7337d847cd8b740f72397e1bd1f02ec155c08c1be61165435648fdb7ddea7b78"}],"hint1":"Part 2 is D1's lesson in a new costume: a modifier can only paint what exists at its position in the chain.","explain":"<code>Spacer()<\/code> is a view that expands, pushing its neighbors apart — the standard 'label left, value right' row. And the frame puzzle is modifier order again: paint first, stretch second means the paint keeps the old size. Want full-width blue? Put <code>.background<\/code> after the frame — or on a container that already has the size you want.","revisit":"Module 4, lesson 'Stacks, Frames, and Grids'."},"d3":{"id":"d3","mod":"Module 4 · State Drives the Screen / Observable Models","type":"multi","points":5,"extension":true,"secondTryCredit":true,"title":"Single source of truth","parts":[{"prompt":"A shopping screen stores <code>@State var items: [String]<\/code> <em>and<\/em> <code>@State var itemCount = 0<\/code>. Add increments the count; a new Delete button forgets to decrement it. The header count drifts wrong. The lesson's fix?","choices":["Delete the stored count and compute it: <code>var itemCount: Int { items.count }<\/code> — one source of truth, derived values are computed, never stored twice","Add a second Delete handler and be more careful","Store the count in the Delete button","Rebuild the screen every second"],"ahash":"d19e9315efed092b0c3d6ae887f1d2767e5b970fde009e6c200ea2bd73771fd6"},{"prompt":"A child view contains the Toggle that must flip its <em>parent's<\/em> <code>isMuted<\/code>. The child should declare it as…","choices":["<code>@Binding var isMuted: Bool<\/code> — a two-way connection to the parent's state, not a copy","<code>@State private var isMuted = false<\/code> — every view keeps its own","<code>let isMuted: Bool<\/code>","A global variable both views import"],"ahash":"12f9fea9552b37e0f8187434e96622d9c702ec66b53c0cbb95f2002424a145af"},{"prompt":"An <code>@Observable<\/code> model class <code>Order<\/code> is created and owned by a view. Why write <code>@State private var order = Order()<\/code> instead of <code>let order = Order()<\/code>?","choices":["So SwiftUI keeps that exact instance alive and tied to the view's lifetime across body re-runs — the view owns the model","Because classes can't be stored in <code>let<\/code>","Because <code>@State<\/code> makes classes faster","It makes no difference — style only"],"ahash":"70575a4ca4de09036b322e5dfbc2b2e22d97d9ea778242a9ac8962fac50eebe6"}],"hint1":"Part 1's bug has a name: two sources of truth for one fact. They <em>will<\/em> disagree eventually — usually right after a new feature (like Delete) arrives.","explain":"Derived facts (a count of items) must be <strong>computed from<\/strong> the source of truth, never stored beside it. Children that must <em>change<\/em> a parent's value get a <strong>@Binding<\/strong> — a live two-way wire, not a copy. And a view that creates an @Observable model holds it in <strong>@State<\/strong> so the same instance survives every re-run of <code>body<\/code>. One fact, one owner, live connections: that's reactive UI hygiene.","revisit":"Module 4, lessons 'State Drives the Screen' and 'Observable Models'."},"d4":{"id":"d4","mod":"Module 4 · Forms and Input","type":"multi","points":4,"extension":true,"secondTryCredit":true,"title":"Form edges: bindings, spaces, and the right control","parts":[{"prompt":"Why does <code>TextField(\"Email\", text: $email)<\/code> pass <code>$email<\/code> — with the dollar sign — instead of <code>email<\/code>?","choices":["The <code>$<\/code> passes a <strong>Binding<\/strong>: a two-way connection so typing updates the state <em>and<\/em> state changes update the field","The $ is Swift's symbol for strings","It's a typo that happens to compile","The $ makes the field secure"],"ahash":"c2d792df6ac3528a07696df331fcfa4e928fde4fe21da7e66343e7b3abd8e030"},{"prompt":"The pay button is <code>.disabled(name.isEmpty)<\/code>. A customer types a single space as their name — the button enables, and the order goes through with a 'blank' name. The robust fix?","choices":["Check the <em>trimmed<\/em> name: <code>name.trimmingCharacters(in: .whitespaces).isEmpty<\/code> — whitespace-only counts as empty","Require names of at least 2 characters","Disable the space bar","Compare against \" \" exactly — that covers every case"],"ahash":"5ecef90d4ceab6f3fb3ec2ed44faf8991bc9955ae6d44b674fed10dd8ab7f013"},{"prompt":"'How many people split this bill?' — the answer is always 1 to 12. Best control?","choices":["A Stepper bound to the count, with its range set to 1...12","A free-text TextField — people know what to type","A Picker with 14 flavors","A Slider with no labels"],"ahash":"e614adfb1bd79a5e8d59bbfa64ec33e8f7f81a726ba3e9ea06bb01948126b284"}],"hint1":"Part 2: the bug isn't that the check is missing — the check exists and still fails. Ask what a space <em>is<\/em> to a String.","explain":"<code>$<\/code> projects a <strong>Binding<\/strong> — without it, the field could display the value but never write back. A single space is a non-empty String, so <code>isEmpty<\/code> passes it: validate what the user <em>means<\/em> (trim first), not the raw keystrokes. And bounded counts want a <strong>Stepper<\/strong> — the control itself makes out-of-range input impossible, which beats checking after the fact.","revisit":"Module 4, lesson 'Forms and Input'."},"d5a":{"id":"d5a","mod":"Module 4 · Lists — Capstone Warm-Up","type":"mc","points":2,"extension":true,"secondTryCredit":true,"title":"Predict what breaks: duplicate names in a list","prompt":"<p>A contacts list is built with <code class=\"inline\">ForEach(names, id: \\.self)<\/code> — each row's identity <em>is<\/em> its name. The user adds a second contact also named “Sam”. <strong>Predict what breaks<\/strong> before you build the capstone.<\/p>","choices":["Identity collision: two rows claim the same identity, so SwiftUI can confuse them — wrong row deleted, animations and updates landing on the wrong Sam","Nothing — SwiftUI counts duplicates automatically","The app always crashes on launch","The second Sam is silently renamed Sam 2"],"hint1":"Identity is how SwiftUI tells rows apart across updates. What happens to any ID system when two different things share one ID?","explain":"<code>id: \\.self<\/code> works only while every value is unique. Two Sams = two rows with one identity, and SwiftUI's diffing can attach changes to the wrong row. The fix — stable, unique identity per element (an <code>Identifiable<\/code> model with its own id) — is one of the capstone choices below.","revisit":"Module 4, lesson 'Lists and Dynamic Data'.","ahash":"dd95e7cfcfaf01c666260e76944e39c485826d39f13aadba9fdaf9c9627c0d99"},"d5b":{"id":"d5b","mod":"Module 4 · Capstone Builder","type":"builder","points":5,"extension":true,"attemptFactors":[1,0.5,0.25],"title":"Capstone: assemble the product card screen","prompt":"<p>Build a small shop screen from decisions, not syntax: a product card with a quantity stepper (a child view), shown in a list of products, tapping a product opens its details. Choose one option per group — the checklist and the simulated phone react live. You get <strong>three graded checks<\/strong> (full, half, then quarter credit), so use the checklist before you spend one.<\/p>","groups":[{"label":"1 · The quantity lives where?","options":["In @State owned by the card view — one owner, one source of truth","In @State in the card AND a separate counter in the parent","In a global variable any file can change"],"checkText":"Quantity has exactly one owner (@State in the card)","ahash":"214815a452ff357db4ebc46716d345abe2d84d9e64df338d83cb3b10c46e39a2"},{"label":"2 · The child stepper changes the quantity through…","options":["Its own private @State copy of the quantity","A @Binding to the card's quantity — writes go straight to the source","A let passed down from the card"],"checkText":"Child edits through a @Binding, not a copy","ahash":"8a10564a34236cee0bfa223797a517d0a48c91e9656dd04fdb39a091aec7177d"},{"label":"3 · Products in the list get their identity from…","options":["id: \\.self on the product name — duplicates are possible","A stable unique id on each product (Identifiable) — duplicates names are fine","No identity — position in the array is enough even after deletions"],"checkText":"List rows have stable, unique identity","ahash":"517e034615a73aa22e3960cfedb3776ac1d9b91d2c7e5f361a50199546c10337"},{"label":"4 · Tapping a product opens details via…","options":["An alert showing the product name","NavigationLink(value:) inside a NavigationStack, with a navigationDestination for the product type","A second TabView"],"checkText":"Details open through NavigationStack navigation","ahash":"37562009624d6b6624bc18f2587c04f3a1700f3bf7122bf32da2131f3c21d336"}],"checkLabel":"Grade my build","hint1":"Every group is one lesson in disguise: ownership (D3), bindings (D3), identity (D5a), navigation (Module 4, 'Navigation, Tabs, and Sheets').","hint2":"If the checklist shows a ✗, that group is wrong — the checklist is live feedback, and it never lies. Fix groups until only ✓ remains, <em>then<\/em> grade.","explain":"The passing build: quantity <strong>@State in the card<\/strong> (single owner), the stepper edits it through a <strong>@Binding<\/strong>, products carry <strong>stable unique identity<\/strong> (so two Trail Mugs in the list are still two rows), and details open via <strong>NavigationLink(value:) + navigationDestination<\/strong> inside a NavigationStack (the value type must be Hashable — that's the fine print from the lesson). Notice what you just did: four architecture decisions, each traceable to a specific failure you predicted earlier in this homework.","revisit":"Module 4, lessons 'State Drives the Screen', 'Lists and Dynamic Data', and 'Navigation, Tabs, and Sheets'.","neutralPreview":true},"db":{"id":"db","mod":"Module 4 · Adaptivity — Bonus","type":"mc","points":2,"extension":true,"bonus":true,"secondTryCredit":true,"title":"Bonus: ViewThatFits with nowhere to fit","prompt":"<p>A <code class=\"inline\">ViewThatFits<\/code> offers three layouts, widest first. The available width is narrower than <em>all three<\/em>. What does SwiftUI show?<\/p>","choices":["The first child — it gives up and overflows","The last child — ViewThatFits falls through to its final option, even if it doesn't fit","Nothing — an empty space","It crashes — at least one child must fit"],"hint1":"ViewThatFits tries children in order and takes the first that fits. 'None fit' is an edge case — what does a fallback chain do at the end?","explain":"It shows the <strong>last<\/strong> child — the fallback of last resort. That's why you order ViewThatFits candidates from most to least spacious: the last one is your narrow-screen survival layout, and it should be designed to degrade gracefully.","revisit":"Module 4, lesson 'Motion, Adaptivity, and Liquid Glass'.","ahash":"620120e56bab049196490a4060fd949ec7270b5bb7d3424b4a1c7e6c5b52ebcc"}};
+renderSection({id:"warmup",title:"Warm-Up — Start Here (Module 0)",desc:"About 5 minutes · 5 points. Two predictions to wake up what Module 0 taught: constants, and why SwiftUI needs @State.",items:["w1","w2"].map(x=>DEFS[x])});
+renderSection({id:"secA",title:"Section A — The Apple Platform and Its Ecosystem (Module 1)",desc:"About 12 minutes · 20 points. Applied scenarios only — no trivia for its own sake. Do the math yourself first; the page only checks it.",items:["a1","a2","a3","a4"].map(x=>DEFS[x])});
+renderSection({id:"secB",title:"Section B — Swift Fundamentals (Module 2)",desc:"About 25 minutes · 40 points. The heart of the homework: predict traces, debug one real bug, assemble one function, and write Swift yourself twice.",items:["b1","b2","b3","b4","b5","b6","b7a","b7b"].map(x=>DEFS[x])});
+renderSection({id:"secC",title:"Section C — Types, Protocols and Programming Paradigms (Module 3)",desc:"About 25 minutes · 35 points, plus a bonus. Section B's value-semantics trace was the warm-up act — now it decides real design questions.",items:["c1","c2","c3","c4","c5","c6","c7","cb"].map(x=>DEFS[x])});
+renderSection({id:"secD",title:"Extension — SwiftUI and Reactive Interfaces (Module 4)",desc:"Scored separately: 25 points · about 20 minutes. Count this section only if your instructor's 'first four modules' starts counting at Module 1. The phone previews are simulations with fixed, known outcomes that match the course preview for the cases shown.",items:["d1","d2","d3","d4","d5a","d5b","db"].map(x=>DEFS[x])});
+
+function acceptMatch(raw, field){
+  const cands = [norm(raw)];
+  return cands.some(c=>field.ahashes.includes(HKEY('typed', c)));
+}
+function checkItem(id){
+  const def=ITEMS[id]; const st=itemState(id); if(st.done) return;
+  if(def.type==="mc"){
+    const sel=(picks[id]||{})[0]; if(sel===undefined){ note(id,"Pick an answer first — commit to a prediction, then check."); return; }
+    grade(id, HKEY('mc',id,0,sel)===def.ahash?1:0, "chose: "+stripTags(def.choices[sel]));
+  }
+  else if(def.type==="multi"){
+    let got=0,log=[];
+    def.parts.forEach((p,pi)=>{
+      if(p.type==="typed"){ const raw=$("#typed-"+id+"-"+pi).value; const ok=acceptMatch(raw,p); if(ok)got++; log.push('part'+(pi+1)+':'+(ok?"✓":"✗ '"+raw+"'")); }
+      else { const sel=(picks[id]||{})[pi]; const ok=sel!==undefined&&HKEY('mc',id,pi,sel)===p.ahash; if(ok)got++; log.push('part'+(pi+1)+':'+(ok?"✓":"✗")); }
+    });
+    grade(id, got/def.parts.length, log.join(" "));
+  }
+  else if(def.type==="typed"){
+    let got=0,log=[];
+    def.fields.forEach((f,fi)=>{ const raw=$("#typed-"+id+"-"+fi).value; const ok=acceptMatch(raw,f); if(ok)got++; log.push(f.short+':'+(ok?"✓":"✗ '"+raw+"'")); });
+    grade(id, got/def.fields.length, log.join(" "));
+  }
+  else if(def.type==="write"){
+    const ta=$("#code-"+id); const res=CHECKERS[def.checker](ta.value);
+    st.code=ta.value; note(id,res.notes);
+    grade(id, res.fraction, "code: "+ta.value.replace(/\n/g," ⏎ "));
+  }
+  else if(def.type==="parsons"){
+    const zone=$$("#zone-"+id+" .parsons-line");
+    if(zone.length===0){ note(id,"Move lines into Your program first."); return; }
+    const expected=def.lines.map((t,si)=>[def.prank[si],t]).sort((a,b)=>a[0]-b[0]).map(x=>x[1].replace(/\s+/g," ").trim());
+    let posOK=0; zone.forEach((b,i)=>{ if(b.textContent.replace(/\s+/g," ").trim()===expected[i]) posOK++; });
+    const exact = zone.length===def.lines.length && posOK===def.lines.length;
+    grade(id, exact?1:posOK/def.lines.length, "order placed");
+  }
+  else if(def.type==="debug"){
+    const line=debugPick[id]; const fix=(picks[id]||{})[0];
+    if(line===undefined||fix===undefined){ note(id,"Do both steps: tap the buggy line AND pick a fix."); return; }
+    const lineOK = HKEY('line',id,line)===def.lhash, fixOK = HKEY('fix',id,fix)===def.fhash;
+    const frac=(lineOK?0.5:0)+(fixOK?0.5:0);
+    $$("#body-"+id+" .debugline").forEach((b,j)=>{ if(HKEY('line',id,j)===def.lhash) b.classList.add("correct"); });
+    grade(id, frac, 'line:'+line+' fix:'+stripTags(def.fixes[fix]));
+  }
+  else if(def.type==="builder"){
+    const sel=picks[id]||{};
+    if(Object.keys(sel).length<def.groups.length){ note(id,"Choose one option in every group first — the checklist shows what's still open."); return; }
+    let got=0; def.groups.forEach((g,gi)=>{ if(HKEY('grp',id,gi,sel[gi])===g.ahash) got++; });
+    grade(id, got/def.groups.length, "builder groups correct: "+got+"/"+def.groups.length);
+    updateBuilder(id);
+  }
+  else if(def.type==="custom"){ CUSTOM_CHECK[def.custom](def); }
+  const t=$("#tries-"+id); const st2=itemState(id);
+  if(t) t.textContent = st2.done? "" : (triesLeft(id)>0? triesLeft(id)+" try left":"");
+}
+
+function updateBuilder(id){
+  const def=ITEMS[id]; const sel=picks[id]||{};
+  const phone=$("#phone-"+id);
+  if(phone) phone.innerHTML='<div style="background:#182238;border:1px solid #2a3557;border-radius:16px;padding:14px;width:100%">'
+    +'<div style="font-size:1.6rem">🧺</div><strong>Trail Mug</strong><div class="mini" style="color:#a7b0cc">$18 · qty 1</div>'
+    +'<div style="margin-top:8px"><button class="small">−</button> <button class="small">+</button></div>'
+    +'<div class="mini" style="color:#a7b0cc">List rows: Trail Mug · Trail Mug (two products, same name)</div></div>';
+  const cl=$("#checklist-"+id);
+  if(cl) cl.innerHTML=def.groups.map((g,gi)=>{ const chosen=sel[gi]!==undefined; const ok=chosen&&HKEY('grp',id,gi,sel[gi])===g.ahash;
+    return '<li class="'+(chosen?(ok?"ok":"no"):"")+'">'+(chosen?(ok?"✓":"✗"):"•")+' '+esc(g.checkText)+'</li>'; }).join("");
+}
+
+
+(function init(){
+  const nameEl=$("#studentName");
+  if(state.name) nameEl.value=state.name;
+  nameEl.addEventListener("input",()=>{ state.name=nameEl.value; save(); });
+  for(const id in ITEMS){
+    const st=state.items[id]; if(!st||st.attempts===0) continue;
+    const def=ITEMS[id];
+    if(def.type==="write"&&st.code){ const ta=$("#code-"+id); if(ta) ta.value=st.code; }
+    if(st.hint1){ const b=$("#hint1-"+id); if(b)b.classList.add("show"); }
+    if(st.hint2){ const b=$("#hint2-"+id); if(b)b.classList.add("show"); }
+    if(st.attempts>0) renderItemFeedback(id, st.bestFraction||0, st.awarded);
+    const t=$("#tries-"+id); if(t&&!st.done&&triesLeft(id)>0) t.textContent=triesLeft(id)+" try left";
+  }
+  renderProgress(); renderSummary();
+})();
+
+</script>
+</body>
+</html>
