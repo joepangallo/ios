@@ -132,10 +132,11 @@ describe('student-facing hygiene', () => {
       for (const re of BANNED) expect(re.test(text), `${rel}: ${re}`).toBe(false);
       // The scaffold's placeholder must be gone from apps and the guide; tests may name it to check that.
       if (!/Tests\//.test(rel)) expect(/coming soon/i.test(text), `${rel}: placeholder text`).toBe(false);
-      for (const ch of text) {
-        const cp = ch.codePointAt(0);
-        expect((cp >= 0x2600 && cp <= 0x27bf) || cp >= 0x1f300, `${rel}: U+${cp.toString(16)}`).toBe(false);
-      }
+      // Emoji and pictographs: Miscellaneous Symbols and Dingbats (U+2600-27BF) and
+      // everything from U+1F300 up. One regex per file, not one expect per character
+      // (millions of expect calls slowed the whole suite on CI).
+      const emoji = text.match(/[☀-➿\u{1f300}-\u{10ffff}]/u);
+      expect(emoji && `U+${emoji[0].codePointAt(0).toString(16)}`, `${rel}: emoji`).toBeNull();
     }
   });
 
