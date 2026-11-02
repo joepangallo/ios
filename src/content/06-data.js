@@ -1777,6 +1777,18 @@ const L5 = {
       ],
     },
     {
+      kind: 'concept',
+      title: 'Refresher: the Storage menu in a new project',
+      body: `<p>When you create a project (File &gt; New &gt; Project, then iOS &gt; App), the <strong>Storage</strong> menu can set SwiftData up for you. The course checklist leaves it at <strong>None</strong> so you write each piece yourself in this lesson. Here is what choosing <strong>SwiftData</strong> adds, so you recognize it in other projects and tutorials.</p>`,
+      points: [
+        { term: 'Item.swift', text: 'A sample <code>@Model</code> class with one property, <code>timestamp</code>.' },
+        { term: 'The App struct', text: 'Builds a <code>ModelContainer</code> for Item and attaches it to the window with <code>.modelContainer(...)</code>.' },
+        { term: 'ContentView.swift', text: 'A list driven by <code>@Query</code>, with buttons that insert and delete items through the model context.' },
+        { term: 'Host in CloudKit', text: 'A checkbox that also syncs the data through iCloud. It needs the iCloud capability, which a free Personal Team cannot add.' },
+      ],
+      callout: { tone: 'tip', title: 'Already made your project with None?', html: `<p>Keep it. Adding a model file and the <code>.modelContainer(for:)</code> modifier by hand, as the next steps do, gives the same result.</p>` },
+    },
+    {
       kind: 'code',
       title: 'Define a model',
       intro: '<p>A model is a class marked with <code>@Model</code>. The macro (code that writes code at compile time) adds everything needed to store, track, and observe the class. You declare ordinary stored properties and a normal initializer. The class is called <code>TaskItem</code> rather than <code>Task</code>, so it never clashes with Swift\'s concurrency type named Task.</p>',

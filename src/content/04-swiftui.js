@@ -503,6 +503,17 @@ export default {
           ],
         },
         {
+          kind: 'concept',
+          title: 'Refresher: follow along in Xcode',
+          body: '<p>From here on, almost every example is a SwiftUI view you can rebuild in Xcode. Make one practice project with the new-project checklist from the Anatomy of a SwiftUI App lesson (iOS &gt; App, SwiftUI, Swift), then give each example its own file instead of piling everything into ContentView.</p>',
+          points: [
+            { term: 'New view file', text: 'Choose File &gt; New &gt; File from Template (Command-N), pick <strong>SwiftUI View</strong>, and name it after the example, such as CounterView.' },
+            { term: 'See it', text: 'Show the canvas with Command-Option-Return. If the preview pauses, press Command-Option-P to refresh it.' },
+            { term: 'Run it', text: 'To launch an example as the whole app, replace <code>ContentView()</code> in the App struct with the example\'s view, then press Command-R.' },
+          ],
+          callout: { tone: 'tip', title: 'One project, many views', html: '<p>Each file keeps its own <code>#Preview</code>, so the canvas shows whichever example is open. Commit after each one, and the history becomes a record of your progress.</p>' },
+        },
+        {
           kind: 'quiz',
           title: 'Check your understanding',
           questions: [

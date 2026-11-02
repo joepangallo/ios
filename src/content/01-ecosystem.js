@@ -526,9 +526,34 @@ const anatomy = {
   title: 'Anatomy of a SwiftUI App',
   steps: [
     {
+      kind: 'widget',
+      title: 'Create a new project, step by step',
+      intro: '<p>Every app in this course starts the same way. This is a working model of Xcode 26: open it, choose a template, fill in the options, save and run. Type your own product name and watch the bundle identifier and file names follow it. Then try the detours: another template, a real iPhone with Team set to None, or SwiftData storage.</p>',
+      widget: 'ecosystem-new-project',
+      props: {},
+    },
+    {
+      kind: 'concept',
+      title: 'The new-project checklist',
+      body: '<p>Use this list for every new app in the course. The choices it names are the ones the lessons assume.</p>',
+      points: [
+        { term: '1. Start', text: 'Open Xcode and click <strong>Create New Project</strong> in the Welcome window, or choose File &gt; New &gt; Project (Command-Shift-N).' },
+        { term: '2. Template', text: 'Choose <strong>iOS</strong> at the top, then <strong>App</strong>, then Next.' },
+        { term: '3. Names', text: 'Product Name: the app\'s name as one word, such as TrailNotes. Organization Identifier: reverse-DNS, such as com.yourname. Team: your Personal Team, or None while you only use the Simulator.' },
+        { term: '4. Options', text: 'Interface <strong>SwiftUI</strong>, Language <strong>Swift</strong>, Testing System <strong>Swift Testing with XCTest UI Tests</strong>, Storage <strong>None</strong>. Then Next.' },
+        { term: '5. Save', text: 'Pick a folder, keep <strong>Create Git repository on my Mac</strong> ticked, and click Create.' },
+        { term: '6. Run', text: 'Choose an iPhone simulator as the run destination and press Run (Command-R).' },
+      ],
+      callout: {
+        tone: 'tip',
+        title: 'Most choices can change later',
+        html: '<p>Change the name people see with Display Name on the target\'s General tab, and add a test target with File &gt; New &gt; Target. The bundle identifier is the one to settle before your first App Store upload. If Xcode asks to download the iOS platform, say yes: it contains the Simulator.</p>',
+      },
+    },
+    {
       kind: 'concept',
       title: 'What the App template gives you',
-      body: '<p>In Xcode, <strong>File &gt; New &gt; Project</strong>, then <strong>iOS &gt; App</strong> with the SwiftUI interface, creates a project that already builds and runs. Every item in it has a job. Click the items in the project navigator to see what each one is, who reads it and when.</p>',
+      body: '<p>The project the checklist creates already builds and runs, and every item in it has a job. Click the items in the project navigator to see what each one is, who reads it and when.</p>',
       callout: {
         tone: 'tip',
         title: 'Where the bundle identifier comes from',
@@ -836,6 +861,18 @@ const anatomy = {
           choices: ['WindowGroup', 'Settings', 'DocumentGroup', 'ImmersiveSpace'],
           answer: 2,
           explain: '<p>DocumentGroup ties each window to a file and provides open, save and Files integration for you. A WindowGroup could work, but you would have to build all the file handling yourself.</p>',
+        },
+        {
+          q: '<p>In the new-project options you type <code>Trail Notes</code> as the Product Name and <code>com.samrivera</code> as the Organization Identifier. Which bundle identifier does Xcode show?</p>',
+          choices: ['com.samrivera.TrailNotes', 'com.samrivera.Trail-Notes', 'com.samrivera.Trail_Notes', 'Trail Notes.com.samrivera'],
+          answer: 1,
+          explain: '<p>Xcode puts the organization identifier first and the product name last. A bundle identifier cannot contain spaces, so each space becomes a hyphen. Swift names use underscores instead, which is why the App struct becomes Trail_NotesApp, and why one-word names stay tidier.</p>',
+        },
+        {
+          q: '<p>A brand-new project runs in the Simulator, but on your own iPhone the build stops with <code>Signing for "TrailNotes" requires a development team</code>. What fixes it?</p>',
+          choices: ['Join the paid Apple Developer Program', 'Turn on Developer Mode on the iPhone', 'Create the project again with a new bundle identifier', 'Choose your Personal Team under Signing & Capabilities'],
+          answer: 3,
+          explain: '<p>A real iPhone runs only signed apps, and signing needs a team. A free Apple Account gives you a Personal Team, so no paid membership is needed. Developer Mode matters too, but this message is about signing, and a new project with Team set to None would stop at the same place.</p>',
         },
       ],
     },

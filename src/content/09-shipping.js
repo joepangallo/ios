@@ -985,6 +985,16 @@ const testingBasics = {
       figure: { widget: 'shipping-test-pyramid', props: {} },
     },
     {
+      kind: 'concept',
+      title: 'Refresher: where test targets come from',
+      body: `<p>Tests live in their own <strong>targets</strong>, separate from the app target, so test code never ships to users. The new-project checklist chose <strong>Testing System: Swift Testing with XCTest UI Tests</strong>, which made two of them: one ending in <code>Tests</code> for unit tests written with <code>@Test</code>, and one ending in <code>UITests</code> for UI tests built on XCTest.</p>`,
+      points: [
+        { term: 'Chose None?', text: 'Choose File &gt; New &gt; Target, then <strong>Unit Testing Bundle</strong> in the Test section. Set Testing System to Swift Testing and check that Target to be Tested names your app.' },
+        { term: 'Need UI tests too?', text: 'Repeat with <strong>UI Testing Bundle</strong>. UI tests launch the real app, so they run more slowly.' },
+        { term: 'Run them', text: 'Command-U builds the app and every test target in the scheme, then runs the tests.' },
+      ],
+    },
+    {
       kind: 'code',
       title: 'Your first tests',
       intro: `<p>Swift Testing marks tests with <code>@Test</code> and checks results with <code>#expect</code>. In a real project the function lives in the app target and tests sit in a separate test target that starts with <code>@testable import StudyBuddy</code>. Here both share one file. Press Command-U in Xcode to run every test.</p>`,
