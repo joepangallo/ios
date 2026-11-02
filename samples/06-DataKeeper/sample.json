@@ -1,0 +1,13 @@
+{
+  "name": "DataKeeper",
+  "title": "Data Keeper",
+  "modules": [
+    6
+  ],
+  "about": "Every place an app keeps data: @AppStorage settings, Codable and JSON, files in the sandbox, SwiftData models with relationships and migrations, secrets in the Keychain, and iCloud sync.",
+  "notes": [
+    "iCloud and CloudKit run in a clearly labeled simulated mode, because they need the paid Apple Developer Program. The real code is included for you to read.",
+    "The appearance picker in lesson 6.2 is saved, so the app stays in the mode you pick until you change it back.",
+    "To see the save that happens when the app leaves the screen (lesson 6.1), press Command-Shift-H in the Simulator, then return."
+  ]
+}

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+PrivacyInfo.xcprivacy
+Who: App Store Connect reads it at upload; Xcode merges it into the archive's
+     privacy report; lesson 9.6 reads it back from the app bundle and shows it.
+What: Study Buddy's privacy manifest. It declares that the app does not track,
+      collects no data, and uses one required-reason API: UserDefaults.
+Where: the app folder, so it is a member of the StudyBuddy target and is copied
+       into every build.
+When: read at upload time and when a privacy report is generated.
+Why: it must match what the app really does. The app saves sessions with
+     UserDefaultsSessionStorage and the focus length with @AppStorage, both
+     only for this app, which is reason CA92.1. Nothing leaves the device.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

@@ -1,0 +1,11 @@
+{
+  "name": "SwiftUIStudio",
+  "title": "SwiftUI Studio",
+  "modules": [
+    4
+  ],
+  "about": "The SwiftUI module's examples as working screens: views and modifiers, stacks and grids, @State and @Binding, @Observable models, lists, navigation, tabs and sheets, forms, animation, and a first look at Liquid Glass.",
+  "notes": [
+    "Demos that need their own navigation stack or tab bar open in a sheet with a Close button, so they never nest inside the lesson screen."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "EcosystemTour",
+  "title": "Ecosystem Tour",
+  "modules": [
+    0,
+    1
+  ],
+  "widget": {
+    "name": "TourWidget",
+    "title": "Tour Widget"
+  },
+  "about": "Start here: your first Swift program and SwiftUI screen, then the Apple platform itself: screens and size classes, Xcode and Swift packages, an app's anatomy and lifecycle, the development life cycle, app extensions, and Swift beyond the iPhone.",
+  "notes": [
+    "The Tour Widget shows a sample timeline: sharing the app's own count with a widget needs an App Group, which requires the paid Apple Developer Program.",
+    "TipMath, next to the project, is a standalone Swift package: open its folder in Xcode, or run swift test in Terminal inside it.",
+    "To see the app save as it leaves the screen (lesson 1.4), press Command-Shift-H in the Simulator, then open the app again."
+  ]
+}

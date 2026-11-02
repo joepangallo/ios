@@ -1,0 +1,758 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld min" : {
+      "comment" : "A short length in minutes, shown beside a session",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
+          }
+        }
+      }
+    },
+    "%lld min left" : {
+      "comment" : "Focus status: minutes still needed",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faltan %lld min"
+          }
+        }
+      }
+    },
+    "%lld minutes" : {
+      "comment" : "A length in minutes; varies by plural",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld minute"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld minutes"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld minuto"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld minutos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld of 60 minutes" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de 60 minutos"
+          }
+        }
+      }
+    },
+    "%lld sessions" : {
+      "comment" : "Number of study sessions this week; varies by plural",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sessions"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sesión"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sesiones"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "120 Hz budget (ProMotion)" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "60 Hz budget" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "[weak self]" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Add 15 minutes" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir 15 minutos"
+          }
+        }
+      }
+    },
+    "Add Session" : {
+      "comment" : "Button that opens the New Session sheet",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir sesión"
+          }
+        }
+      }
+    },
+    "Algebra" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Álgebra"
+          }
+        }
+      }
+    },
+    "App" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App"
+          }
+        }
+      }
+    },
+    "App language: Spanish" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Appearance" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Ask: what if -ui-testing were passed?" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Build configuration" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Bundle ID" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Cancel" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        }
+      }
+    },
+    "Cancel upload" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Check the criteria against StudyPlanner" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Clear the week" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaciar la semana"
+          }
+        }
+      }
+    },
+    "Collected data types" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Could not load sessions" : {
+      "comment" : "Shown when saved sessions cannot be read",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudieron cargar las sesiones"
+          }
+        }
+      }
+    },
+    "Could not save sessions" : {
+      "comment" : "Shown when sessions cannot be saved",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudieron guardar las sesiones"
+          }
+        }
+      }
+    },
+    "Create a formatter inside body" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Decode full photos on the main thread" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Eager VStack instead of LazyVStack" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Fast-forward: one second counts as one minute" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avance rápido: un segundo cuenta como un minuto"
+          }
+        }
+      }
+    },
+    "Finished" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminado"
+          }
+        }
+      }
+    },
+    "Focus length" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duración del enfoque"
+          }
+        }
+      }
+    },
+    "Focus timer" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temporizador de enfoque"
+          }
+        }
+      }
+    },
+    "Frames on time" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Goal reached" : {
+      "comment" : "Focus status once the goal is met",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meta alcanzada"
+          }
+        }
+      }
+    },
+    "Hangs (250 ms or more)" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Hitches (late frames)" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Inject a failing service" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Inject MockWeatherService(reading: -4)" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "It would choose" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Languages in the bundle" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Launch arguments" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Launch with -ui-testing" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Load again" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Localization in use" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Log 25 minutes" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrar 25 minutos"
+          }
+        }
+      }
+    },
+    "log(-10)" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "log(15)" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "logged" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Logged %lld min of %@." : {
+      "comment" : "Focus timer result after logging",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrados %lld min de %@."
+          }
+        }
+      }
+    },
+    "Logs more study time for Algebra" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra más tiempo de estudio de Álgebra"
+          }
+        }
+      }
+    },
+    "New Session" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva sesión"
+          }
+        }
+      }
+    },
+    "No output yet" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "No sessions yet" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay sesiones"
+          }
+        }
+      }
+    },
+    "NSPrivacyTracking" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Open and close (strong)" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Open and close (weak)" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Pause" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausar"
+          }
+        }
+      }
+    },
+    "Pause the rollout" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Paused" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En pausa"
+          }
+        }
+      }
+    },
+    "Pop the screen" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Preferred language" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Preview" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Query" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Ready" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listo"
+          }
+        }
+      }
+    },
+    "Reduce Motion" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Refresh" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Refresh rate" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Reset" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer"
+          }
+        }
+      }
+    },
+    "Reset to 45" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Resume" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reanudar"
+          }
+        }
+      }
+    },
+    "Role" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Run after" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Run before" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Run both tests" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Run on the main actor" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Run the program" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Run the verification" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Run with @concurrent" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Running" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En marcha"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar"
+          }
+        }
+      }
+    },
+    "Scenario" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Server for this configuration" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Service" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Sessions" : {
+      "comment" : "Heading of the session list",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesiones"
+          }
+        }
+      }
+    },
+    "Shape" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "share(of:tip:people:)" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Stage" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Start" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empezar"
+          }
+        }
+      }
+    },
+    "Start again" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Stop and log" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detener y registrar"
+          }
+        }
+      }
+    },
+    "Storage" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Story" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Subject" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asignatura"
+          }
+        }
+      }
+    },
+    "Swipe up or down to change the length" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desliza hacia arriba o hacia abajo para cambiar la duración"
+          }
+        }
+      }
+    },
+    "Tap Add Session to log your first study session." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca Añadir sesión para registrar tu primera sesión de estudio."
+          }
+        }
+      }
+    },
+    "Text size" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "This launch chose" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "This launch, init to first screen" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "This week" : {
+      "comment" : "Heading of the week summary card",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta semana"
+          }
+        }
+      }
+    },
+    "Time to an answer" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Title" : {
+      "comment" : "Placeholder of the session title field",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título"
+          }
+        }
+      }
+    },
+    "Try it: log a third session of 0 minutes first" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Under a minute: nothing was logged." : {
+      "comment" : "Focus timer result when too short",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menos de un minuto: no se registró nada."
+          }
+        }
+      }
+    },
+    "Upload 3 sessions" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Version" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "VoiceOver" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "weak var delegate" : {
+      "comment" : "Lesson interface: teaching text stays in English",
+      "shouldTranslate" : false
+    },
+    "Weekly goal reached" : {
+      "comment" : "Banner shown when the weekly goal is met",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meta semanal alcanzada"
+          }
+        }
+      }
+    },
+    "Weekly total" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total semanal"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

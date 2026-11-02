@@ -1,0 +1,22 @@
+{
+  "name": "DeviceLab",
+  "title": "Device Lab",
+  "modules": [
+    7
+  ],
+  "widget": {
+    "name": "DeviceLabWidget",
+    "title": "Device Lab Widget"
+  },
+  "infoPlist": {
+    "NSLocationWhenInUseUsageDescription": "Device Lab shows your location on the map and measures distances to nearby trails.",
+    "NSCameraUsageDescription": "Device Lab checks camera permission to show how apps ask before using the camera.",
+    "NSSupportsLiveActivities": true
+  },
+  "about": "Device features, with trail examples: asking for permission, Core Location, MapKit maps, search and routes, CloudKit, photos and sharing, the on-device language model, and widgets, App Intents, a Live Activity and local notifications.",
+  "notes": [
+    "Set a location in the Simulator with Features > Location.",
+    "The language model, the camera and Siri need a real iPhone. Without them the app explains what would happen and never crashes.",
+    "CloudKit runs in a labeled simulated mode and the widget shows a stand-in count: both need capabilities from the paid Apple Developer Program."
+  ]
+}

@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sample Apps</title>
+<meta name="description" content="Nine Xcode sample apps, one per module, with a screen for every lesson of the iOS Development course.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one-viewport Xcode-style workbench (outline rail | stage | inspector), Swift orange as the single brand accent.
+   Contrast contract (checked by tests/unit/shell-fixes.test.js): every text/background pair below reaches WCAG AA 4.5:1 in both themes.
+   --accent is a filled surface for --on-accent text, so light mode uses a deeper Swift orange and dark mode puts dark ink on the bright one. */
+:root {
+  --bg: #f2f3f6;
+  --panel: #ffffff;
+  --panel-2: #eceef2;
+  --panel-3: #e2e5ea;
+  --ink: #15171c;
+  --ink-2: #474d59;
+  --ink-3: #5e6472;
+  --line: #d9dde4;
+  --accent: #cc3a1e;
+  --accent-hover: #b8331a;
+  --accent-ink: #b9321c;
+  --accent-soft: #fde6e1;
+  --on-accent: #ffffff;
+  --link: #0a6cdc;
+  --focus: #0a84ff;
+  --ok: #13763d;
+  --ok-soft: #dcf3e5;
+  --on-ok: #ffffff;
+  --warn: #8a5700;
+  --warn-soft: #fbefd5;
+  --bad: #c8281c;
+  --bad-soft: #fbe2df;
+  --on-bad: #ffffff;
+  /* Xcode "Default (Light)" syntax colors */
+  --code-bg: #ffffff;
+  --code-gutter: #f6f7f9;
+  --code-line: #eef4ff;
+  --kw: #9b2393;
+  --str: #c41a16;
+  --num: #1c00cf;
+  --type: #0b4f79;
+  --cmt: #5d6c79;
+  --fn: #326d74;
+  --attr: #815f03;
+  --font-display: "Bricolage Grotesque", ui-rounded, -apple-system, system-ui, sans-serif;
+  --font-ui: "Figtree", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --shadow: 0 1px 2px rgba(20, 24, 33, 0.06), 0 8px 24px rgba(20, 24, 33, 0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111215; --panel: #1b1c21; --panel-2: #24252b; --panel-3: #2d2f36;
+    --ink: #eceef2; --ink-2: #b0b5bf; --ink-3: #9a9fa9; --line: #30323a;
+    --accent: #f2603f; --accent-hover: #ff7554; --accent-ink: #ff8d73; --accent-soft: #3a1f19; --on-accent: #111215;
+    --link: #5aa9ff; --focus: #3d9bff;
+    --ok: #4cd480; --ok-soft: #173325; --on-ok: #111215; --warn: #f5c451; --warn-soft: #3a2f12; --bad: #ff6b5e; --bad-soft: #3d1b18; --on-bad: #111215;
+    --code-bg: #1f1f24; --code-gutter: #1a1a1f; --code-line: #2a2e3a;
+    --kw: #fc5fa3; --str: #fc6a5d; --num: #d0bf69; --type: #5dd8ff; --cmt: #7f8c98; --fn: #67b7a4; --attr: #fd8f3f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111215; --panel: #1b1c21; --panel-2: #24252b; --panel-3: #2d2f36;
+  --ink: #eceef2; --ink-2: #b0b5bf; --ink-3: #9a9fa9; --line: #30323a;
+  --accent: #f2603f; --accent-hover: #ff7554; --accent-ink: #ff8d73; --accent-soft: #3a1f19; --on-accent: #111215;
+  --link: #5aa9ff; --focus: #3d9bff;
+  --ok: #4cd480; --ok-soft: #173325; --on-ok: #111215; --warn: #f5c451; --warn-soft: #3a2f12; --bad: #ff6b5e; --bad-soft: #3d1b18; --on-bad: #111215;
+  --code-bg: #1f1f24; --code-gutter: #1a1a1f; --code-line: #2a2e3a;
+  --kw: #fc5fa3; --str: #fc6a5d; --num: #d0bf69; --type: #5dd8ff; --cmt: #7f8c98; --fn: #67b7a4; --attr: #fd8f3f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-ui); overflow: hidden; }
+a { color: var(--link); }
+code, .mono { font-family: var(--font-code); font-size: .88em; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+header { display: flex; align-items: center; gap: 14px; padding: 12px 24px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.mark { width: 34px; height: 34px; border-radius: 9px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; }
+header h1 { margin: 0; font: 700 20px/1.1 var(--font-display); }
+header p { margin: 2px 0 0; color: var(--ink-3); font-size: 13px; }
+.menu { display: none; margin-left: auto; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: var(--r-sm); padding: 6px 12px; font: 600 13px var(--font-ui); cursor: pointer; }
+.body { display: grid; grid-template-columns: 270px minmax(0, 1fr); min-height: 0; }
+nav.rail { border-right: 1px solid var(--line); background: var(--panel); padding: 12px 10px; overflow: auto; }
+nav.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.rail button { width: 100%; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 2px 10px; align-items: center; text-align: left; border: 0; background: transparent; color: var(--ink); border-radius: var(--r-md); padding: 7px 8px; cursor: pointer; font: inherit; }
+nav.rail button:hover { background: var(--panel-2); }
+nav.rail button[aria-current="page"] { background: var(--accent-soft); }
+nav.rail .n { grid-row: span 2; width: 34px; height: 34px; border-radius: 8px; background: var(--panel-3); display: grid; place-items: center; font: 700 13px var(--font-code); color: var(--ink-2); }
+nav.rail button[aria-current="page"] .n { background: var(--accent); color: var(--on-accent); }
+nav.rail .t { font-weight: 600; font-size: 14px; line-height: 1.2; }
+nav.rail .s { font-size: 12px; color: var(--ink-3); line-height: 1.2; }
+main { min-height: 0; overflow: hidden; position: relative; }
+section.panel { height: 100%; padding: clamp(14px, 2.4vh, 26px) clamp(18px, 2.6vw, 36px); display: flex; flex-direction: column; gap: clamp(8px, 1.6vh, 16px); overflow: hidden; }
+section.panel[hidden] { display: none; }
+section.panel > * { flex: none; }
+.kicker { font: 600 12px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); }
+.panel h2 { margin: 0; font: 700 clamp(22px, 3.2vh, 30px)/1.15 var(--font-display); }
+.lede { margin: 0; color: var(--ink-2); max-width: 78ch; font-size: clamp(13.5px, 1.9vh, 15px); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; color: var(--ink-2); }
+.chip b { color: var(--ink); font-weight: 600; }
+.lessons { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: clamp(6px, 1vh, 10px); min-height: 0; }
+.lessons li { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md); padding: clamp(6px, 1.1vh, 10px) 12px; display: grid; gap: 2px; min-width: 0; }
+.lessons .lt { font-weight: 600; font-size: clamp(13px, 1.8vh, 14.5px); line-height: 1.25; }
+.lessons .lt span { color: var(--accent-ink); font-family: var(--font-code); margin-right: 6px; }
+.lessons .ls { color: var(--ink-2); font-size: clamp(12px, 1.65vh, 13.5px); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lessons .lf { color: var(--ink-3); font: 11.5px/1.3 var(--font-code); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) clamp(250px, 25vw, 340px); gap: clamp(12px, 1.6vw, 20px); align-items: start; min-height: 0; }
+.side { display: flex; flex-direction: column; gap: clamp(8px, 1.3vh, 12px); min-width: 0; }
+.side .lede { font-size: clamp(13px, 1.75vh, 14.5px); line-height: 1.45; }
+.side .chip { max-width: 100%; }
+.side .chip b.mono { overflow-wrap: anywhere; }
+.note { border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 var(--r-sm) var(--r-sm) 0; padding: 8px 12px; font-size: clamp(12.5px, 1.75vh, 14px); line-height: 1.4; }
+.note ul { margin: 0; padding-left: 18px; }
+.note strong { display: block; margin-bottom: 2px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: clamp(10px, 1.6vh, 16px); min-height: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); padding: clamp(10px, 1.6vh, 16px) 16px; min-width: 0; }
+.card h3 { margin: 0 0 6px; font: 700 16px/1.2 var(--font-display); }
+.card ol, .card ul { margin: 0; padding-left: 20px; font-size: clamp(12.5px, 1.75vh, 14px); line-height: 1.45; }
+.card li + li { margin-top: 3px; }
+.card p { margin: 0; font-size: clamp(12.5px, 1.75vh, 14px); color: var(--ink-2); }
+kbd { font: 600 12px var(--font-code); background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
+.map { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: clamp(6px, 1vw, 12px); }
+.map .col { display: grid; gap: clamp(4px, .8vh, 8px); align-content: start; }
+.map .mh { font: 700 11px var(--font-code); color: var(--ink-3); text-align: center; }
+.map button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 6px; padding: clamp(2px, .5vh, 6px) 0; font: 600 12px var(--font-code); cursor: pointer; }
+.map button span { display: block; font: 500 10px/1.2 var(--font-ui); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
+.map button:hover { border-color: var(--accent); color: var(--accent-ink); }
+footer { display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: var(--panel); border-top: 1px solid var(--line); }
+footer button { display: inline-flex; flex-direction: column; align-items: flex-start; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: var(--r-md); padding: 5px 14px; cursor: pointer; font: inherit; max-width: 40%; }
+footer button small { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+footer button span { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+footer button.next { margin-left: auto; align-items: flex-end; background: var(--ink); color: var(--panel); border-color: var(--ink); }
+footer button.next small { color: inherit; opacity: .75; }
+footer button:disabled { visibility: hidden; }
+footer .hint { color: var(--ink-3); font-size: 12px; }
+@media (max-width: 1100px) {
+  .split { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-height: 780px) and (min-width: 761px) {
+  .map button span { display: none; }
+}
+@media (max-width: 760px) {
+  body { overflow: auto; }
+  .app { height: auto; min-height: 100%; }
+  .menu { display: inline-block; }
+  .body { grid-template-columns: minmax(0, 1fr); }
+  nav.rail { display: none; position: fixed; inset: 58px 0 auto 0; max-height: calc(100% - 58px); z-index: 5; border-right: 0; border-bottom: 1px solid var(--line); box-shadow: var(--shadow); }
+  nav.rail.open { display: block; }
+  section.panel { height: auto; overflow: visible; }
+  .map { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  footer .hint { display: none; }
+  footer { position: sticky; bottom: 0; }
+}
+@media print {
+  @page { size: letter; margin: 14mm 14mm 16mm; }
+  body { overflow: visible; background: #fff; }
+  .app { display: block; height: auto; }
+  header { border: 0; padding: 0 0 8px; }
+  .menu, nav.rail, footer { display: none !important; }
+  .body { display: block; }
+  main { overflow: visible; }
+  section.panel, section.panel[hidden] { display: flex !important; height: auto; overflow: visible; padding: 10px 0 0; break-before: page; }
+  section.panel:first-child { break-before: auto; }
+  .lessons li, .card, .note { break-inside: avoid; }
+  .lessons .ls { -webkit-line-clamp: unset; display: block; }
+  .map button { pointer-events: none; }
+  .map { grid-template-columns: repeat(10, minmax(0, 1fr)) !important; gap: 4px; }
+  .map .col { gap: 4px; }
+  .map button { padding: 3px 0; font-size: 11px; }
+  .map button span { display: block !important; font-size: 7.5px; padding: 0 2px; }
+  .lessons { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .split { display: flex; flex-direction: column; gap: 10px; }
+  .side { order: -1; gap: 8px; }
+  .lessons li { padding: 5px 10px; }
+  .lessons .lt { font-size: 12.5px; }
+  .lessons .ls { font-size: 11.5px; }
+  .side .lede, .note { font-size: 12px; }
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="mark" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 18.5h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+    <div><h1>Sample Apps</h1><p>9 Xcode projects, one per module, with a screen for each of the course's 72 lessons</p></div>
+    <button type="button" class="menu" id="menu" aria-expanded="false" aria-controls="rail">Apps</button>
+  </header>
+  <div class="body">
+    <nav class="rail" id="rail" aria-label="Sample apps"><ol><li><button type="button" data-go="start"><span class="n">?</span><span class="t">Start here</span><span class="s">Open, run, find a lesson</span></button></li><li><button type="button" data-go="map"><span class="n">#</span><span class="t">Lesson map</span><span class="s">All 72 lessons and their apps</span></button></li><li><button type="button" data-go="app-01"><span class="n">01</span><span class="t">Ecosystem Tour</span><span class="s">Modules 0-1 · Start Here and Ecosystem · 9 lessons</span></button></li><li><button type="button" data-go="app-02"><span class="n">02</span><span class="t">Swift Basics</span><span class="s">Module 2 · Swift Basics · 7 lessons</span></button></li><li><button type="button" data-go="app-03"><span class="n">03</span><span class="t">Type Workshop</span><span class="s">Module 3 · Types · 8 lessons</span></button></li><li><button type="button" data-go="app-04"><span class="n">04</span><span class="t">SwiftUI Studio</span><span class="s">Module 4 · SwiftUI · 9 lessons</span></button></li><li><button type="button" data-go="app-05"><span class="n">05</span><span class="t">Design Gallery</span><span class="s">Module 5 · Design · 10 lessons</span></button></li><li><button type="button" data-go="app-06"><span class="n">06</span><span class="t">Data Keeper</span><span class="s">Module 6 · Data · 8 lessons</span></button></li><li><button type="button" data-go="app-07"><span class="n">07</span><span class="t">Device Lab</span><span class="s">Module 7 · Device APIs · 7 lessons</span></button></li><li><button type="button" data-go="app-08"><span class="n">08</span><span class="t">Network Lab</span><span class="s">Module 8 · Networking · 7 lessons</span></button></li><li><button type="button" data-go="app-09"><span class="n">09</span><span class="t">Study Buddy</span><span class="s">Module 9 · Ship It · 7 lessons</span></button></li></ol></nav>
+    <main><section class="panel" id="start" data-label="Start here" aria-labelledby="h-start">
+    <div class="kicker">Start here</div>
+    <h2 id="h-start" tabindex="-1">Every lesson, running on an iPhone</h2>
+    <p class="lede">Each sample is a complete Xcode project for one module of the course. Its home screen lists that module's lessons in course order, and every lesson opens a screen of live demos. Each demo card is titled after the course step it illustrates, and every line of code is commented.</p>
+    <div class="cols">
+      <div class="card"><h3>Open and run a sample</h3><ol>
+        <li>Download the course repository as a ZIP, unzip it and open the <code>samples</code> folder.</li>
+        <li>Open a sample's folder and double-click its <code>.xcodeproj</code> file.</li>
+        <li>Choose an iPhone simulator in the run destination menu.</li>
+        <li>Press Run (<kbd>Command-R</kbd>). Press <kbd>Command-U</kbd> to run its tests.</li>
+      </ol></div>
+      <div class="card"><h3>Jump straight to a lesson</h3><ol>
+        <li>Choose Product &gt; Scheme &gt; Edit Scheme, then Run &gt; Arguments.</li>
+        <li>Add the two arguments <code>-lesson</code> and a lesson number, such as <code>4.3</code>.</li>
+        <li>Run again: the app opens on that lesson. Untick the arguments to return to the list.</li>
+      </ol></div>
+      <div class="card"><h3>On your own iPhone</h3><ol>
+        <li>Select the project, then the app target, then Signing &amp; Capabilities.</li>
+        <li>Set Team to your Personal Team.</li>
+        <li>Change the bundle identifier from <code>com.example</code> to your own prefix, such as <code>com.yourname</code>, because identifiers must be unique.</li>
+      </ol></div>
+    </div>
+  </section>
+  <section class="panel" id="map" data-label="Lesson map" aria-labelledby="h-map" hidden>
+    <div class="kicker">Lesson map</div>
+    <h2 id="h-map" tabindex="-1">Which app has which lesson</h2>
+    <p class="lede">Every lesson of the course has a screen in exactly one sample app. Select a lesson number to open the app that demonstrates it.</p>
+    <div class="map"><div class="col"><div class="mh">M0</div><button type="button" data-go="app-01" title="0.1 Welcome to iOS Development (Ecosystem Tour)">0.1<span>Ecosystem Tour</span></button><button type="button" data-go="app-01" title="0.2 Three Ways Swift Runs Here (Ecosystem Tour)">0.2<span>Ecosystem Tour</span></button></div><div class="col"><div class="mh">M1</div><button type="button" data-go="app-01" title="1.1 One Swift Codebase, Many Screens (Ecosystem Tour)">1.1<span>Ecosystem Tour</span></button><button type="button" data-go="app-01" title="1.2 Xcode and the Developer Toolbox (Ecosystem Tour)">1.2<span>Ecosystem Tour</span></button><button type="button" data-go="app-01" title="1.3 Anatomy of a SwiftUI App (Ecosystem Tour)">1.3<span>Ecosystem Tour</span></button><button type="button" data-go="app-01" title="1.4 The App Lifecycle (Ecosystem Tour)">1.4<span>Ecosystem Tour</span></button><button type="button" data-go="app-01" title="1.5 The Software Development Life Cycle (Ecosystem Tour)">1.5<span>Ecosystem Tour</span></button><button type="button" data-go="app-01" title="1.6 Kinds of Apps and Extensions (Ecosystem Tour)">1.6<span>Ecosystem Tour</span></button><button type="button" data-go="app-01" title="1.7 Swift Beyond the iPhone (Ecosystem Tour)">1.7<span>Ecosystem Tour</span></button></div><div class="col"><div class="mh">M2</div><button type="button" data-go="app-02" title="2.1 Values, Types and Your First Program (Swift Basics)">2.1<span>Swift Basics</span></button><button type="button" data-go="app-02" title="2.2 Numbers, Operators and Strings (Swift Basics)">2.2<span>Swift Basics</span></button><button type="button" data-go="app-02" title="2.3 Optionals: Values That Might Be Missing (Swift Basics)">2.3<span>Swift Basics</span></button><button type="button" data-go="app-02" title="2.4 Arrays, Dictionaries and Sets (Swift Basics)">2.4<span>Swift Basics</span></button><button type="button" data-go="app-02" title="2.5 Decisions and Loops (Swift Basics)">2.5<span>Swift Basics</span></button><button type="button" data-go="app-02" title="2.6 Functions (Swift Basics)">2.6<span>Swift Basics</span></button><button type="button" data-go="app-02" title="2.7 Closures and Higher-Order Functions (Swift Basics)">2.7<span>Swift Basics</span></button></div><div class="col"><div class="mh">M3</div><button type="button" data-go="app-03" title="3.1 Structs: Your Own Value Types (Type Workshop)">3.1<span>Type Workshop</span></button><button type="button" data-go="app-03" title="3.2 Classes and Reference Semantics (Type Workshop)">3.2<span>Type Workshop</span></button><button type="button" data-go="app-03" title="3.3 Enums: Modeling Choices and State (Type Workshop)">3.3<span>Type Workshop</span></button><button type="button" data-go="app-03" title="3.4 Protocols and Protocol-Oriented Design (Type Workshop)">3.4<span>Type Workshop</span></button><button type="button" data-go="app-03" title="3.5 Generics: Write It Once, Keep the Types (Type Workshop)">3.5<span>Type Workshop</span></button><button type="button" data-go="app-03" title="3.6 Error Handling (Type Workshop)">3.6<span>Type Workshop</span></button><button type="button" data-go="app-03" title="3.7 Concurrency: async/await and Actors (Type Workshop)">3.7<span>Type Workshop</span></button><button type="button" data-go="app-03" title="3.8 Programming Paradigms in Swift (Type Workshop)">3.8<span>Type Workshop</span></button></div><div class="col"><div class="mh">M4</div><button type="button" data-go="app-04" title="4.1 Describe the Screen, Not the Steps (SwiftUI Studio)">4.1<span>SwiftUI Studio</span></button><button type="button" data-go="app-04" title="4.2 Views and Modifiers (SwiftUI Studio)">4.2<span>SwiftUI Studio</span></button><button type="button" data-go="app-04" title="4.3 Stacks, Frames, and Grids (SwiftUI Studio)">4.3<span>SwiftUI Studio</span></button><button type="button" data-go="app-04" title="4.4 State Drives the Screen (SwiftUI Studio)">4.4<span>SwiftUI Studio</span></button><button type="button" data-go="app-04" title="4.5 Observable Models (SwiftUI Studio)">4.5<span>SwiftUI Studio</span></button><button type="button" data-go="app-04" title="4.6 Lists and Dynamic Data (SwiftUI Studio)">4.6<span>SwiftUI Studio</span></button><button type="button" data-go="app-04" title="4.7 Navigation, Tabs, and Sheets (SwiftUI Studio)">4.7<span>SwiftUI Studio</span></button><button type="button" data-go="app-04" title="4.8 Forms and Input (SwiftUI Studio)">4.8<span>SwiftUI Studio</span></button><button type="button" data-go="app-04" title="4.9 Motion, Adaptivity, and Liquid Glass (SwiftUI Studio)">4.9<span>SwiftUI Studio</span></button></div><div class="col"><div class="mh">M5</div><button type="button" data-go="app-05" title="5.1 Principles of iOS Design (Design Gallery)">5.1<span>Design Gallery</span></button><button type="button" data-go="app-05" title="5.2 Liquid Glass (Design Gallery)">5.2<span>Design Gallery</span></button><button type="button" data-go="app-05" title="5.3 Typography and Dynamic Type (Design Gallery)">5.3<span>Design Gallery</span></button><button type="button" data-go="app-05" title="5.4 Color, Dark Mode, and Contrast (Design Gallery)">5.4<span>Design Gallery</span></button><button type="button" data-go="app-05" title="5.5 Layout, Spacing, and Touch Targets (Design Gallery)">5.5<span>Design Gallery</span></button><button type="button" data-go="app-05" title="5.6 SF Symbols and App Icons (Design Gallery)">5.6<span>Design Gallery</span></button><button type="button" data-go="app-05" title="5.7 Choosing a Navigation Pattern (Design Gallery)">5.7<span>Design Gallery</span></button><button type="button" data-go="app-05" title="5.8 States, Feedback, and Clear Copy (Design Gallery)">5.8<span>Design Gallery</span></button><button type="button" data-go="app-05" title="5.9 Designing for Accessibility (Design Gallery)">5.9<span>Design Gallery</span></button><button type="button" data-go="app-05" title="5.10 Process, Prototypes, and Critique (Design Gallery)">5.10<span>Design Gallery</span></button></div><div class="col"><div class="mh">M6</div><button type="button" data-go="app-06" title="6.1 Where App Data Lives (Data Keeper)">6.1<span>Data Keeper</span></button><button type="button" data-go="app-06" title="6.2 Settings with @AppStorage (Data Keeper)">6.2<span>Data Keeper</span></button><button type="button" data-go="app-06" title="6.3 Codable and JSON (Data Keeper)">6.3<span>Data Keeper</span></button><button type="button" data-go="app-06" title="6.4 Reading and Writing Files (Data Keeper)">6.4<span>Data Keeper</span></button><button type="button" data-go="app-06" title="6.5 SwiftData Fundamentals (Data Keeper)">6.5<span>Data Keeper</span></button><button type="button" data-go="app-06" title="6.6 Relationships and Schema Changes (Data Keeper)">6.6<span>Data Keeper</span></button><button type="button" data-go="app-06" title="6.7 Secrets in the Keychain (Data Keeper)">6.7<span>Data Keeper</span></button><button type="button" data-go="app-06" title="6.8 iCloud and CloudKit Sync (Data Keeper)">6.8<span>Data Keeper</span></button></div><div class="col"><div class="mh">M7</div><button type="button" data-go="app-07" title="7.1 Permission and Privacy (Device Lab)">7.1<span>Device Lab</span></button><button type="button" data-go="app-07" title="7.2 Core Location, the Modern Way (Device Lab)">7.2<span>Device Lab</span></button><button type="button" data-go="app-07" title="7.3 MapKit for SwiftUI (Device Lab)">7.3<span>Device Lab</span></button><button type="button" data-go="app-07" title="7.4 Cloud Storage with CloudKit (Device Lab)">7.4<span>Device Lab</span></button><button type="button" data-go="app-07" title="7.5 Photos, Camera and Sharing (Device Lab)">7.5<span>Device Lab</span></button><button type="button" data-go="app-07" title="7.6 On-Device Intelligence (Device Lab)">7.6<span>Device Lab</span></button><button type="button" data-go="app-07" title="7.7 Beyond the App: Widgets, Intents and Notifications (Device Lab)">7.7<span>Device Lab</span></button></div><div class="col"><div class="mh">M8</div><button type="button" data-go="app-08" title="8.1 How an App Talks to a Server (Network Lab)">8.1<span>Network Lab</span></button><button type="button" data-go="app-08" title="8.2 Speaking HTTP (Network Lab)">8.2<span>Network Lab</span></button><button type="button" data-go="app-08" title="8.3 REST Resources and JSON (Network Lab)">8.3<span>Network Lab</span></button><button type="button" data-go="app-08" title="8.4 URLSession with async/await (Network Lab)">8.4<span>Network Lab</span></button><button type="button" data-go="app-08" title="8.5 Errors, Retries and Security (Network Lab)">8.5<span>Network Lab</span></button><button type="button" data-go="app-08" title="8.6 Live Data Beyond Request and Response (Network Lab)">8.6<span>Network Lab</span></button><button type="button" data-go="app-08" title="8.7 Designing the API Layer (Network Lab)">8.7<span>Network Lab</span></button></div><div class="col"><div class="mh">M9</div><button type="button" data-go="app-09" title="9.1 Architecture That Survives Change (Study Buddy)">9.1<span>Study Buddy</span></button><button type="button" data-go="app-09" title="9.2 Testing with Swift Testing (Study Buddy)">9.2<span>Study Buddy</span></button><button type="button" data-go="app-09" title="9.3 UI Tests, Previews and Accessibility Checks (Study Buddy)">9.3<span>Study Buddy</span></button><button type="button" data-go="app-09" title="9.4 Debugging and Instruments (Study Buddy)">9.4<span>Study Buddy</span></button><button type="button" data-go="app-09" title="9.5 Performance, Accessibility and Localization (Study Buddy)">9.5<span>Study Buddy</span></button><button type="button" data-go="app-09" title="9.6 From Archive to App Store (Study Buddy)">9.6<span>Study Buddy</span></button><button type="button" data-go="app-09" title="9.7 Capstone: Study Buddy from Idea to Release (Study Buddy)">9.7<span>Study Buddy</span></button></div></div>
+  </section>
+<section class="panel" id="app-01" data-label="Ecosystem Tour" aria-labelledby="h-app-01" hidden>
+    <div class="kicker">Modules 0-1 · Start Here and Ecosystem</div>
+    <h2 id="h-app-01" tabindex="-1">Ecosystem Tour</h2>
+    <div class="split">
+      <ol class="lessons" aria-label="Lessons in Ecosystem Tour"><li><div class="lt"><span>0.1</span>Welcome to iOS Development</div><div class="ls">Run the course&#39;s Study Buddy, first Swift program and first SwiftUI screen, read five-part line notes, and try the lesson quiz.</div><div class="lf">Lesson_0_1_Welcome.swift</div></li><li><div class="lt"><span>0.2</span>Three Ways Swift Runs Here</div><div class="ls">Time the course&#39;s prime counter as native compiled Swift and compare the interpreter, WebAssembly and native engines.</div><div class="lf">Lesson_0_2_ThreeEngines.swift</div></li><li><div class="lt"><span>1.1</span>One Swift Codebase, Many Screens</div><div class="ls">See this device&#39;s points, pixels and size classes, explore Apple&#39;s devices, and watch layouts adapt with AnyLayout and ViewThatFits.</div><div class="lf">Lesson_1_1_ManyScreens.swift</div></li><li><div class="lt"><span>1.2</span>Xcode and the Developer Toolbox</div><div class="ls">Tour Xcode, inspect this app&#39;s own targets and build, run a model of the build pipeline, and read a real Swift package manifest.</div><div class="lf">Lesson_1_2_DeveloperToolbox.swift</div></li><li><div class="lt"><span>1.3</span>Anatomy of a SwiftUI App</div><div class="ls">Name a new project, read this app&#39;s identity from Bundle.main, and run the template&#39;s first view and a first screen of your own.</div><div class="lf">Lesson_1_3_AppAnatomy.swift</div></li><li><div class="lt"><span>1.4</span>The App Lifecycle</div><div class="ls">Watch real scenePhase changes with timestamps, drive a lifecycle simulator, save and restore a draft, and see this app&#39;s sandbox.</div><div class="lf">Lesson_1_4_AppLifecycle.swift</div></li><li><div class="lt"><span>1.5</span>The Software Development Life Cycle</div><div class="ls">Follow PlantPal through the cycle, turn an acceptance criterion into a check, and practice version, build and phased-release numbers.</div><div class="lf">Lesson_1_5_DevelopmentLifeCycle.swift</div></li><li><div class="lt"><span>1.6</span>Kinds of Apps and Extensions</div><div class="ls">Run the Log Water App Intent, preview the Home Screen widget&#39;s timeline, find the widget inside this app, and match ideas to app types.</div><div class="lf">Lesson_1_6_AppsAndExtensions.swift</div></li><li><div class="lt"><span>1.7</span>Swift Beyond the iPhone</div><div class="ls">Run the course page&#39;s WebAssembly Swift natively: contrast ratios, the prime race, and map distances, with the same answers.</div><div class="lf">Lesson_1_7_SwiftBeyondIPhone.swift</div></li></ol>
+      <aside class="side" aria-label="About Ecosystem Tour">
+        <p class="lede">Start here: your first Swift program and SwiftUI screen, then the Apple platform itself: screens and size classes, Xcode and Swift packages, an app&#39;s anatomy and lifecycle, the development life cycle, app extensions, and Swift beyond the iPhone.</p>
+        <div class="meta">
+          <span class="chip">Open <b class="mono">samples/01-EcosystemTour/EcosystemTour.xcodeproj</b></span>
+          <span class="chip"><b>9</b> lesson screens</span>
+          <span class="chip"><b>96</b> unit tests</span>
+          <span class="chip">Home Screen widget: <b>Tour Widget</b></span>
+        </div>
+        <div class="note"><strong>Good to know</strong><ul><li>The Tour Widget shows a sample timeline: sharing the app&#39;s own count with a widget needs an App Group, which requires the paid Apple Developer Program.</li><li>TipMath, next to the project, is a standalone Swift package: open its folder in Xcode, or run swift test in Terminal inside it.</li><li>To see the app save as it leaves the screen (lesson 1.4), press Command-Shift-H in the Simulator, then open the app again.</li></ul></div>
+      </aside>
+    </div>
+  </section>
+<section class="panel" id="app-02" data-label="Swift Basics" aria-labelledby="h-app-02" hidden>
+    <div class="kicker">Module 2 · Swift Basics</div>
+    <h2 id="h-app-02" tabindex="-1">Swift Basics</h2>
+    <div class="split">
+      <ol class="lessons" aria-label="Lessons in Swift Basics"><li><div class="lt"><span>2.1</span>Values, Types and Your First Program</div><div class="ls">Run your first prints, change let and var values, see what type Swift infers, and convert between Int and Double on purpose.</div><div class="lf">Lesson_2_1_ValuesTypes.swift</div></li><li><div class="lt"><span>2.2</span>Numbers, Operators and Strings</div><div class="ls">Change the numbers and text in each operator, string and formatting example, predict the output, then run it.</div><div class="lf">Lesson_2_2_NumbersOperatorsStrings.swift</div></li><li><div class="lt"><span>2.3</span>Optionals: Values That Might Be Missing</div><div class="ls">Open optionals with if let, guard let, ?? and ?., and watch a force unwrap fail safely instead of crashing the app.</div><div class="lf">Lesson_2_3_Optionals.swift</div></li><li><div class="lt"><span>2.4</span>Arrays, Dictionaries and Sets</div><div class="ls">Build, search and change arrays, dictionaries and sets, and see that a copied collection is independent.</div><div class="lf">Lesson_2_4_ArraysDictionariesSets.swift</div></li><li><div class="lt"><span>2.5</span>Decisions and Loops</div><div class="ls">Steer if, switch and loops with your own values, and step through a loop one line at a time.</div><div class="lf">Lesson_2_5_DecisionsLoops.swift</div></li><li><div class="lt"><span>2.6</span>Functions</div><div class="ls">Call functions with labels, defaults, tuples and inout, pass functions as values, and watch recursion count down.</div><div class="lf">Lesson_2_6_Functions.swift</div></li><li><div class="lt"><span>2.7</span>Closures and Higher-Order Functions</div><div class="ls">Climb the closure syntax ladder, chain map, filter and reduce, and tap counters that capture their own state.</div><div class="lf">Lesson_2_7_Closures.swift</div></li></ol>
+      <aside class="side" aria-label="About Swift Basics">
+        <p class="lede">Every Swift Fundamentals example as a program you can run, change and run again: values and types, numbers and strings, optionals, collections, decisions and loops, functions and closures. Each console shows exactly what the course page prints.</p>
+        <div class="meta">
+          <span class="chip">Open <b class="mono">samples/02-SwiftBasics/SwiftBasics.xcodeproj</b></span>
+          <span class="chip"><b>7</b> lesson screens</span>
+          <span class="chip"><b>123</b> unit tests</span>
+          
+        </div>
+        <div class="note"><strong>Good to know</strong><ul><li>Mistake examples cannot compile, so each one shows the real compiler message next to the working fix.</li><li>Add the launch argument -autorun to run every example as soon as its card appears, which suits a projector.</li></ul></div>
+      </aside>
+    </div>
+  </section>
+<section class="panel" id="app-03" data-label="Type Workshop" aria-labelledby="h-app-03" hidden>
+    <div class="kicker">Module 3 · Types</div>
+    <h2 id="h-app-03" tabindex="-1">Type Workshop</h2>
+    <div class="split">
+      <ol class="lessons" aria-label="Lessons in Type Workshop"><li><div class="lt"><span>3.1</span>Structs: Your Own Value Types</div><div class="ls">Edit a to-do item, price a coffee order, add songs with a mutating method and watch didSet log every temperature change.</div><div class="lf">Lesson_3_1_Structs.swift</div></li><li><div class="lt"><span>3.2</span>Classes and Reference Semantics</div><div class="ls">Deposit through two names for one account, run month end on a subclass, and copy a struct versus share a class while ARC counts references.</div><div class="lf">Lesson_3_2_Classes.swift</div></li><li><div class="lt"><span>3.3</span>Enums: Modeling Choices and State</div><div class="ls">Switch over coffee sizes, pick from allCases, build payments with associated values and load songs through a loading, loaded or failed screen.</div><div class="lf">Lesson_3_3_Enums.swift</div></li><li><div class="lt"><span>3.4</span>Protocols and Protocol-Oriented Design</div><div class="ls">Fill a cart of any Priced items, share with default behavior, sort Comparable tasks, decode JSON with Codable and compare some with any.</div><div class="lf">Lesson_3_4_Protocols.swift</div></li><li><div class="lt"><span>3.5</span>Generics: Write It Once, Keep the Types</div><div class="ls">Run one generic function on Strings and Ints, push and pop a Stack, call constrained functions and rebuild Optional as Maybe.</div><div class="lf">Lesson_3_5_Generics.swift</div></li><li><div class="lt"><span>3.6</span>Error Handling</div><div class="ls">Make a withdrawal fail, see which catch runs, compare try? and try!, watch defer hide a spinner, switch over a Result and read friendly errors.</div><div class="lf">Lesson_3_6_ErrorHandling.swift</div></li><li><div class="lt"><span>3.7</span>Concurrency: async/await and Actors</div><div class="ls">Await a forecast, time sequential awaits against async let, freeze and unfreeze the main thread, cancel a task and land 1,000 actor likes.</div><div class="lf">Lesson_3_7_Concurrency.swift</div></li><li><div class="lt"><span>3.8</span>Programming Paradigms in Swift</div><div class="ls">Flip today&#39;s chores and watch the imperative, object-oriented, protocol-oriented, functional and declarative answers agree.</div><div class="lf">Lesson_3_8_Paradigms.swift</div></li></ol>
+      <aside class="side" aria-label="About Type Workshop">
+        <p class="lede">Structs, classes, enums, protocols, generics, error handling, concurrency and programming paradigms, each made visible: copy a struct and share a class side by side, push onto a generic stack, watch async let finish early, and see an actor land on exactly 1,000.</p>
+        <div class="meta">
+          <span class="chip">Open <b class="mono">samples/03-TypeWorkshop/TypeWorkshop.xcodeproj</b></span>
+          <span class="chip"><b>8</b> lesson screens</span>
+          <span class="chip"><b>66</b> unit tests</span>
+          <span class="chip"><b>UI tests</b> included</span>
+        </div>
+        <div class="note"><strong>Good to know</strong><ul><li>This app also has UI tests, so Command-U takes a few minutes longer.</li><li>The Blocking mode in lesson 3.7 freezes the app for about four seconds on purpose, so you can see taps pile up.</li></ul></div>
+      </aside>
+    </div>
+  </section>
+<section class="panel" id="app-04" data-label="SwiftUI Studio" aria-labelledby="h-app-04" hidden>
+    <div class="kicker">Module 4 · SwiftUI</div>
+    <h2 id="h-app-04" tabindex="-1">SwiftUI Studio</h2>
+    <div class="split">
+      <ol class="lessons" aria-label="Lessons in SwiftUI Studio"><li><div class="lt"><span>4.1</span>Describe the Screen, Not the Steps</div><div class="ls">Compare a UIKit counter with a SwiftUI one, watch body re-run, and reshape a view tree.</div><div class="lf">Lesson_4_1_DescribeTheScreen.swift</div></li><li><div class="lt"><span>4.2</span>Views and Modifiers</div><div class="ls">Style text, symbols, labels and buttons, and reorder modifiers to see how each one wraps the view.</div><div class="lf">Lesson_4_2_ViewsAndModifiers.swift</div></li><li><div class="lt"><span>4.3</span>Stacks, Frames, and Grids</div><div class="ls">Arrange views with stacks, alignment, spacing, Spacer and frames, then scroll a lazy grid.</div><div class="lf">Lesson_4_3_StacksFramesGrids.swift</div></li><li><div class="lt"><span>4.4</span>State Drives the Screen</div><div class="ls">Change @State, derive values instead of copying them, and share state with a child through @Binding.</div><div class="lf">Lesson_4_4_StateDrivesTheScreen.swift</div></li><li><div class="lt"><span>4.5</span>Observable Models</div><div class="ls">Drive views from an @Observable coffee order, edit it with @Bindable, share it through the environment, and count which views re-run.</div><div class="lf">Lesson_4_5_ObservableModels.swift</div></li><li><div class="lt"><span>4.6</span>Lists and Dynamic Data</div><div class="ls">Build lists from identifiable data, group them in sections, swipe to delete or mark done, and search.</div><div class="lf">Lesson_4_6_ListsAndDynamicData.swift</div></li><li><div class="lt"><span>4.7</span>Navigation, Tabs, and Sheets</div><div class="ls">Open a navigation stack, value-based links, a tab bar and a sheet, watch the path array, and confirm before resetting.</div><div class="lf">Lesson_4_7_NavigationTabsSheets.swift</div></li><li><div class="lt"><span>4.8</span>Forms and Input</div><div class="ls">Fill in forms with text fields, toggles, pickers, steppers and dates, and watch validation enable the button.</div><div class="lf">Lesson_4_8_FormsAndInput.swift</div></li><li><div class="lt"><span>4.9</span>Motion, Adaptivity, and Liquid Glass</div><div class="ls">Animate changes of state, try transitions and text sizes, let ViewThatFits choose, and place controls on Liquid Glass.</div><div class="lf">Lesson_4_9_MotionAdaptivityGlass.swift</div></li></ol>
+      <aside class="side" aria-label="About SwiftUI Studio">
+        <p class="lede">The SwiftUI module&#39;s examples as working screens: views and modifiers, stacks and grids, @State and @Binding, @Observable models, lists, navigation, tabs and sheets, forms, animation, and a first look at Liquid Glass.</p>
+        <div class="meta">
+          <span class="chip">Open <b class="mono">samples/04-SwiftUIStudio/SwiftUIStudio.xcodeproj</b></span>
+          <span class="chip"><b>9</b> lesson screens</span>
+          <span class="chip"><b>84</b> unit tests</span>
+          
+        </div>
+        <div class="note"><strong>Good to know</strong><ul><li>Demos that need their own navigation stack or tab bar open in a sheet with a Close button, so they never nest inside the lesson screen.</li></ul></div>
+      </aside>
+    </div>
+  </section>
+<section class="panel" id="app-05" data-label="Design Gallery" aria-labelledby="h-app-05" hidden>
+    <div class="kicker">Module 5 · Design</div>
+    <h2 id="h-app-05" tabindex="-1">Design Gallery</h2>
+    <div class="split">
+      <ol class="lessons" aria-label="Lessons in Design Gallery"><li><div class="lt"><span>5.1</span>Principles of iOS Design</div><div class="ls">Squint at a checkout, nest rounded corners, and open a settings screen that adapts for free.</div><div class="lf">Lesson_5_1_Principles.swift</div></li><li><div class="lt"><span>5.2</span>Liquid Glass</div><div class="ls">Float controls on regular and clear glass, group and morph them, and see why glass on glass fails.</div><div class="lf">Lesson_5_2_LiquidGlass.swift</div></li><li><div class="lt"><span>5.3</span>Typography and Dynamic Type</div><div class="ls">Drag through all twelve text sizes and watch text styles grow while fixed sizes freeze.</div><div class="lf">Lesson_5_3_Typography.swift</div></li><li><div class="lt"><span>5.4</span>Color, Dark Mode, and Contrast</div><div class="ls">Flip cards between Light and Dark, measure contrast ratios, and fix colors that fail.</div><div class="lf">Lesson_5_4_ColorContrast.swift</div></li><li><div class="lt"><span>5.5</span>Layout, Spacing, and Touch Targets</div><div class="ls">See the safe areas, group content with three spacing values, and tap-test 44-point targets.</div><div class="lf">Lesson_5_5_LayoutSpacing.swift</div></li><li><div class="lt"><span>5.6</span>SF Symbols and App Icons</div><div class="ls">Tune symbol weight and scale, try rendering modes and effects, and label icon-only buttons.</div><div class="lf">Lesson_5_6_SymbolsIcons.swift</div></li><li><div class="lt"><span>5.7</span>Choosing a Navigation Pattern</div><div class="ls">Open a real tab bar, stack and sheet, then pick the right pattern for eight apps.</div><div class="lf">Lesson_5_7_NavigationPatterns.swift</div></li><li><div class="lt"><span>5.8</span>States, Feedback, and Clear Copy</div><div class="ls">Walk a screen through its five states, rewrite vague errors, and confirm a delete.</div><div class="lf">Lesson_5_8_StatesFeedback.swift</div></li><li><div class="lt"><span>5.9</span>Designing for Accessibility</div><div class="ls">Hear what VoiceOver says, label icon buttons, and respect Reduce Motion and color settings.</div><div class="lf">Lesson_5_9_Accessibility.swift</div></li><li><div class="lt"><span>5.10</span>Process, Prototypes, and Critique</div><div class="ls">Write a checkable requirement, run a wireframe, and critique an invoices screen.</div><div class="lf">Lesson_5_10_ProcessCritique.swift</div></li></ol>
+      <aside class="side" aria-label="About Design Gallery">
+        <p class="lede">Design judgment you can flip between: before and after versions of real screens for Liquid Glass, Dynamic Type, color and contrast, spacing and touch targets, SF Symbols, navigation patterns, states and clear copy, and accessibility, ending with a prototype and a critique.</p>
+        <div class="meta">
+          <span class="chip">Open <b class="mono">samples/05-DesignGallery/DesignGallery.xcodeproj</b></span>
+          <span class="chip"><b>10</b> lesson screens</span>
+          <span class="chip"><b>57</b> unit tests</span>
+          <span class="chip"><b>UI tests</b> included</span>
+        </div>
+        <div class="note"><strong>Good to know</strong><ul><li>This app also has UI tests: a full tour of every lesson, so Command-U takes several minutes.</li><li>Haptics need a real iPhone. Reduce Motion, Differentiate Without Color and Increase Contrast have Simulate switches, and the app also shows your device&#39;s real settings.</li><li>iOS 26 adjusted some system colors, so the app shows the values your device actually uses next to the ones the course quotes.</li></ul></div>
+      </aside>
+    </div>
+  </section>
+<section class="panel" id="app-06" data-label="Data Keeper" aria-labelledby="h-app-06" hidden>
+    <div class="kicker">Module 6 · Data</div>
+    <h2 id="h-app-06" tabindex="-1">Data Keeper</h2>
+    <div class="split">
+      <ol class="lessons" aria-label="Lessons in Data Keeper"><li><div class="lt"><span>6.1</span>Where App Data Lives</div><div class="ls">See the six places data can live, explore this app&#39;s real sandbox folders, and watch a draft save itself when the app goes to the background.</div><div class="lf">Lesson_6_1_WhereAppDataLives.swift</div></li><li><div class="lt"><span>6.2</span>Settings with @AppStorage</div><div class="ls">Write and read UserDefaults, keep an onboarding flag across launches, pick a theme for the whole app, and edit a settings form that remembers every value.</div><div class="lf">Lesson_6_2_SettingsWithAppStorage.swift</div></li><li><div class="lt"><span>6.3</span>Codable and JSON</div><div class="ls">Encode a struct to pretty-printed JSON, decode arrays and nested objects, break JSON on purpose to read each DecodingError, and parse ISO 8601 dates.</div><div class="lf">Lesson_6_3_CodableAndJSON.swift</div></li><li><div class="lt"><span>6.4</span>Reading and Writing Files</div><div class="ls">Write and read files in Documents, save Codable notes to notes.json, crash a save on purpose, and handle a missing or damaged file.</div><div class="lf">Lesson_6_4_ReadingAndWritingFiles.swift</div></li><li><div class="lt"><span>6.5</span>SwiftData Fundamentals</div><div class="ls">Add, complete, delete, sort and filter real SwiftData tasks, watch pending changes reach the database file, and clear completed tasks from code.</div><div class="lf">Lesson_6_5_SwiftDataFundamentals.swift</div></li><li><div class="lt"><span>6.6</span>Relationships and Schema Changes</div><div class="ls">Link folders and notes, compare delete rules, edit a note with @Bindable, build an in-memory container, and run a real schema migration.</div><div class="lf">Lesson_6_6_RelationshipsAndSchemaChanges.swift</div></li><li><div class="lt"><span>6.7</span>Secrets in the Keychain</div><div class="ls">Save, update, read and delete a sample token in this app&#39;s Keychain, and see every status code the Security framework returns.</div><div class="lf">Lesson_6_7_SecretsInTheKeychain.swift</div></li><li><div class="lt"><span>6.8</span>iCloud and CloudKit Sync</div><div class="ls">Save and query CloudKit records, check a model for sync readiness, and resolve offline edits between two devices, all in a clearly labeled simulated mode.</div><div class="lf">Lesson_6_8_ICloudAndCloudKitSync.swift</div></li></ol>
+      <aside class="side" aria-label="About Data Keeper">
+        <p class="lede">Every place an app keeps data: @AppStorage settings, Codable and JSON, files in the sandbox, SwiftData models with relationships and migrations, secrets in the Keychain, and iCloud sync.</p>
+        <div class="meta">
+          <span class="chip">Open <b class="mono">samples/06-DataKeeper/DataKeeper.xcodeproj</b></span>
+          <span class="chip"><b>8</b> lesson screens</span>
+          <span class="chip"><b>122</b> unit tests</span>
+          
+        </div>
+        <div class="note"><strong>Good to know</strong><ul><li>iCloud and CloudKit run in a clearly labeled simulated mode, because they need the paid Apple Developer Program. The real code is included for you to read.</li><li>The appearance picker in lesson 6.2 is saved, so the app stays in the mode you pick until you change it back.</li><li>To see the save that happens when the app leaves the screen (lesson 6.1), press Command-Shift-H in the Simulator, then return.</li></ul></div>
+      </aside>
+    </div>
+  </section>
+<section class="panel" id="app-07" data-label="Device Lab" aria-labelledby="h-app-07" hidden>
+    <div class="kicker">Module 7 · Device APIs</div>
+    <h2 id="h-app-07" tabindex="-1">Device Lab</h2>
+    <div class="split">
+      <ol class="lessons" aria-label="Lessons in Device Lab"><li><div class="lt"><span>7.1</span>Permission and Privacy</div><div class="ls">Read this app&#39;s real permission answers, run the course&#39;s status switch, replay a whole permission journey, try a priming screen and open Settings.</div><div class="lf">Lesson_7_1_PermissionPrivacy.swift</div></li><li><div class="lt"><span>7.2</span>Core Location, the Modern Way</div><div class="ls">Stream live positions into an observable model, step through its loop body for every update flag, measure distances and turn coordinates into a place name.</div><div class="lf">Lesson_7_2_CoreLocation.swift</div></li><li><div class="lt"><span>7.3</span>MapKit for SwiftUI</div><div class="ls">Drop markers and annotations, fly the camera in 3D, build a map by hand, search for places and draw a walking route with a Look Around preview.</div><div class="lf">Lesson_7_3_MapKitSwiftUI.swift</div></li><li><div class="lt"><span>7.4</span>Cloud Storage with CloudKit</div><div class="ls">Check an iCloud account, save and query grocery records, handle CloudKit errors and sync a setting between two devices, all in a clearly labeled simulated mode.</div><div class="lf">Lesson_7_4_CloudKit.swift</div></li><li><div class="lt"><span>7.5</span>Photos, Camera and Sharing</div><div class="ls">Pick a photo and load it two ways, see what your app actually receives, check camera permission and share a trail link or photo with ShareLink.</div><div class="lf">Lesson_7_5_PhotosCameraSharing.swift</div></li><li><div class="lt"><span>7.6</span>On-Device Intelligence</div><div class="ls">Check whether the on-device language model can run, ask it for trip ideas when it can, compare plain text with guided generation and read a trail sign with Vision.</div><div class="lf">Lesson_7_6_OnDeviceIntelligence.swift</div></li><li><div class="lt"><span>7.7</span>Beyond the App: Widgets, Intents and Notifications</div><div class="ls">Watch a widget timeline across a day, run an App Intent, start a hike Live Activity and schedule a local notification.</div><div class="lf">Lesson_7_7_WidgetsIntentsNotifications.swift</div></li></ol>
+      <aside class="side" aria-label="About Device Lab">
+        <p class="lede">Device features, with trail examples: asking for permission, Core Location, MapKit maps, search and routes, CloudKit, photos and sharing, the on-device language model, and widgets, App Intents, a Live Activity and local notifications.</p>
+        <div class="meta">
+          <span class="chip">Open <b class="mono">samples/07-DeviceLab/DeviceLab.xcodeproj</b></span>
+          <span class="chip"><b>7</b> lesson screens</span>
+          <span class="chip"><b>115</b> unit tests</span>
+          <span class="chip">Home Screen widget: <b>Device Lab Widget</b></span>
+        </div>
+        <div class="note"><strong>Good to know</strong><ul><li>Set a location in the Simulator with Features &gt; Location.</li><li>The language model, the camera and Siri need a real iPhone. Without them the app explains what would happen and never crashes.</li><li>CloudKit runs in a labeled simulated mode and the widget shows a stand-in count: both need capabilities from the paid Apple Developer Program.</li></ul></div>
+      </aside>
+    </div>
+  </section>
+<section class="panel" id="app-08" data-label="Network Lab" aria-labelledby="h-app-08" hidden>
+    <div class="kicker">Module 8 · Networking</div>
+    <h2 id="h-app-08" tabindex="-1">Network Lab</h2>
+    <div class="split">
+      <ol class="lessons" aria-label="Lessons in Network Lab"><li><div class="lt"><span>8.1</span>How an App Talks to a Server</div><div class="ls">Send a real request, measure its DNS, TCP, TLS and HTTP phases, and step through the round trips of HTTP/1.1, HTTP/2 and HTTP/3.</div><div class="lf">Lesson_8_1_AppTalksToServer.swift</div></li><li><div class="lt"><span>8.2</span>Speaking HTTP</div><div class="ls">Build URLs, headers and a POST request, see them as raw HTTP text, and send each method to a practice API.</div><div class="lf">Lesson_8_2_SpeakingHTTP.swift</div></li><li><div class="lt"><span>8.3</span>REST Resources and JSON</div><div class="ls">Call REST routes for real, run the course&#39;s decoding programs, and break JSON on purpose to read each DecodingError.</div><div class="lf">Lesson_8_3_RESTResourcesJSON.swift</div></li><li><div class="lt"><span>8.4</span>URLSession with async/await</div><div class="ls">Fetch, check and decode with async/await, watch each phase timed, and see .task cancel a load when its view disappears.</div><div class="lf">Lesson_8_4_URLSessionAsyncAwait.swift</div></li><li><div class="lt"><span>8.5</span>Errors, Retries and Security</div><div class="ls">Cause real and simulated failures, retry with backoff, keep a POST safe to retry, and put a Keychain token in a request.</div><div class="lf">Lesson_8_5_ErrorsRetriesSecurity.swift</div></li><li><div class="lt"><span>8.6</span>Live Data Beyond Request and Response</div><div class="ls">Compare polling, WebSockets and push in a score lab, open a real WebSocket, stream a response line by line, and try push registration.</div><div class="lf">Lesson_8_6_LiveData.swift</div></li><li><div class="lt"><span>8.7</span>Designing the API Layer</div><div class="ls">Inject a live or stub service into a paginating list, run its test, and watch URLCache answer from the cache or with a 304.</div><div class="lf">Lesson_8_7_APILayer.swift</div></li></ol>
+      <aside class="side" aria-label="About Network Lab">
+        <p class="lede">Networking with real requests to the free JSONPlaceholder test API: HTTP and URLs, REST and JSON decoding, URLSession with async/await, errors, retries and security, WebSockets and streaming, and a testable API layer.</p>
+        <div class="meta">
+          <span class="chip">Open <b class="mono">samples/08-NetworkLab/NetworkLab.xcodeproj</b></span>
+          <span class="chip"><b>7</b> lesson screens</span>
+          <span class="chip"><b>105</b> unit tests</span>
+          
+        </div>
+        <div class="note"><strong>Good to know</strong><ul><li>Most demos need an internet connection. Each one shows a readable error and a Retry button when you are offline.</li><li>JSONPlaceholder answers POST, PATCH and DELETE but does not store anything.</li><li>Push notifications need the paid Apple Developer Program, so the push demo starts in a labeled simulated mode.</li></ul></div>
+      </aside>
+    </div>
+  </section>
+<section class="panel" id="app-09" data-label="Study Buddy" aria-labelledby="h-app-09" hidden>
+    <div class="kicker">Module 9 · Ship It</div>
+    <h2 id="h-app-09" tabindex="-1">Study Buddy</h2>
+    <div class="split">
+      <ol class="lessons" aria-label="Lessons in Study Buddy"><li><div class="lt"><span>9.1</span>Architecture That Survives Change</div><div class="ls">Move the focus rules into a view model, swap live, stand-in and failing services behind one protocol, and see which storage this launch chose.</div><div class="lf">Lesson_9_1_Architecture.swift</div></li><li><div class="lt"><span>9.2</span>Testing with Swift Testing</div><div class="ls">Split a bill, run the course&#39;s tests on screen, switch bugs on in the bug lab and watch which checks turn red.</div><div class="lf">Lesson_9_2_SwiftTesting.swift</div></li><li><div class="lt"><span>9.3</span>UI Tests, Previews and Accessibility Checks</div><div class="ls">Add a session through the identified sheet the UI test drives, explore queries in two languages and compare preview states.</div><div class="lf">Lesson_9_3_UITestsPreviews.swift</div></li><li><div class="lt"><span>9.4</span>Debugging and Instruments</div><div class="ls">Fix the average bug found with a print, log with Logger, and leak then free a timer with [weak self] while counters watch.</div><div class="lf">Lesson_9_4_DebuggingInstruments.swift</div></li><li><div class="lt"><span>9.5</span>Performance, Accessibility and Localization</div><div class="ls">Block the main thread and then use @concurrent, hear what VoiceOver says for custom controls, and see the app in Spanish.</div><div class="lf">Lesson_9_5_PerformanceAccessibilityLocalization.swift</div></li><li><div class="lt"><span>9.6</span>From Archive to App Store</div><div class="ls">Read this build&#39;s version, number and configuration, inspect the privacy manifest it ships, and walk a release through its gates.</div><div class="lf">Lesson_9_6_ArchiveToAppStore.swift</div></li><li><div class="lt"><span>9.7</span>Capstone: Study Buddy from Idea to Release</div><div class="ls">Run the Study Buddy focus timer and log, then turn user stories into the model and acceptance criteria into checks.</div><div class="lf">Lesson_9_7_Capstone.swift</div></li></ol>
+      <aside class="side" aria-label="About Study Buddy">
+        <p class="lede">Study Buddy, the course&#39;s capstone app, built the way the module teaches: a testable architecture, Swift Testing and UI tests, debugging with Logger, performance and accessibility, a Spanish translation, and everything a release needs.</p>
+        <div class="meta">
+          <span class="chip">Open <b class="mono">samples/09-StudyBuddy/StudyBuddy.xcodeproj</b></span>
+          <span class="chip"><b>7</b> lesson screens</span>
+          <span class="chip"><b>122</b> unit tests</span>
+          <span class="chip"><b>UI tests</b> included</span><span class="chip">Languages: <b>English, Spanish</b></span>
+        </div>
+        <div class="note"><strong>Good to know</strong><ul><li>Command-U runs both the unit tests and the UI tests.</li><li>Add the launch arguments -AppleLanguages (es) to see the app in Spanish.</li><li>Add the launch argument -ui-testing to start from known sample data.</li></ul></div>
+      </aside>
+    </div>
+  </section></main>
+  </div>
+  <footer>
+    <button type="button" id="prev"><small>Previous</small><span></span></button>
+    <span class="hint"><kbd>&larr;</kbd> <kbd>&rarr;</kbd> to move</span>
+    <button type="button" class="next" id="next"><small>Next</small><span></span></button>
+  </footer>
+</div>
+<script>
+(() => {
+  const panels = [...document.querySelectorAll('section.panel')];
+  const rail = document.querySelector('nav.rail');
+  const railButtons = [...rail.querySelectorAll('button[data-go]')];
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+  const menu = document.getElementById('menu');
+  const ids = panels.map((p) => p.id);
+  let current = 0;
+  function show(i, focus) {
+    current = Math.max(0, Math.min(panels.length - 1, i));
+    panels.forEach((p, k) => { p.hidden = k !== current; });
+    railButtons.forEach((b) => { if (b.dataset.go === ids[current]) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+    const label = (k) => panels[k] ? panels[k].dataset.label : '';
+    prev.disabled = current === 0; next.disabled = current === panels.length - 1;
+    prev.querySelector('span').textContent = label(current - 1);
+    next.querySelector('span').textContent = label(current + 1);
+    if (location.hash.slice(1) !== ids[current]) history.replaceState(null, '', '#' + ids[current]);
+    document.title = (current ? panels[current].dataset.label + ' | ' : '') + 'Sample Apps';
+    if (focus) panels[current].querySelector('h2').focus();
+  }
+  function fromHash() { const k = ids.indexOf(location.hash.slice(1)); return k < 0 ? 0 : k; }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-go]');
+    if (b) { show(ids.indexOf(b.dataset.go), true); rail.classList.remove('open'); menu.setAttribute('aria-expanded', 'false'); }
+  });
+  prev.addEventListener('click', () => show(current - 1, true));
+  next.addEventListener('click', () => show(current + 1, true));
+  menu.addEventListener('click', () => { const open = rail.classList.toggle('open'); menu.setAttribute('aria-expanded', String(open)); });
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); show(current + 1, true); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); show(current - 1, true); }
+  });
+  window.addEventListener('hashchange', () => show(fromHash(), false));
+  show(fromHash(), false);
+})();
+</script>
+</body>
+</html>

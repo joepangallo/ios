@@ -1,0 +1,19 @@
+{
+  "name": "StudyBuddy",
+  "title": "Study Buddy",
+  "modules": [
+    9
+  ],
+  "uiTests": true,
+  "regions": [
+    "en",
+    "es",
+    "Base"
+  ],
+  "about": "Study Buddy, the course's capstone app, built the way the module teaches: a testable architecture, Swift Testing and UI tests, debugging with Logger, performance and accessibility, a Spanish translation, and everything a release needs.",
+  "notes": [
+    "Command-U runs both the unit tests and the UI tests.",
+    "Add the launch arguments -AppleLanguages (es) to see the app in Spanish.",
+    "Add the launch argument -ui-testing to start from known sample data."
+  ]
+}

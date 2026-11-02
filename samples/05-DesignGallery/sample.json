@@ -1,0 +1,14 @@
+{
+  "name": "DesignGallery",
+  "title": "Design Gallery",
+  "modules": [
+    5
+  ],
+  "uiTests": true,
+  "about": "Design judgment you can flip between: before and after versions of real screens for Liquid Glass, Dynamic Type, color and contrast, spacing and touch targets, SF Symbols, navigation patterns, states and clear copy, and accessibility, ending with a prototype and a critique.",
+  "notes": [
+    "This app also has UI tests: a full tour of every lesson, so Command-U takes several minutes.",
+    "Haptics need a real iPhone. Reduce Motion, Differentiate Without Color and Increase Contrast have Simulate switches, and the app also shows your device's real settings.",
+    "iOS 26 adjusted some system colors, so the app shows the values your device actually uses next to the ones the course quotes."
+  ]
+}

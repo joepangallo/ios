@@ -1,0 +1,13 @@
+{
+  "name": "TypeWorkshop",
+  "title": "Type Workshop",
+  "modules": [
+    3
+  ],
+  "uiTests": true,
+  "about": "Structs, classes, enums, protocols, generics, error handling, concurrency and programming paradigms, each made visible: copy a struct and share a class side by side, push onto a generic stack, watch async let finish early, and see an actor land on exactly 1,000.",
+  "notes": [
+    "This app also has UI tests, so Command-U takes a few minutes longer.",
+    "The Blocking mode in lesson 3.7 freezes the app for about four seconds on purpose, so you can see taps pile up."
+  ]
+}

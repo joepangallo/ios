@@ -1,0 +1,13 @@
+{
+  "name": "NetworkLab",
+  "title": "Network Lab",
+  "modules": [
+    8
+  ],
+  "about": "Networking with real requests to the free JSONPlaceholder test API: HTTP and URLs, REST and JSON decoding, URLSession with async/await, errors, retries and security, WebSockets and streaming, and a testable API layer.",
+  "notes": [
+    "Most demos need an internet connection. Each one shows a readable error and a Retry button when you are offline.",
+    "JSONPlaceholder answers POST, PATCH and DELETE but does not store anything.",
+    "Push notifications need the paid Apple Developer Program, so the push demo starts in a labeled simulated mode."
+  ]
+}

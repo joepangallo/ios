@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  PrivacyInfo.xcprivacy: this app's privacy manifest (lesson 7.1).
+  Device Lab does not track anyone, collects no data, and calls no
+  required-reason API (such as UserDefaults or file timestamps), so every
+  list below is empty. An app that read UserDefaults would add an entry to
+  NSPrivacyAccessedAPITypes with the type NSPrivacyAccessedAPICategoryUserDefaults
+  and the reason CA92.1 (reading its own settings).
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array/>
+</dict>
+</plist>

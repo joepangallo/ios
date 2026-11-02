@@ -1,0 +1,12 @@
+{
+  "name": "SwiftBasics",
+  "title": "Swift Basics",
+  "modules": [
+    2
+  ],
+  "about": "Every Swift Fundamentals example as a program you can run, change and run again: values and types, numbers and strings, optionals, collections, decisions and loops, functions and closures. Each console shows exactly what the course page prints.",
+  "notes": [
+    "Mistake examples cannot compile, so each one shows the real compiler message next to the working fix.",
+    "Add the launch argument -autorun to run every example as soon as its card appears, which suits a projector."
+  ]
+}

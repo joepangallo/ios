@@ -110,3 +110,25 @@ of `tools/conformance.mjs` and `tools/diag-check.mjs` call the real Swift
 compiler through `xcrun`. They exit with code 2 and a message when it is not
 available. Everything else, including the unit tests, the browser checks and
 the build, runs on any platform with Node.
+
+## Sample apps
+
+`samples/` holds nine Xcode 26 projects, one per module (Module 0 shares the first),
+with one screen per lesson: every lesson of the course has exactly one screen, in
+the app for its module. Each home screen lists the module's lessons in course order;
+launching with the arguments `-lesson 4.3` opens a lesson directly. Each app has a
+Swift Testing target (Type Workshop, Design Gallery and Study Buddy also have UI tests),
+and two apps add a Home Screen widget. `samples/sample-apps.html` and `.pdf` are the
+students' guide to them.
+
+- `tools/build-samples.mjs` writes each project from its `sample.json` (folder-based
+  groups, Swift 6, default MainActor isolation, iOS 26.0) and copies the shared
+  `tools/sample-template/CourseKit.swift` into every app. Never edit an `.xcodeproj`
+  by hand: change `sample.json` and run `node tools/build-samples.mjs`. Add `--page`
+  to rebuild the guide, or `--pdf` to rebuild it and its PDF.
+- `tests/unit/samples.test.js` fails when a lesson has no screen, when a project,
+  CourseKit copy or the guide page is stale, or when student-facing hygiene slips.
+  `tests/e2e/samples.mjs` walks the guide page in a browser.
+- The apps themselves build and test with Xcode only, for example
+  `xcodebuild -project samples/04-SwiftUIStudio/SwiftUIStudio.xcodeproj -scheme SwiftUIStudio -destination "platform=iOS Simulator,name=iPhone 17 Pro" test`.
+  `samples/01-EcosystemTour/TipMath` is a standalone Swift package (`swift test`).
