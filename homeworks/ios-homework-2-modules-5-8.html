@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework 2 — iOS Development Studio (Modules 5–8)</title>
+<style>
+:root{
+  --bg:#0b1020; --panel:#131a2e; --panel2:#182238; --ink:#eef1ff; --muted:#a7b0cc;
+  --line:#2a3557; --accent:#ff9f0a; --accent2:#64d2ff; --good:#30d158; --bad:#ff453a;
+  --warn:#ffd60a; --code-bg:#0a0e1a; --radius:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0b1020,#0d1330 40%,#0b1020);color:var(--ink);line-height:1.55}
+a{color:var(--accent2)}
+header.hero{padding:34px 20px 10px;max-width:1020px;margin:0 auto}
+.kicker{color:var(--accent);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:.78rem}
+h1{font-size:2rem;margin:.3rem 0 .4rem;line-height:1.15}
+.sub{color:var(--muted);max-width:760px}
+main{max-width:1020px;margin:0 auto;padding:10px 20px 70px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin:18px 0;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.card h2{margin:.1rem 0 .5rem;font-size:1.3rem}
+.card h3{margin:.2rem 0 .4rem;font-size:1.08rem}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.18rem .55rem;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:.4rem;vertical-align:middle}
+.tag.mod{color:#0b1020;background:var(--accent2);border-color:transparent}
+.tag.bonus{color:#0b1020;background:var(--warn);border-color:transparent}
+.tag.write{color:#0b1020;background:var(--good);border-color:transparent}
+.pts{float:right;color:var(--accent);font-weight:700;white-space:nowrap}
+pre.code{background:var(--code-bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:.92rem;line-height:1.5}
+pre.code code,code.inline{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+code.inline{background:var(--code-bg);padding:.08rem .35rem;border-radius:6px;border:1px solid var(--line);font-size:.88em}
+.tok-k{color:#ff7eb6}.tok-s{color:#a5d6a7}.tok-n{color:#82aaff}.tok-c{color:#697098;font-style:italic}
+.sticky{position:sticky;top:0;z-index:50;background:rgba(11,16,32,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.sticky-in{max-width:1020px;margin:0 auto;padding:10px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.progresswrap{flex:1;min-width:180px}
+.progressbar{height:10px;background:var(--panel2);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.progressbar>div{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+.scorebox{font-weight:700}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:.55rem 1rem}
+button:hover{border-color:var(--accent2)}
+button.primary{background:var(--accent);color:#14100a;border-color:transparent;font-weight:700}
+button.primary:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{background:transparent}
+button.small{padding:.3rem .7rem;font-size:.9rem}
+.choices{display:grid;gap:10px;margin:12px 0}
+.choice{text-align:left;width:100%;padding:.7rem .9rem;display:flex;gap:.6rem;align-items:flex-start}
+.choice.sel{border-color:var(--accent);background:#1d2a4a}
+.choice.correct{border-color:var(--good);background:rgba(48,209,88,.12)}
+.choice.wrong{border-color:var(--bad);background:rgba(255,69,58,.10)}
+.choice:disabled{cursor:default;opacity:1}
+.feedback{border-radius:12px;padding:12px 14px;margin:12px 0;display:none}
+.feedback.show{display:block}
+.feedback.good{border:1px solid var(--good);background:rgba(48,209,88,.10)}
+.feedback.bad{border:1px solid var(--bad);background:rgba(255,69,58,.08)}
+.feedback.info{border:1px solid var(--accent2);background:rgba(100,210,255,.08)}
+.hintbox{display:none;border-left:4px solid var(--warn);background:rgba(255,214,10,.07);padding:10px 14px;margin:10px 0;border-radius:0 10px 10px 0}
+.hintbox.show{display:block}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+input[type=text],textarea,select{font:inherit;background:var(--code-bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem}
+textarea.codein{width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92rem;min-height:96px}
+input.typed{width:110px}
+input.namein{width:min(420px,100%);font-size:1.05rem;padding:.7rem .9rem}
+select{max-width:100%}
+.parsons-bank,.parsons-zone{display:grid;gap:8px;margin:10px 0}
+.parsons-line{text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;width:100%}
+.parsons-line.inzone{border-color:var(--accent2)}
+.parsons-line.distractor-used{border-color:var(--bad)}
+.zone-label{color:var(--muted);font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.debugline{display:block;width:100%;text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;margin:4px 0;background:var(--code-bg)}
+.debugline.sel{border-color:var(--accent)}
+.debugline.correct{border-color:var(--good)}
+.debugline.wrong{border-color:var(--bad)}
+.phone{width:270px;max-width:88vw;margin:14px auto;background:#000;border:3px solid #39466e;border-radius:38px;padding:16px 14px 22px;min-height:340px;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.phone .notch{width:110px;height:20px;background:#39466e;border-radius:0 0 12px 12px;margin:-16px auto 12px}
+.phone .screen{display:grid;gap:12px;align-content:start;justify-items:center;text-align:center}
+.pill-demo{font-weight:700;color:#111}
+.state-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+.state-table th,.state-table td{border:1px solid var(--line);padding:.45rem .6rem;text-align:left}
+.state-table th{background:var(--panel2)}
+.timeline{display:grid;gap:8px;margin:12px 0}
+.tl-row{display:flex;align-items:center;gap:10px}
+.tl-label{width:120px;color:var(--muted);font-size:.88rem}
+.tl-track{flex:1;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;height:26px;position:relative;overflow:hidden}
+.tl-fill{position:absolute;top:0;bottom:0;border-radius:6px}
+.checklist{list-style:none;padding:0;margin:10px 0;display:grid;gap:8px}
+.checklist li{padding:.55rem .8rem;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.checklist li.ok{border-color:var(--good)}
+.checklist li.no{border-color:var(--bad)}
+.mini{font-size:.88rem;color:var(--muted)}
+.scoregrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.scorecell{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+.scorecell b{font-size:1.25rem;display:block}
+#summaryList{display:grid;gap:8px}
+footer{max-width:1020px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:.9rem}
+@media print{
+  body{background:#fff;color:#000}
+  .sticky,.no-print{display:none!important}
+  .card{border:1px solid #bbb;box-shadow:none;background:#fff;break-inside:avoid}
+  pre.code{background:#f4f4f4;border-color:#bbb}
+  .feedback{display:none}
+  #printSummary{display:block!important}
+}
+#printSummary{display:none}
+</style>
+</head>
+<body>
+<div class="sticky no-print"><div class="sticky-in">
+  <div class="scorebox">Homework 2</div>
+  <div class="progresswrap"><div class="progressbar"><div id="progressFill"></div></div><div class="mini" id="progressText">0 of 0 points</div></div>
+  <div class="scorebox" id="scoreBox">Score: 0 / 100</div>
+  <button class="small" onclick="scrollToId('finish')">Finish &amp; results ↓</button>
+</div></div>
+
+<header class="hero">
+  <div class="kicker">iOS Development Studio · Homework 2</div>
+  <h1>Judge it. Store it. Fetch it.</h1>
+  <p class="sub">This homework is built from the course in the
+  <a href="https://github.com/joepangallo/ios" target="_blank" rel="noopener">joepangallo/ios</a> repo
+  (live course: <a href="https://joepangallo.github.io/ios/" target="_blank" rel="noopener">joepangallo.github.io/ios</a>).
+  It covers the next four modules: <strong>Module 5</strong> Design, <strong>Module 6</strong> Data,
+  <strong>Module 7</strong> Services, and <strong>Module 8</strong> Networking — <strong>25 points each, 100 total</strong>,
+  plus two clearly-marked <em>bonus</em> items (up to +4) that can never hurt your grade.
+  <strong>Do this homework before the midterm</strong> — the midterm re-tests exactly these concepts.</p>
+  <div class="card">
+    <h3>How this works — read this first (2 minutes)</h3>
+    <ul>
+      <li><strong>Time:</strong> about 90 minutes. <strong>Total:</strong> 100 points (25 per module), plus up to +4 bonus that can never hurt your grade.</li>
+      <li><strong>Learn while you work:</strong> almost every item asks you to <em>commit to a prediction before anything is revealed</em>. Guessing after you see the answer teaches nothing — predicting first is where the learning happens. Your first prediction is kept in your results, so you can see what your instincts got right.</li>
+      <li><strong>Feedback explains why</strong>, not just right/wrong. If you miss, read the explanation — it names the exact lesson to revisit.</li>
+      <li><strong>Second tries:</strong> on questions with 4+ choices and on typed / built / written answers, a correct second try earns half credit. On 2–3 choice questions there is no second-try credit (elimination would make it free). Multi-part items earn credit per correct part.</li>
+      <li><strong>Hints are free.</strong> Hint 1 is a concept reminder; Hint 2 is a bigger nudge. Using hints is recorded in your results (so your instructor can see where the class got stuck), but it never lowers your score — being stuck and using help is part of learning.</li>
+      <li><strong>Simulated vs. real:</strong> the screen-audit phone and other previews are simulations with fixed, known outcomes drawn from the lessons. The written-Swift check tests the language rules taught in the course, not a full compiler.</li>
+      <li><strong>Your work saves automatically</strong> in this browser. At the end, use <em>Download results</em> or <em>Print</em> to turn it in, exactly as your instructor directs.</li>
+      <li><strong>You will actually write Swift</strong> in this homework too. Spelling of keywords matters; spacing doesn't. Equivalent correct Swift is accepted.</li>
+    </ul>
+    <label for="studentName"><strong>Your name:</strong></label><br>
+    <input class="namein" type="text" id="studentName" placeholder="First and last name" autocomplete="name">
+    <span class="mini" id="saveNote">Progress saves automatically on this device.</span>
+  </div>
+</header>
+<main id="app"></main>
+
+<section class="card" id="finish">
+  <h2>Finish &amp; results</h2>
+  <p>When every section shows as complete, review what you missed below — each miss names the module and lesson to revisit in the course. Then turn this in the way your instructor directed.</p>
+  <div class="scoregrid" id="sectionScores"></div>
+  <div class="scorebox" id="finalScore" style="font-size:1.2rem"></div>
+  <h3>Review what you missed</h3>
+  <div id="summaryList"><p class="mini">Nothing missed yet — or nothing attempted yet. Items you attempt will be summarized here.</p></div>
+  <div class="row no-print">
+    <button class="primary" onclick="downloadResults()">Download results (.txt)</button>
+    <button onclick="window.print()">Print / save as PDF</button>
+    <button onclick="copyBackup()">Copy backup code</button>
+    <button onclick="restoreBackup()">Restore from backup code</button>
+    <button class="ghost" onclick="resetAll()">Reset everything</button>
+  </div>
+  <p class="mini no-print">Honesty note: this page grades in your browser and its answers live in the page source, like every take-home practice file. Your downloaded result includes your attempts, hints used, and a timestamp — that's the record to turn in.</p>
+  <div id="printSummary"></div>
+</section>
+<footer>Built from the iOS Development Studio course (Modules 5–8) · Homework 2 · Judge → Store → Fetch</footer>
+
+<script>
+"use strict";
+/* ============ tiny helpers ============ */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function hl(code){ // very small Swift highlighter for display snippets
+  let e=esc(code);
+  e=e.replace(/(\/\/[^\n]*)/g,'<span class="tok-c">$1</span>');
+  e=e.replace(/(&quot;[^&]*?&quot;|"(?:[^"\\]|\\.)*")/g,'<span class="tok-s">$1</span>');
+  e=e.replace(/\b(import|struct|class|enum|protocol|func|var|let|return|if|else|guard|switch|case|default|for|while|repeat|in|break|continue|try|catch|do|throws|async|await|some|any|mutating|static|private|true|false|nil|self|super|init|extension|where|inout|defer|typealias)\b/g,'<span class="tok-k">$1</span>');
+  e=e.replace(/\b(\d+(?:\.\d+)?)\b/g,'<span class="tok-n">$1</span>');
+  return e;
+}
+const norm=s=>String(s).toLowerCase().replace(/\s+/g," ").trim();
+const normCode=s=>String(s).replace(/\/\/[^\n]*/g,"").replace(/\s+/g," ").trim();
+function scrollToId(id){document.getElementById(id)?.scrollIntoView({behavior:"smooth"});}
+
+/* ============ state ============ */
+const LS_KEY="ios-hw2-v1";
+let state={name:"",items:{},finishedAt:null};
+try{const raw=localStorage.getItem(LS_KEY); if(raw) state=JSON.parse(raw);}catch(e){}
+function save(){ try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){} renderProgress(); }
+function itemState(id){ if(!state.items[id]) state.items[id]={attempts:0,hint1:false,hint2:false,awarded:0,done:false,answers:[]}; return state.items[id]; }
+
+/* ============ scoring core ============
+   grade(id, fraction, detail): fraction = share of the item answered correctly (0..1).
+   Attempt factor: 1st graded try x1; 2nd try x0.5 when def.secondTryCredit (or the item is
+   multi-part / typed / written / built), otherwise x0 and the item locks after one try.
+   def.attemptFactors overrides this (capstone builder: [1, .5, .25], max 3 checks).
+   Hints are FREE (never reduce the score); hint use is logged for the instructor.
+   Partial credit: multi-part items keep the best fraction earned across tries. */
+function maxAttempts(def){ return def.attemptFactors? def.attemptFactors.length : (def.secondTryCredit?2:1); }
+function attemptFactor(def,attempt){
+  if(def.attemptFactors) return def.attemptFactors[Math.min(attempt-1,def.attemptFactors.length-1)];
+  if(attempt===1) return 1;
+  return def.secondTryCredit? 0.5 : 0;
+}
+function grade(id,fraction,detail){
+  const def=ITEMS[id]; const st=itemState(id);
+  if(st.done) return st.awarded;
+  fraction=Math.max(0,Math.min(1,fraction));
+  st.attempts++;
+  st.answers.push(detail||("fraction="+fraction));
+  if(st.attempts===1) st.firstAnswer=detail||("fraction="+fraction);
+  const f=attemptFactor(def,st.attempts);
+  const earned=Math.round(def.points*fraction*f*100)/100;
+  if(earned>st.awarded) st.awarded=earned;
+  st.bestFraction=Math.max(st.bestFraction||0,fraction);
+  if(fraction>=1 || st.attempts>=maxAttempts(def)) st.done=true;
+  save(); renderItemFeedback(id,fraction,st.awarded); renderSummary();
+  return st.awarded;
+}
+function useHint(id,n){
+  const st=itemState(id); if(n===1)st.hint1=true; if(n===2)st.hint2=true; save();
+  const box=$("#hint"+n+"-"+id); if(box) box.classList.add("show");
+  const b=$("#hintbtn"+n+"-"+id); if(b) b.disabled=true;
+}
+function triesLeft(id){ const def=ITEMS[id]; const st=itemState(id); if(st.done)return 0; return def.secondTryCredit? Math.max(0,2-st.attempts): Math.max(0,1-st.attempts); }
+
+/* ============ ITEMS registry (renderers fill this) ============ */
+const ITEMS={}; const SECTIONS=[];
+function registerSection(sec){ SECTIONS.push(sec); }
+function registerItem(def){ ITEMS[def.id]=def; }
+
+/* feedback renderer: every item has #fb-<id> */
+function renderItemFeedback(id,fraction,awarded){
+  const def=ITEMS[id]; const st=itemState(id); const fb=$("#fb-"+id); if(!fb)return;
+  const full=fraction>=1, label=def.bonus?`Bonus earned: +${awarded} pts`:`Score so far on this item: ${awarded} / ${def.points} pts`;
+  fb.className="feedback show "+(full?"good":(st.done?"bad":"info"));
+  if(full){
+    fb.innerHTML=`<strong>✓ Correct — ${label}.</strong><br>${def.explain}`;
+  } else if(st.done){
+    fb.innerHTML=`<strong>${st.bestFraction>0?"◐ Partially there":"✗ Not quite"} — ${label}.</strong><br>${def.explain}<br><span class="mini">Revisit: ${esc(def.revisit)}</span>`;
+  } else {
+    fb.innerHTML=`<strong>◐ Not fully there yet (${Math.round((st.bestFraction||0)*100)}% of this item so far).</strong> You have another try — a fully correct second try earns half credit on this item. Re-read carefully${st.hint1?"":" — Hint 1 is free"}.`;
+  }
+  if(st.done){ $$("[data-lock='"+id+"']").forEach(el=>{el.disabled=true;}); const c=$("#check-"+id); if(c)c.disabled=true; }
+}
+</script>
+<script>
+"use strict";
+/* ============ renderers ============ */
+const app=document.getElementById("app");
+function tagsHTML(def){
+  let t=`<span class="tag mod">${esc(def.mod)}</span>`;
+  if(def.extension) t+=`<span class="tag">Extension · scored separately</span>`;
+  if(def.bonus) t+=`<span class="tag bonus">Bonus · can't hurt you</span>`;
+  if(def.type==="write") t+=`<span class="tag write">You write the Swift</span>`;
+  if(def.type==="parsons") t+=`<span class="tag write">Build the code</span>`;
+  if(def.type==="builder") t+=`<span class="tag write">Capstone builder</span>`;
+  return t;
+}
+function cardShell(def){
+  const sec=document.createElement("section"); sec.className="card"; sec.id="card-"+def.id;
+  sec.innerHTML=`<span class="pts">${def.bonus?"+":""}${def.points} pts</span>${tagsHTML(def)}
+    <h3>${esc(def.title)}</h3>
+    <div class="prompt">${def.prompt||""}</div>
+    ${def.code?`<pre class="code"><code>${hl(def.code)}</code></pre>`:""}
+    <div id="body-${def.id}"></div>
+    <div id="notes-${def.id}"></div>
+    ${(def.hint1||def.hint2)?`<div class="row no-print">
+      ${def.hint1?`<button class="small" id="hintbtn1-${def.id}" onclick="useHint('${def.id}',1)">Hint 1 (free)</button>`:""}
+      ${def.hint2?`<button class="small" id="hintbtn2-${def.id}" onclick="useHint('${def.id}',2)">Hint 2 (free, bigger nudge)</button>`:""}
+    </div>
+    ${def.hint1?`<div class="hintbox" id="hint1-${def.id}"><strong>Hint 1:</strong> ${def.hint1}</div>`:""}
+    ${def.hint2?`<div class="hintbox" id="hint2-${def.id}"><strong>Hint 2:</strong> ${def.hint2}</div>`:""}`:""}
+    <div class="row no-print"><button class="primary" id="check-${def.id}" onclick="checkItem('${def.id}')">${def.checkLabel||"Commit &amp; check"}</button>
+    <span class="mini" id="tries-${def.id}"></span></div>
+    <div class="feedback" id="fb-${def.id}"></div>`;
+  return sec;
+}
+function sectionHeader(sec){
+  const d=document.createElement("div"); d.innerHTML=`<h2 style="margin:26px 4px 4px">${esc(sec.title)}</h2><p class="mini" style="margin:0 4px">${sec.desc||""}</p>`; return d;
+}
+function renderSection(sec){
+  registerSection(sec); app.appendChild(sectionHeader(sec));
+  for(const def of sec.items){ registerItem(def); app.appendChild(cardShell(def)); buildBody(def); }
+}
+function choicesHTML(id,partIdx,choices){
+  return `<div class="choices" id="choices-${id}-${partIdx}">`+choices.map((c,i)=>
+    `<button class="choice" data-lock="${id}" onclick="pickChoice('${id}',${partIdx},${i},this)"><span>○</span><span>${c}</span></button>`).join("")+`</div>`;
+}
+const picks={}; // id -> {partIdx: choiceIndex}
+function pickChoice(id,partIdx,i,btn){
+  if(itemState(id).done) return;
+  picks[id]=picks[id]||{}; picks[id][partIdx]=i;
+  $$( "#choices-"+id+"-"+partIdx+" .choice").forEach((b,j)=>{ b.classList.toggle("sel",j===i); b.querySelector("span").textContent=j===i?"●":"○"; });
+}
+function buildBody(def){
+  const body=$("#body-"+def.id); if(!body) return;
+  if(def.type==="mc"){ body.innerHTML=choicesHTML(def.id,0,def.choices); }
+  else if(def.type==="multi"){
+    body.innerHTML=def.parts.map((p,pi)=>`<div style="margin:14px 0"><p><strong>Part ${pi+1}.</strong> ${p.prompt||""}</p>
+      ${p.code?`<pre class="code"><code>${hl(p.code)}</code></pre>`:""}
+      ${p.type==="typed"?`<input type="text" class="typed" data-lock="${def.id}" id="typed-${def.id}-${pi}" placeholder="${esc(p.placeholder||"type here")}"> ${esc(p.suffix||"")}`
+        : choicesHTML(def.id,pi,p.choices)}</div>`).join("");
+  }
+  else if(def.type==="typed"){
+    body.innerHTML=def.fields.map((f,fi)=>`<p>${f.label} <input type="text" class="typed" data-lock="${def.id}" id="typed-${def.id}-${fi}" placeholder="${esc(f.placeholder||"")}"> ${esc(f.suffix||"")}</p>`).join("");
+  }
+  else if(def.type==="write"){
+    body.innerHTML=`${def.before||""}<textarea class="codein" data-lock="${def.id}" id="code-${def.id}" spellcheck="false">${esc(def.starter||"")}</textarea>
+      <p class="mini">Spacing doesn't matter. Equivalent correct Swift is accepted. Your code is saved into your results.</p>`;
+    const ta=$("#code-"+def.id); ta.addEventListener("input",()=>{ itemState(def.id).code=ta.value; save(); });
+  }
+  else if(def.type==="parsons"){
+    const order=def.lines.map((_,i)=>i); // deterministic shuffle
+    let seed=[...def.id].reduce((a,c)=>a+c.charCodeAt(0),0);
+    for(let i=order.length-1;i>0;i--){ seed=(seed*31+7)%997; const j=seed%(i+1); [order[i],order[j]]=[order[j],order[i]]; }
+    const all=def.lines.map((t,i)=>({t,correct:i})); if(def.distractor) all.push({t:def.distractor,correct:-1});
+    const bankOrder=[...all]; for(let i=bankOrder.length-1;i>0;i--){ seed=(seed*31+13)%997; const j=seed%(i+1); [bankOrder[i],bankOrder[j]]=[bankOrder[j],bankOrder[i]]; }
+    body.innerHTML=`<p class="mini">Tap a line to move it into your program (tap again in the program to send it back). Keyboard: Tab to a line, press Enter. One line below is a distractor — a real program won't use it.</p>
+      <div class="zone-label">Line bank</div><div class="parsons-bank" id="bank-${def.id}">
+      ${bankOrder.map((o,k)=>`<button class="parsons-line" data-lock="${def.id}" data-correct="${o.correct}" onclick="parsonsMove('${def.id}',this)">${esc(o.t)}</button>`).join("")}</div>
+      <div class="zone-label">Your program</div><div class="parsons-zone" id="zone-${def.id}"></div>`;
+  }
+  else if(def.type==="debug"){
+    body.innerHTML=`<p><strong>Step 1:</strong> tap the line that causes the problem.</p>`+
+      def.lines.map((l,i)=>`<button class="debugline" data-lock="${def.id}" onclick="pickDebugLine('${def.id}',${i},this)">${esc(l)}</button>`).join("")+
+      `<p style="margin-top:12px"><strong>Step 2:</strong> pick the fix.</p>`+choicesHTML(def.id,0,def.fixes);
+  }
+  else if(def.type==="builder"){
+    body.innerHTML=def.groups.map((g,gi)=>`<div style="margin:14px 0"><p><strong>${esc(g.label)}</strong></p>${choicesHTML(def.id,gi,g.options)}</div>`).join("")+
+      `<div class="phone" aria-label="Simulated phone preview"><div class="notch"></div><div class="screen" id="phone-${def.id}"></div></div>
+       <p class="mini" style="text-align:center">Simulated preview — fixed outcomes for the choices above.</p>
+       <div class="zone-label">Live checklist (feedback only — your choices are what's graded)</div><ul class="checklist" id="checklist-${def.id}"></ul>`;
+    updateBuilder(def.id);
+  }
+  else if(def.type==="custom"){ CUSTOM_BUILD[def.custom](def,body); }
+}
+function parsonsMove(id,btn){
+  if(itemState(id).done) return;
+  const bank=$("#bank-"+id), zone=$("#zone-"+id);
+  if(btn.parentElement===bank){ zone.appendChild(btn); btn.classList.add("inzone"); }
+  else { bank.appendChild(btn); btn.classList.remove("inzone"); }
+}
+let debugPick={};
+function pickDebugLine(id,i,btn){
+  if(itemState(id).done) return; debugPick[id]=i;
+  $$("#body-"+id+" .debugline").forEach((b,j)=>b.classList.toggle("sel",j===i));
+}
+function updateBuilder(id){
+  const def=ITEMS[id]; const sel=picks[id]||{};
+  const phone=$("#phone-"+id); if(phone&&def.preview) phone.innerHTML=def.preview(sel);
+  const cl=$("#checklist-"+id);
+  if(cl) cl.innerHTML=def.groups.map((g,gi)=>{ const ok=sel[gi]===g.answer; const chosen=sel[gi]!==undefined;
+    return `<li class="${chosen?(ok?"ok":"no"):""}">${chosen?(ok?"✓":"✗"):"•"} ${esc(g.checkText)}</li>`; }).join("");
+}
+/* generic check dispatcher */
+function checkItem(id){
+  const def=ITEMS[id]; const st=itemState(id); if(st.done) return;
+  if(def.type==="mc"){
+    const sel=(picks[id]||{})[0]; if(sel===undefined){ note(id,"Pick an answer first — commit to a prediction, then check."); return; }
+    grade(id, sel===def.answer?1:0, "chose: "+stripTags(def.choices[sel]));
+  }
+  else if(def.type==="multi"){
+    let got=0,log=[];
+    def.parts.forEach((p,pi)=>{
+      if(p.type==="typed"){ const v=norm($("#typed-"+id+"-"+pi).value); const ok=p.accept.map(norm).includes(v); if(ok)got++; log.push(`part${pi+1}:${ok?"✓":"✗ '"+v+"'"}`); }
+      else { const sel=(picks[id]||{})[pi]; const ok=sel===p.answer; if(ok)got++; log.push(`part${pi+1}:${ok?"✓":"✗"}`); }
+    });
+    if(log.some(l=>l.includes("undefined"))) {}
+    grade(id, got/def.parts.length, log.join(" "));
+  }
+  else if(def.type==="typed"){
+    let got=0,log=[];
+    def.fields.forEach((f,fi)=>{ const v=norm($("#typed-"+id+"-"+fi).value); const ok=f.accept.map(norm).includes(v); if(ok)got++; log.push(`${f.short}:${ok?"✓":"✗ '"+v+"'"}`); });
+    grade(id, got/def.fields.length, log.join(" "));
+  }
+  else if(def.type==="write"){
+    const ta=$("#code-"+id); const res=CHECKERS[def.checker](ta.value);
+    st.code=ta.value;
+    note(id,res.notes);
+    grade(id, res.fraction, "code: "+ta.value.replace(/\n/g," ⏎ "));
+  }
+  else if(def.type==="parsons"){
+    const zone=$$("#zone-"+id+" .parsons-line");
+    if(zone.length===0){ note(id,"Move lines into Your program first."); return; }
+    let posOK=0; zone.forEach((b,i)=>{ if(parseInt(b.dataset.correct)===i) posOK++; });
+    const exact = zone.length===def.lines.length && zone.every((b,i)=>parseInt(b.dataset.correct)===i);
+    grade(id, exact?1:posOK/def.lines.length, "order: "+zone.map(b=>b.dataset.correct).join(","));
+  }
+  else if(def.type==="debug"){
+    const line=debugPick[id]; const fix=(picks[id]||{})[0];
+    if(line===undefined||fix===undefined){ note(id,"Do both steps: tap the buggy line AND pick a fix."); return; }
+    const frac=(line===def.bugLine?0.5:0)+(fix===def.fixAnswer?0.5:0);
+    $$("#body-"+id+" .debugline").forEach((b,j)=>{ if(j===def.bugLine) b.classList.add("correct"); });
+    grade(id, frac, `line:${line} fix:${stripTags(def.fixes[fix])}`);
+  }
+  else if(def.type==="builder"){
+    const sel=picks[id]||{};
+    if(Object.keys(sel).length<def.groups.length){ note(id,"Choose one option in every group first — the checklist shows what's still open."); return; }
+    let got=0; def.groups.forEach((g,gi)=>{ if(sel[gi]===g.answer) got++; });
+    grade(id, got/def.groups.length, "builder groups correct: "+got+"/"+def.groups.length);
+    updateBuilder(id);
+  }
+  else if(def.type==="custom"){ CUSTOM_CHECK[def.custom](def); }
+  const t=$("#tries-"+id); const st2=itemState(id);
+  if(t) t.textContent = st2.done? "" : (triesLeft(id)>0? triesLeft(id)+" try left":"");
+}
+function note(id,html){ const n=$("#notes-"+id); if(n) n.innerHTML=`<div class="feedback show info">${html}</div>`; }
+function stripTags(s){ const d=document.createElement("div"); d.innerHTML=s; return d.textContent; }
+/* builder picks also refresh preview */
+const _pick=pickChoice;
+pickChoice=function(id,partIdx,i,btn){ _pick(id,partIdx,i,btn); if(ITEMS[id]&&ITEMS[id].type==="builder") updateBuilder(id); };
+
+/* ============ progress / summary / export ============ */
+function totals(){
+  let core=0,coreDone=0,ext=0,bonus=0,attempted=0,doneCount=0,totalItems=0;
+  for(const id in ITEMS){ const def=ITEMS[id], st=state.items[id]; totalItems++;
+    if(st&&st.attempts>0)attempted++; if(st&&st.done)doneCount++;
+    if(!st) continue;
+    if(def.bonus) bonus+=st.awarded; else if(def.extension) ext+=st.awarded; else core+=st.awarded;
+  }
+  return {core:Math.round(core*100)/100,ext:Math.round(ext*100)/100,bonus:Math.round(bonus*100)/100,attempted,doneCount,totalItems};
+}
+function renderProgress(){
+  const t=totals();
+  $("#progressFill").style.width=Math.min(100,t.core)+"%";
+  $("#progressText").textContent=`${t.doneCount} of ${t.totalItems} items finished`;
+  $("#scoreBox").textContent=`Score: ${t.core} / 100 · Bonus: +${t.bonus}`;
+  const fs=$("#finalScore"); if(fs) fs.textContent=`Score (Modules 5–8): ${t.core} / 100`+(t.bonus>0?` · Bonus: +${t.bonus}`:"");
+  const sg=$("#sectionScores");
+  if(sg){ sg.innerHTML=SECTIONS.map(sec=>{ let got=0,max=0; for(const def of sec.items){ if(def.bonus)continue; max+=def.points; const st=state.items[def.id]; if(st)got+=st.awarded; }
+    return `<div class="scorecell"><span class="mini">${esc(sec.title)}</span><b>${Math.round(got*100)/100} / ${max}</b></div>`; }).join(""); }
+}
+function renderSummary(){
+  renderProgress();
+  const list=$("#summaryList"); if(!list) return;
+  const missed=[];
+  for(const sec of SECTIONS) for(const def of sec.items){ const st=state.items[def.id];
+    if(st&&st.attempts>0&&(st.bestFraction||0)<1) missed.push({def,st});
+  }
+  if(!missed.length){ list.innerHTML=`<p class="mini">Nothing missed yet — or nothing attempted yet. Items you attempt will be summarized here.</p>`; return; }
+  list.innerHTML=missed.map(({def,st})=>`<div class="feedback show info"><strong>${esc(def.title)}</strong> — ${st.awarded} / ${def.points} pts after ${st.attempts} ${st.attempts===1?"try":"tries"}${st.hint1||st.hint2?" · used a hint":""}.<br><span class="mini">Revisit: ${esc(def.revisit)}</span></div>`).join("");
+  const ps=$("#printSummary");
+  if(ps) ps.innerHTML="<h3>Results summary</h3>"+list.innerHTML;
+}
+function resultsText(){
+  const t=totals(); const lines=[];
+  lines.push("iOS Development Studio — Homework 2 (Modules 5–8)");
+  lines.push("Name: "+(state.name||"(not entered)"));
+  lines.push("Exported: "+new Date().toLocaleString());
+  lines.push(`Score (Modules 5-8): ${t.core} / 100`);
+  lines.push(`Bonus: +${t.bonus}`);
+  lines.push("");
+  for(const sec of SECTIONS){ lines.push("== "+sec.title+" ==");
+    for(const def of sec.items){ const st=state.items[def.id];
+      if(!st||st.attempts===0){ lines.push(`- ${def.title}: not attempted (0/${def.points})`); continue; }
+      lines.push(`- ${def.title}: ${st.awarded}/${def.points} pts, ${st.attempts} ${st.attempts===1?"try":"tries"}, hints: ${st.hint1?"1":"-"}${st.hint2?"+2":""}`);
+      if(st.firstAnswer) lines.push(`    first answer: ${st.firstAnswer}`);
+      if(st.code) lines.push(`    submitted code:\n      ${st.code.replace(/\n/g,"\n      ")}`);
+      if(st.answers&&st.answers.length>1) lines.push(`    all attempts: ${st.answers.join(" | ")}`);
+    } lines.push("");
+  }
+  return lines.join("\n");
+}
+function downloadResults(){
+  state.name=$("#studentName").value; save();
+  const blob=new Blob([resultsText()],{type:"text/plain"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="ios-homework-2-results-"+(state.name||"student").replace(/\s+/g,"-").toLowerCase()+".txt"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function copyBackup(){
+  const code=btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  if(navigator.clipboard) navigator.clipboard.writeText(code).then(()=>alert("Backup code copied. Keep it somewhere safe — pasting it into Restore brings your work back on any device."));
+  else prompt("Copy your backup code:",code);
+}
+function restoreBackup(){
+  const code=prompt("Paste your backup code:"); if(!code) return;
+  try{ state=JSON.parse(decodeURIComponent(escape(atob(code.trim())))); save(); location.reload(); }
+  catch(e){ alert("That code didn't work — check you pasted the whole thing."); }
+}
+function resetAll(){ if(confirm("Erase all answers and scores on this device and start over?")){ localStorage.removeItem(LS_KEY); location.reload(); } }
+</script>
+<script>
+"use strict";
+/* STUDENT EDITION — self-grading uses salted hash checks; this file contains no readable answer key. */
+
+function sha256hex(ascii){function rr(v,a){return (v>>>a)|(v<<(32-a));}
+var maxWord=Math.pow(2,32),i,j,result='';var words=[],asciiBitLength=ascii.length*8;
+var hash=sha256hex.h=sha256hex.h||[],k=sha256hex.k=sha256hex.k||[];
+var primeCounter=k.length,isComposite={};
+for(var candidate=2;primeCounter<64;candidate++){if(!isComposite[candidate]){
+for(i=0;i<313;i+=candidate){isComposite[i]=candidate;}
+hash[primeCounter]=(Math.pow(candidate,.5)*maxWord)|0;k[primeCounter++]=(Math.pow(candidate,1/3)*maxWord)|0;}}
+ascii+='\x80';while(ascii.length%64-56)ascii+='\x00';
+for(i=0;i<ascii.length;i++){var code=ascii.charCodeAt(i);if(code>255)return sha256hex(unescape(encodeURIComponent(ascii)));
+words[i>>2]|=code<<((3-i)%4)*8;}
+words[words.length]=(asciiBitLength/maxWord)|0;words[words.length]=(asciiBitLength);
+for(j=0;j<words.length;){var w=words.slice(j,j+=16);var oldHash=hash;hash=hash.slice(0,8);
+for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2];var a=hash[0],e=hash[4];
+var temp1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]
++(w[i]=(i<16)?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);
+var temp2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+hash=[(temp1+temp2)|0].concat(hash);hash[4]=(hash[4]+temp1)|0;}
+for(i=0;i<8;i++){hash[i]=(hash[i]+oldHash[i])|0;}}
+for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;result+=((b<16)?0:'')+b.toString(16);}}
+return result;}
+const HKEY=(...p)=>sha256hex("hwkey-v1|"+p.join("|"));
+
+const AUDIT={};
+function renderAudit(id){
+  const def=ITEMS[id]; const a=AUDIT[id]; if(!a) return;
+  const phone=$("#auditphone-"+id); if(!phone) return;
+  const dark=a.dark;
+  phone.style.background=dark? "#101014":"#f4f4f8";
+  phone.style.color=dark? "#f2f2f7":"#16161c";
+  phone.innerHTML=def.regions.map((r,i)=>{
+    const diagnosed=a.diag[i]!==undefined;
+    const sel=a.current===i;
+    let inner=r.html;
+    if(r.id==="bodytext") inner=`<span style="color:#000">Your driver is 6 minutes away. The gate code is on the receipt.</span>`;
+    return `<button class="audit-region" data-lock="${id}" onclick="auditTap('${id}',${i})" style="display:block;width:100%;text-align:left;margin:6px 0;padding:10px;border-radius:12px;border:2px solid ${sel?"#7aa2ff":(diagnosed?"#3f9e63":"#3a4160")};background:${dark?"#1b1b21":"#ffffff"};color:inherit;cursor:pointer">
+      <span class="audit-num">${i+1}</span> ${inner}
+      ${a.hits?`<span class="mini" style="float:right">frame: ${r.frame}</span>`:""}
+      ${diagnosed?`<span class="mini" style="float:right;color:#3f9e63">diagnosed ✓</span>`:""}
+    </button>`;
+  }).join("");
+  const panel=$("#auditdiag-"+id);
+  const n=Object.keys(a.diag).length;
+  if(a.current<0){ panel.innerHTML=`<p class="mini">Tap a numbered region of the screen, then choose its diagnosis. Diagnose all ${def.regions.length} regions, including the ones you believe are fine. Two free tools: <strong>Toggle Dark Mode</strong> and <strong>Show hit areas</strong> — real auditors test both.</p>`; }
+  else{
+    panel.innerHTML=`<p style="margin:8px 0 4px"><strong>Region ${a.current+1}:</strong> what's the verdict?</p><div class="choices">`+
+      def.diagOptions.map((o,oi)=>`<button class="choice" data-lock="${id}" onclick="auditPick('${id}','${o.key}')"><span class="choice-marker">${a.diag[a.current]===o.key?"◉":"○"}</span><span>${esc(o.label)}</span></button>`).join("")+`</div>`;
+  }
+  const st=$("#auditstat-"+id); if(st) st.textContent=`Diagnosed ${n} of ${def.regions.length} regions`;
+}
+function auditToggle(id,what){ const a=AUDIT[id]; a[what]=!a[what]; renderAudit(id); }
+function auditTap(id,idx){ AUDIT[id].current=idx; renderAudit(id); }
+function auditPick(id,key){ const a=AUDIT[id]; if(a.current<0) return; a.diag[a.current]=key; renderAudit(id); }
+
+const CHECKERS={
+"semanticRewrite": function semanticRewrite(text){
+    const t=text.replace(/\/\/[^\n]*/g," ").toLowerCase();
+    let f=0; const missing=[];
+    if(!/\.system\(size:/.test(t) && !/\.system\(size/.test(t)) f+=0.3; else missing.push("remove every <code>.system(size: ...)</code> — numeric sizes are the thing being fixed");
+    if(/\.(largetitle|title|title2|title3|headline)\b/.test(t)) f+=0.25; else missing.push("give the title a header text style — <code>.headline</code>, <code>.title3</code>, <code>.title</code>…");
+    if(/\.(body|callout|subheadline|footnote|caption|caption2)\b/.test(t)) f+=0.2; else missing.push("give the subtitle a secondary text style — <code>.subheadline</code>, <code>.footnote</code>, <code>.caption</code>…");
+    if(!/\.black/.test(t) && !/color\.gray/.test(t) && !/color\(red:/.test(t)) f+=0.25; else missing.push("replace the hard-coded colors (Color.black / Color.gray) with semantic styles like <code>.primary</code> / <code>.secondary</code> — or drop the title's color modifier entirely");
+    return { fraction: Math.round(f*100)/100, notes: f>=1? "<strong>That's the rewrite:</strong> roles instead of numbers, colors that mean something instead of colors that were sampled once. This card now scales with Dynamic Type and survives Dark Mode." : "Still missing: "+missing.join("; ")+"." };
+  }
+};
+const CUSTOM_BUILD={ screenAudit: function screenAudit(def,body){
+    AUDIT[def.id]={diag:{},current:-1,dark:false,hits:false};
+    body.innerHTML=`<div class="auditbar" style="margin:10px 0">
+        <button class="small" data-lock="${def.id}" onclick="auditToggle('${def.id}','dark')">🌙 Toggle Dark Mode</button>
+        <button class="small" data-lock="${def.id}" onclick="auditToggle('${def.id}','hits')">📐 Show hit areas</button>
+        <span class="mini" id="auditstat-${def.id}"></span></div>
+      <div class="phone" id="auditphone-${def.id}" style="max-width:340px;margin:0 auto;padding:12px;border-radius:22px;border:1px solid #3a4160"></div>
+      <div id="auditdiag-${def.id}"></div>`;
+    renderAudit(def.id);
+  } };
+const CUSTOM_CHECK={ screenAudit(def){
+      const a=AUDIT[def.id];
+      if(Object.keys(a.diag).length<def.regions.length){ note(def.id,"Diagnose every region first — including the ones you believe are fine. Clearing the good design is part of an audit."); return; }
+      let correct=0; def.regions.forEach((r,i)=>{ if(HKEY('audit',def.id,i,a.diag[i])===r.phash) correct++; });
+      grade(def.id, correct/def.regions.length, "audit diagnoses correct: "+correct+"/"+def.regions.length);
+    }};
+const DEFS={"g1":{"id":"g1","mod":"Module 5 · Dynamic Type","type":"mc","points":2,"secondTryCredit":true,"title":"Predict: the label that never grows","prompt":"<p>A settings row is styled with <code class=\"inline\">.font(.system(size: 14))<\/code>. The person using the phone sets their text size to <strong>AX2<\/strong> (a large accessibility size). Predict the label's rendered size:<\/p>","choices":["14 pt — a fixed point size never scales with Dynamic Type","About 21 pt — it scales up just like .body does","28 pt — fixed sizes double at accessibility sizes","The label is hidden — fixed sizes are dropped at AX sizes"],"hint1":"Think about what .system(size:) promises: an exact number of points.","hint2":"Text styles (.body, .headline) are the ones tied to the user's Dynamic Type setting. A numeric size is a frozen number.","explain":"<strong>14 pt, at every setting.<\/strong> <code>.system(size:)<\/code> is a frozen number — it renders at 14 pt for a user at the smallest size and at AX5 alike. Text styles exist precisely so type can follow the person: choose by role (<code>.font(.body)<\/code>), never by number.","revisit":"Module 5 · Typography and Dynamic Type — 'Fixed sizes freeze; text styles scale'.","ahash":"b472252db1c7d1ece59f5a1389093e59ddf77097b7d30e343996e81e296536eb"},"g2":{"id":"g2","mod":"Module 5 · Color & Contrast","type":"mc","points":3,"secondTryCredit":true,"title":"Which pair passes WCAG AA?","prompt":"<p>Body text at <strong>15 pt regular<\/strong> needs to meet WCAG AA. AA requires <strong>4.5:1<\/strong> for normal text (3:1 is only enough for large text). The measured contrast ratios are printed — which pairing passes?<\/p>","choices":["Slate gray text on white — 3.4:1","Deep teal text on white — 4.6:1","Medium gray text on light gray — 2.9:1","Charcoal text on pale yellow — 4.4:1"],"hint1":"There is exactly one option at or above 4.5:1. The 3.4:1 option is the trap — it would pass only for large text.","hint2":"4.4:1 is agonizingly close and still a fail for 15 pt regular text.","explain":"<strong>Deep teal on white at 4.6:1<\/strong> is the only pass. 3.4:1 clears the 3:1 bar for <em>large<\/em> text only, and 4.4:1 is a near-miss — AA has no 'close enough.' When you check a design, use the ratio for the text's actual size and weight, not the friendlier one.","revisit":"Module 5 · Color, Dark Mode, and Contrast — the WCAG AA thresholds (4.5:1 normal, 3:1 large).","ahash":"dd991aef5450333b6ee105b09f0f3dfd8e1f57b301eb5259e11626a70c65c8d8"},"g3":{"id":"g3","mod":"Module 5 · Navigation","type":"multi","points":5,"secondTryCredit":true,"title":"Pick the navigation pattern","prompt":"<p>Four screens from a trip-planning app. For each, commit to the pattern the HIG points to:<\/p>","parts":[{"prompt":"Home, Search, Saved and Profile — people switch between them all day long.","choices":["A TabView with one tab per area","One NavigationStack holding everything","A sheet that slides over the home screen"],"ahash":"3b9a9e52160d6cc081b09271774973a87bc0f4975fa677a07ce4d29c113b4303"},{"prompt":"Tapping a trip shows its days; tapping a day shows that day's stops — each step is more detail about the thing above it.","choices":["A modal sheet for each level","A NavigationStack that pushes detail screens","Four tabs, one per level"],"ahash":"85d5067776ca12e5557a405711fe19b4a6c014d471f488085225929e0fafee40"},{"prompt":"Tapping + opens a focused New Trip editor with Cancel and Save; finishing or cancelling returns you to exactly where you were.","choices":["A new tab","A NavigationStack push","A modal sheet"],"ahash":"a38dc21cf569e8b44861b68ef33b9af397380b57e235718cb84be8a26b0a9050"},{"prompt":"A teammate wraps the <em>entire<\/em> TabView in a single NavigationStack. Predict what testers notice:","choices":["Every tab shares one navigation history — pushing in one tab leaks into the others and titles collide","Nothing — SwiftUI silently gives each tab its own stack","The tab bar disappears at runtime"],"ahash":"09ecbc61328abcd5e7eb942b7437ff10ca3a358635551a44f61512b56628d9e8"}],"hint1":"Flat, peer-level areas want tabs. Drill-down detail wants a stack. A self-contained task you finish or abandon wants a sheet.","hint2":"Part 4 is the classic anti-pattern from the lesson: one stack around a TabView means one shared history for all tabs.","explain":"<strong>Tabs for peers, a stack for drill-down, a sheet for a focused task.<\/strong> And the wrapped TabView is the trap: a single stack shared by every tab, so navigation state bleeds across tabs. The fix is one NavigationStack <em>inside each tab<\/em>, so every tab owns its history.","revisit":"Module 5 · Choosing a Navigation Pattern."},"g4":{"id":"g4","mod":"Module 5 · Design Audit","type":"custom","custom":"screenAudit","points":6,"secondTryCredit":true,"title":"The screen audit: find the 4 real problems","prompt":"<p>Below is a delivery app's order screen, as an auditor would inspect it. <strong>Four<\/strong> of the seven regions break a design rule from this module; <strong>three<\/strong> are good design you must clear. Diagnose <em>every<\/em> region. Use the Dark Mode and hit-area tools — two of the problems only show themselves with those on.<\/p>","diagOptions":[{"key":"hit","label":"Touch target smaller than 44 x 44 pt"},{"key":"color","label":"Status told by color alone"},{"key":"dark","label":"Hard-coded color that breaks in Dark Mode"},{"key":"glass","label":"Glass layered on glass"},{"key":"fine","label":"No problem — this follows the HIG"}],"regions":[{"id":"closebtn","frame":"20 x 20 pt","html":"<span style=\"font-weight:600\">Order #4821<\/span> <span style=\"float:right;border:1px solid currentColor;border-radius:6px;padding:0 5px\">✕<\/span><div class=\"mini\">Order header with its close button<\/div>","phash":"703c6cdc75a6c78a218c1319fabbb6c0035b0ab071af6c3c30e8327009a22d57"},{"id":"statusdot","frame":"—","html":"Order status: <span style=\"display:inline-block;width:14px;height:14px;border-radius:50%;background:#f5c542;vertical-align:middle\"><\/span><div class=\"mini\">The only status indicator on the screen<\/div>","phash":"be20f36a48863669d623ac6bd83e9138027eab7a774621a059eb77b6a1202990"},{"id":"bodytext","frame":"—","html":"","phash":"34f513c85a0b96f10551e79a2f92d672b77ef998089fd692506ae66ffd12669f"},{"id":"glasscard","frame":"—","html":"<span style=\"display:block;background:rgba(140,160,220,.35);border-radius:12px;padding:8px\">Spring offer card <span style=\"float:right\"><span style=\"background:rgba(190,205,255,.55);border-radius:999px;padding:2px 8px\">Details<\/span> <span style=\"background:rgba(190,205,255,.55);border-radius:999px;padding:2px 8px\">Dismiss<\/span><\/span><\/span><div class=\"mini\">A translucent card holding translucent buttons<\/div>","phash":"bbca5cd69b33380a1620cb3198adeb6cdd97ce4cfc7204b74a93aa335b3e4493"},{"id":"trashbtn","frame":"44 x 44 pt","html":"<span style=\"font-size:1.1rem\">🗑<\/span> Delete draft <div class=\"mini\">Toolbar button — the icon glyph is small, the button itself is full-size<\/div>","phash":"048d3e2d956be11afdb532db5985b79a72efaeedca0ae79865fffd3c7e55d02f"},{"id":"glassbar","frame":"—","html":"<span style=\"display:block;background:rgba(140,160,220,.35);border-radius:999px;padding:6px 10px;text-align:center\">⌂ &nbsp; 🔍 &nbsp; ♡ &nbsp; ⚙<\/span><div class=\"mini\">A floating bar hovering over scrolling photo content<\/div>","phash":"87cc92185ac40b25374305ef04efa4bd32cd260a10f91861a0670c3d383479de"},{"id":"statuspill","frame":"—","html":"<span style=\"border:1px solid currentColor;border-radius:999px;padding:2px 10px\">✓ Delivered<\/span><div class=\"mini\">Status shown as an icon plus a word<\/div>","phash":"1928aa97df58bd1d1fbad3e76bd59fb77cc45466e890ed5934ebb7ece8d2dfd5"}],"hint1":"Exactly four regions are broken. One breaks in Dark Mode only, and one is about the size of the tappable frame, not the size of the icon you see.","hint2":"The good ones: a small glyph inside a full 44 pt frame is fine; glass floating over scrolling content is exactly what glass is for; a status with an icon AND a word is the fix, not the problem.","explain":"<strong>The four problems:<\/strong> (1) the close button's 20 x 20 pt frame — under the 44 x 44 pt minimum, no matter how visible the ✕ is; (2) the lone colored status dot — anyone who can't distinguish the colors learns nothing; pair color with an icon or words; (3) the hard-coded black body text — fine in Light Mode, unreadable the moment Dark Mode flips the background; semantic colors (.primary) adapt for free; (4) glass buttons inside a glass card — glass belongs on controls floating <em>over<\/em> content, never layered on glass. <strong>Cleared:<\/strong> the full-frame trash button, the floating glass bar over photos, and the icon-plus-word status pill are the module's own recommended patterns.","revisit":"Module 5 · Layout (touch targets), Color (status by color alone, Dark Mode), Liquid Glass (glass on glass), Accessibility."},"g5":{"id":"g5","mod":"Module 5 · Typography — You Write It","type":"write","points":5,"secondTryCredit":true,"checker":"semanticRewrite","title":"Write it: rewrite the frozen card","prompt":"<p>This card ignores Dynamic Type and Dark Mode. Rewrite it so the title uses a <strong>header text style<\/strong>, the subtitle uses a <strong>secondary text style<\/strong>, and the colors are <strong>semantic<\/strong> (.primary / .secondary or default). <strong>No numeric font sizes anywhere.<\/strong> Keep the same two Text views and their strings:<\/p>","starter":"VStack(alignment: .leading) {\n    Text(\"Harbor Lights Tour\")\n        .font(.system(size: 22, weight: .bold))\n        .foregroundStyle(Color.black)\n    Text(\"Saturday · 9:00 AM\")\n        .font(.system(size: 13))\n        .foregroundStyle(Color.gray)\n}","checkLabel":"Check my rewrite","hint1":"Title candidates: .headline, .title3, .title2, .title, .largeTitle. Subtitle candidates: .subheadline, .footnote, .caption, .callout, .body.","hint2":"Shape: .font(.headline) on the title, .font(.subheadline) on the subtitle, .foregroundStyle(.secondary) on the subtitle — and the title can simply drop its color modifier, because the default IS .primary.","explain":"<strong>Roles, not numbers.<\/strong> Text styles scale with the reader's Dynamic Type setting and weight choices stay harmonious; semantic colors flip correctly in Dark Mode. A numeric size and Color.black freeze the design at the exact settings on the designer's desk — and nowhere else.","revisit":"Module 5 · Typography and Dynamic Type; Color, Dark Mode, and Contrast."},"g6":{"id":"g6","mod":"Module 5 · States, Feedback & Accessibility","type":"multi","points":4,"secondTryCredit":true,"title":"Say it right: labels, dialogs, empty states, errors","prompt":"<p>Four moments where the words (or the label) ARE the design. Pick the one that follows the module:<\/p>","parts":[{"prompt":"A button is built as <code class=\"inline\">Label(\"Delete\", systemImage: \"trash\")<\/code> with <code class=\"inline\">.labelStyle(.iconOnly)<\/code> — only the icon shows. What does VoiceOver speak?","choices":["\"Delete\" — the label's text survives iconOnly and becomes the accessibility label","\"trash\" — VoiceOver reads the symbol name","Nothing — icon-only controls are silent"],"ahash":"f14dc7805a43cab76c5327f1c090782ab281881a2c5b1f6283ca54fa3bb5a855"},{"prompt":"A confirmation dialog asks about deleting a trip. The destructive button should say:","choices":["OK","Yes","Delete Trip","Confirm"],"ahash":"bd891e9a2debec8bc414d8c488752fcdce3d98be373442039af42f76d82dd832"},{"prompt":"A brand-new user's Saved tab is empty. The best empty state says:","choices":["(leave it blank — white space is clean)","No saved trips yet. Tap + to plan your first one.","Nothing here.","Error: list is empty"],"ahash":"9954dd81dd797f4a0a67007ce386480716d479377f906b9307803387fad26043"},{"prompt":"A save fails because the connection dropped. The best error message is:","choices":["Save failed","Something went wrong","Couldn't save your trip — check your connection, then try again.","Error 500"],"ahash":"2487d19091e58b1fa5ac60aa6a4095b92d7283bde49ab0c4a8595bd0f82b4fe4"}],"hint1":"Good copy names the action, explains what happened, and says what to do next. Vague is the enemy in all four parts.","hint2":"Part 1: .iconOnly hides the text VISUALLY only — that's the whole point of Label. Parts 2-4: pick the option a first-time user could act on without guessing.","explain":"<strong>Words are interface.<\/strong> Label + .iconOnly is the accessible icon button: sighted users see the glyph, VoiceOver users hear 'Delete.' A destructive button names its action ('Delete Trip'), never 'OK.' An empty state explains the emptiness and offers the next action. An error says what happened AND what to do — 'Error 500' does neither.","revisit":"Module 5 · States, Feedback, and Clear Copy; Designing for Accessibility (VoiceOver labels)."},"t1":{"id":"t1","mod":"Module 6 · Choosing Storage","type":"multi","points":6,"secondTryCredit":true,"title":"Pick the right home for the data","prompt":"<p>Six kinds of data, six homes. Match each one — the module's rule is that the <em>nature<\/em> of the data picks the storage, not convenience:<\/p>","parts":[{"prompt":"A light/dark theme preference — one tiny value that must survive relaunch.","choices":["UserDefaults via @AppStorage","The Keychain","A SwiftData database","The Caches folder"],"ahash":"0b541375dd9b8af8939198fc69180da0650ed5afc4afd5a0e78a1ece12c6047a"},{"prompt":"The user's 2,000 recipes, which they search and sort by name, date and rating.","choices":["UserDefaults as one big array","A single JSON file they must fully rewrite on every edit","SwiftData","The Keychain"],"ahash":"7a22489195cb785b75d567f939f62cd823d555ff65819b8f9136454921907056"},{"prompt":"The refresh token the server gave the app at sign-in.","choices":["UserDefaults","The Keychain","A plist in Documents","SwiftData"],"ahash":"0336d5fd472d22c2da299af439d3e2ff7e8a9d969a17150fc1656d587eda2d96"},{"prompt":"Journal entries the user writes — their content, which must be backed up with the device.","choices":["The Caches folder","UserDefaults","The CloudKit public database","Files in the Documents folder"],"ahash":"60afbe815e596587575d6b8c6ee69ebc49b833f5f373be8da913529fd488ce60"},{"prompt":"300 MB of offline map tiles that can be downloaded again at any time.","choices":["The Caches folder","The Documents folder","SwiftData","The Keychain"],"ahash":"44970bdbc8a68dbbf73c44dffb04b7cae1cbb0d7560da446187dab27c48d806a"},{"prompt":"The user's private notes, which should follow them to their other devices.","choices":["The CloudKit public database","The CloudKit private database","UserDefaults","The Caches folder"],"ahash":"8ef3c504943f1c77652b34ef113ab2a2671d349aba659a29f735e6d1ae638b6c"}],"hint1":"Tiny settings → UserDefaults. Secrets → Keychain. Big and queryable → SwiftData. Re-downloadable bulk → Caches (the system may purge it, and that's fine).","hint2":"Part 4 turns on backups: Documents is backed up, Caches is not. Part 6 turns on private vs public: other users must never see these notes.","explain":"<strong>Each store has a nature.<\/strong> UserDefaults is a small settings file — stuffing 2,000 recipes or a secret token into it is the classic misuse. Documents content is the user's own work and is backed up; Caches is for data that can be fetched again, so the system may delete it under storage pressure. SwiftData is the queryable database. The Keychain is the vault. CloudKit's <em>private<\/em> database syncs one user's data to their devices; the public one is shared with everyone.","revisit":"Module 6 · 'Pick the right home for the data'; UserDefaults; Keychain; CloudKit lessons."},"t2":{"id":"t2","mod":"Module 6 · Codable","type":"mc","points":3,"secondTryCredit":true,"title":"Predict: the missing key","prompt":"<p>Given <code class=\"inline\">struct Pet: Codable { var name: String; var age: Int }<\/code>, this code runs:<\/p><pre class=\"code\"><code>do {\n    let pet = try JSONDecoder().decode(Pet.self, from: json)\n    print(pet)\n} catch {\n    print(\"failed\")\n}<\/code><\/pre><p>The JSON is <code class=\"inline\">{\"name\": \"Mochi\"}<\/code> — no <code class=\"inline\">age<\/code> key at all. What happens?<\/p>","choices":["It decodes fine, with age set to 0","It decodes fine, with age left as nil","It throws a keyNotFound error, and the catch block prints \"failed\"","The app crashes before the catch can run"],"hint1":"age is a non-optional Int. What does the synthesized decoder do when a required key is absent?","hint2":"Remember the trap: even writing var age: Int = 0 in the struct would NOT save it — synthesized Codable ignores default values when a key is missing.","explain":"<strong>It throws keyNotFound.<\/strong> Synthesized decoding requires every non-optional property's key to be present — and, famously, it ignores the property's default value, so <code>var age: Int = 0<\/code> would throw too. To tolerate a sometimes-absent key, make the property Optional (or supply a custom init). The error is thrown, not a crash, which is why the do/catch matters.","revisit":"Module 6 · Codable — 'Decode JSON into Swift values' and 'Reading a decoding error'.","ahash":"5926700df0f624f6b19c2596c062da4c5e26aa76ec186bcd192ffc4623d23189"},"t3":{"id":"t3","mod":"Module 6 · @AppStorage & @Query","type":"multi","points":4,"secondTryCredit":true,"title":"Shared settings and live queries","prompt":"<p>Three quick predictions about state that lives outside any one view:<\/p>","parts":[{"prompt":"Two different views each declare <code class=\"inline\">@AppStorage(\"username\")<\/code>. The user edits the name in one view. What happens in the other?","choices":["Nothing — each view keeps its own private copy","It updates — both views read and write the same UserDefaults key","The app crashes: duplicate keys are illegal","Only the first view to declare the key is allowed to change it"],"ahash":"ff1cf59339696279f078b61bf47ec2ecb01e1298a9365ab123abfb92ea40e58e"},{"prompt":"Write the <code class=\"inline\">@Query<\/code> property line that lists notes <strong>newest first<\/strong>. The model is <code class=\"inline\">Note<\/code> with a <code class=\"inline\">createdAt<\/code> date, and the property is named <code class=\"inline\">notes<\/code>.","type":"typed","short":"@Query line","ahashes":["4cf92fe9d7b65eda683bf207a338f0ae65d47e5e835476200eb0a92b7ab1ea0b","52efc4ec264936a7289bc1ff943fd552148ce9740b842bf0a3c02794183a371d","c9be9d2408eb07e1320e94bc64499704836c22aa3e344cc5a658f9683e73840c","550a581f99b650452bb482682edac5e11e9008ecd2578d6189a41a350b3f03df","3ec281c20271da22a3ecaf9b4f53d526630a3b8c49a419dd8cb530789f831f8b","91ddbda0d380f53d052bcd52b385e03570476f585d324d922bc5dda2c1638385","193cd51aed3fbe061996bcfef4f503c5407bdc80890d50162667fc53d1bd30c9","737b4bda308679f8f7da4d9d2426119977b9d5bc1f30dc0743c736785f5e9e23","46fc0c2e9cb9d01e8dc3485c54f66f54efa3015b4306bb140cd12ea69d9cb9a2","7b0ee90eeda0962593e9ad72fb052addddf3979994473864f6ba59e023936c5c","b538a1173eb595e85991896f34d26c01927a18311f88065532fea062a9bcf09b","316835c175d6f927615b425863e424e96a97a3639a4d022421fbae5b8ce1209c"]},{"prompt":"A list's search field changes, but the results never refilter — the <code class=\"inline\">@Query<\/code> was built once with the old text. The module's fix is to:","choices":["Build the query in a subview whose init receives the search text, so a new query is created when the text changes","Call context.save() after every keystroke","Restart the view by changing its id every keystroke","Move the search text into @AppStorage"],"ahash":"2110dfa9fda47bf901cd79b89e2bfe07f31471037dde5c2a193f8cf7ac8cbccb"}],"hint1":"Part 1: @AppStorage is a window onto UserDefaults, not a per-view variable. Part 3: a @Query is a value created once — it cannot see new inputs unless something rebuilds it.","hint2":"Part 2's shape: @Query(sort: \\Note.createdAt, order: .reverse) — newest first means .reverse on a chronological sort.","explain":"<strong>@AppStorage is shared by key<\/strong> — two views bound to \"username\" are looking at the same stored value, so edits appear in both. <strong>@Query(sort: \\Note.createdAt, order: .reverse)<\/strong> sorts newest-first. And a @Query is built once: to make it react to changing inputs, the module passes the input into a subview's <code>init<\/code> and constructs the query there, so SwiftUI builds a fresh query whenever the input changes.","revisit":"Module 6 · UserDefaults / @AppStorage; SwiftData — @Query, sort, and the FilteredTaskList init pattern."},"t4":{"id":"t4","mod":"Module 6 · Files","type":"parsons","points":4,"title":"Assemble the save() that can't corrupt","prompt":"<p>A notes store keeps a <code class=\"inline\">fileURL<\/code> property (its Documents URL) and an array <code class=\"inline\">notes<\/code>. Assemble its <code class=\"inline\">save()<\/code> — with the write done the crash-safe way. One line doesn't belong.<\/p>","lines":["let data = try? JSONEncoder().encode(notes)","}","guard let data else { return }","func save() {","try? data.write(to: fileURL, options: [.atomic])"],"distractor":"UserDefaults.standard.set(data, forKey: \"notes\")","hint1":"You can't guard on data before it exists, and you can't write it before the guard. The .atomic option is what makes a mid-write crash harmless.","hint2":"Encode → guard → write. The UserDefaults line is the distractor: JSON data for a whole notes collection does not belong in the settings file.","explain":"<strong>Encode, guard, then write — atomically.<\/strong> The <code>.atomic<\/code> option writes to a temporary file and swaps it in only when complete, so a crash mid-save leaves the previous good file untouched instead of a half-written corrupt one. And a whole collection of notes is far too big for UserDefaults — it belongs in a file like this one.","revisit":"Module 6 · Files, URLs, and FileManager — the Codable notes store.","prank":[1,4,2,0,3]},"t5":{"id":"t5","mod":"Module 6 · Codable","type":"debug","points":4,"secondTryCredit":true,"title":"Debug: the property that breaks Codable","prompt":"<p>This model refuses to compile: the compiler says <code class=\"inline\">TripNote<\/code> does not conform to <code class=\"inline\">Codable<\/code>, even though every stored property <em>looks<\/em> ordinary. <strong>Tap the line that breaks the synthesis<\/strong>, then pick the fix:<\/p>","lines":["struct TripNote: Codable {","    var title: String","    var day: Date","    var formatter = DateFormatter()","    var text: String","}"],"fixes":["Make it static — static let formatter = DateFormatter() — so synthesis ignores it","Give it an explicit type: var formatter: DateFormatter = DateFormatter()","Change the struct into a class","Delete the text property"],"hint1":"Synthesis requires EVERY stored property to be Codable itself. One of these types isn't.","hint2":"DateFormatter has no Codable conformance. Changing the annotation doesn't change that; making the property static removes it from the stored-property list entirely.","explain":"<strong><code>DateFormatter<\/code> is the poison.<\/strong> Synthesized Codable demands that every stored property be Codable; DateFormatter isn't, so the whole conformance fails. Making the property <code>static<\/code> takes it out of the instance's stored properties (and a shared formatter is what you want anyway). A type annotation changes nothing about conformance, and class-vs-struct is irrelevant here.","revisit":"Module 6 · Codable — 'Which stored property stops the compiler from synthesizing Codable.'","lhash":"6ddeb498981a6570d6ea80ac76c176661d7872d73cf16af75020b8b2d5feb595","fhash":"82e0ab207460789dc8ecdc881e2a3bb10bb43468e0fdae5f7a4857ac16b6f4c3"},"t6":{"id":"t6","mod":"Module 6 · SwiftData, Keychain & Sync","type":"multi","points":4,"secondTryCredit":true,"title":"Four traps from the back half of the module","prompt":"<p>Each part is a situation the module warns about explicitly:<\/p>","parts":[{"prompt":"A Keychain wrapper calls <code class=\"inline\">SecItemAdd<\/code> and gets <code class=\"inline\">errSecDuplicateItem<\/code> (-25299). That means:","choices":["The item already exists — update it with SecItemUpdate instead of adding","The Keychain is full","The user denied Keychain permission","The item was deleted"],"ahash":"b98f3bd638b71402d38b9ba7d06a4e76085c02877f8bec7a2ce3f61e18fde01d"},{"prompt":"<code class=\"inline\">Folder.notes<\/code> uses delete rule <code class=\"inline\">.nullify<\/code>. The user deletes a folder holding three notes. What remains?","choices":["Nothing — the notes are deleted with it","The three notes survive, with their folder set to nil","The delete is refused","The notes move to the first remaining folder"],"ahash":"7ff6e0e91d435bfaa2e50a264115abaa0a652c9a684c9e4bee7f92a62573093d"},{"prompt":"Version 2 of an app adds <code class=\"inline\">var isPinned: Bool<\/code> — no default value — to a model whose users already have data. The safe way to ship it:","choices":["Just ship it — SwiftData migrates anything automatically","Give the property a default value (or make it optional), or plan a VersionedSchema migration","Tell users to delete and reinstall","Rename the model so it looks new"],"ahash":"052b7ab0022e4bf726ed859082bc4ff744d3bd696b77f165a0974846d1fe22a1"},{"prompt":"A model marks <code class=\"inline\">email<\/code> with <code class=\"inline\">@Attribute(.unique)<\/code>, then turns on SwiftData's CloudKit sync. What happens?","choices":["Sync works — uniqueness is enforced in the cloud","It can't sync that model — CloudKit sync doesn't allow unique attributes, so .unique has to go","Emails are silently shared between users","Sync works but only on Wi-Fi"],"ahash":"52dcfcf177ff6675876a538886f02619e2afa68f9af8632a09ec7e951a61dec9"}],"hint1":"Part 1: -25299 is not an error to fear — it's the 'already there' signal. Part 2: nullify severs the link; cascade is the one that deletes.","hint2":"Part 3 is the migration rule: existing stores + a new non-optional property with no default = a store that can't open. Part 4: CloudKit sync has a short list of demands — optional/defaulted properties, and no unique attributes.","explain":"<strong>-25299 means 'already exists'<\/strong> — a save-or-update wrapper responds with SecItemUpdate. <strong>Nullify<\/strong> deletes the relationship, not the notes (cascade is the deleting rule; deny is the refusing one). <strong>Migrations:<\/strong> a new non-optional property without a default gives existing data no value to fill in — defaults, optionals, or a VersionedSchema are the safe paths. <strong>Sync:<\/strong> CloudKit-backed SwiftData forbids <code>@Attribute(.unique)<\/code> — uniqueness can't be enforced across devices that edit offline.","revisit":"Module 6 · Keychain (duplicate items); Relationships (delete rules); Migrations (VersionedSchema); SwiftData + CloudKit sync requirements."},"b1":{"id":"b1","mod":"Module 6 · SwiftData","type":"mc","points":2,"bonus":true,"secondTryCredit":true,"title":"BONUS: Bindable or State?","prompt":"<p>A <code class=\"inline\">NoteEditor<\/code> view receives an <em>existing<\/em> SwiftData <code class=\"inline\">Note<\/code> and binds text fields to its properties with <code class=\"inline\">$note.title<\/code>. The property should be declared:<\/p>","choices":["@Bindable var note: Note","@State var note: Note","@Query var note: Note","let note: Note"],"hint1":"The note already exists and is owned by the model context — the editor borrows it. Which wrapper is made for binding to an existing @Model object?","hint2":"@State would make the view treat the note as its own owned value state. @Bindable exists precisely for editing an @Model you were handed.","explain":"<strong>@Bindable.<\/strong> It produces bindings into an existing <code>@Model<\/code> object the view doesn't own. <code>@State<\/code> is for value state the view creates and owns; using it for a passed-in model object is the classic SwiftData editing bug.","revisit":"Module 6 · Relationships — 'Edit a model with @Bindable'.","ahash":"2db373be7d84bf954d1e08f709c23d550a603858a77ce1c4488ddd3ab097130c"},"s1":{"id":"s1","mod":"Module 7 · Permissions","type":"multi","points":5,"secondTryCredit":true,"title":"What setup does this need?","prompt":"<p>Five features, five permission puzzles. For each, predict what actually happens — the differences between sensors are the whole lesson:<\/p>","parts":[{"prompt":"A trail app calls <code class=\"inline\">requestWhenInUseAuthorization()<\/code>, but its Info.plist has <strong>no location usage-description string<\/strong>. On a fresh install:","choices":["The app crashes the moment it asks","No prompt ever appears — the status just stays .notDetermined","The prompt appears, but with a blank message","The prompt appears with Apple's default text"],"ahash":"ee7e4ef2006d78fef99761f8943f46c91103543fef0bd831e460d1c4b4735440"},{"prompt":"A barcode scanner calls <code class=\"inline\">AVCaptureDevice.requestAccess(for: .video)<\/code> with <strong>no camera usage-description string<\/strong> in Info.plist:","choices":["No prompt appears, and the status stays .notDetermined","The prompt appears anyway","The app crashes — the system terminates it for asking without a string","The camera opens with a warning banner"],"ahash":"bc0ca989f6cab979839bcba36b479a0a000d0d2b2bd12b514c673cf9323fcc7a"},{"prompt":"Picking one profile photo with <code class=\"inline\">PhotosPicker<\/code> requires:","choices":["Full photo-library permission plus a usage string","Limited photo-library permission","A usage string, but no permission request","No permission and no usage string at all — the person hands the app the one photo they pick"],"ahash":"ed8fcd3462b26bcb8ce2b4a6299ddba68da47659ff0bac9687a51a0ebddca474"},{"prompt":"A map includes <code class=\"inline\">UserAnnotation()<\/code> and the app HAS its location usage string — but the blue dot never appears on a real phone. The missing piece is:","choices":["The app never actually requested location authorization — the dot needs permission, not just the string","MapKit is broken in this iOS version","The camera permission","An Always-authorization upgrade"],"ahash":"b8c25d3bf0748030a1a2e585579d29ffbadd1a81b152c2f25bbdbc0db2b28040"},{"prompt":"An app must log a user's visits <em>automatically, even if they never open it<\/em>. That requires:","choices":["When In Use authorization","Always authorization","No authorization — visits are exempt","A restricted status"],"ahash":"bf4a7f2335e2f1c2800a210f1ecf153e84ac81e8fe23a661a860bf8a64d0f5c4"}],"hint1":"Location without its string fails silently; the camera without its string is fatal. The photo picker is the privacy-friendly exception to everything.","hint2":"Part 4: a usage string is only the explanation text — iOS still needs the app to ASK. Part 5: 'even if they never open it' is the definition of the Always level.","explain":"<strong>Permissions are per-sensor and unforgiving.<\/strong> Location asked without a usage string silently never prompts (the request is a no-op). The camera asked without its string crashes the app outright. PhotosPicker needs nothing at all — the system picker runs out of process and hands back only the chosen photo, which is exactly why Apple steers you to it. A usage string alone never grants anything: the app must still request authorization before UserAnnotation can work. And monitoring visits in the background, app unopened, is what Always authorization exists for.","revisit":"Module 7 · Permissions — usage descriptions, 'Check the status before you ask', and the PhotosPicker lesson."},"s2":{"id":"s2","mod":"Module 7 · Permissions","type":"builder","points":5,"secondTryCredit":true,"attemptFactors":[1,0.5,0.25],"title":"Builder: the permission journey","prompt":"<p>Your app checks <code class=\"inline\">authorizationStatus<\/code> before its trails feature runs. For <strong>each status<\/strong>, choose the app's correct next move:<\/p>","groups":[{"label":"Status: .notDetermined (never asked)","options":["Show an honest priming screen explaining the benefit, then request authorization","Send the person to the Settings app","Start location updates immediately","Show an error and disable the feature"],"checkText":".notDetermined → prime honestly, then ask","ahash":"c7cc2cefc934c915c2040cfedcde4e5b20423c8a36598ac3cdb42874d646e48e"},{"label":"Status: .denied (they said no last week)","options":["Call requestWhenInUseAuthorization() again — it will re-prompt","Restart the app to reset the prompt","Explain what won't work without it, and offer a button that opens the app's Settings page","Quietly use the camera to estimate position"],"checkText":".denied → explain + Settings path (the system will never re-prompt)","ahash":"1143df464f2a2b7293719c4ad373d175af1c0a81f265b8c18afd74a2c76f327e"},{"label":"Status: .restricted (Screen Time / device management)","options":["Explain the feature is restricted on this device — the person can't lift it from your app's Settings page","Send them to the app's Settings page to switch it on","Request authorization and hope","Delete the feature's button"],"checkText":".restricted → explain; it's not the user's switch to flip","ahash":"d0921a826946eb1e2b0786e6c135f2873a51121d78cb7ddef1110de9777b3941"},{"label":"Status: .authorizedWhenInUse","options":["Ask again, just to be safe","Start the location updates the feature needs","Upgrade to Always before doing anything","Wait for the next app launch"],"checkText":".authorizedWhenInUse → start the updates","ahash":"2261993665da8db793ad4881dbcc910739d55702053c49e2c4de1a8f9b39192a"}],"hint1":"Two statuses end the 'just ask' road: once denied, the system will not show the prompt again; restricted isn't the user's decision at all.","hint2":"Order of thinking: notDetermined = ask (with priming). denied = explain + Settings. restricted = explain (device-level). authorized = go.","explain":"<strong>The journey is the feature.<\/strong> .notDetermined is the only status where a request does anything — and a priming screen first raises grant rates honestly. After a denial, re-calling request does nothing at all; the only path is explaining and deep-linking to Settings. Restricted means a parent or admin decided — your app can only explain. And with authorization in hand, the move is simply to start.","revisit":"Module 7 · Permissions — 'Walk the whole permission journey' and 'Send people to Settings'.","neutralPreview":true},"s3":{"id":"s3","mod":"Module 7 · Location","type":"multi","points":3,"secondTryCredit":true,"title":"Reading a location update","prompt":"<p>Your model receives a location update from a trail in a canyon:<\/p>","parts":[{"prompt":"The update reports <code class=\"inline\">horizontalAccuracy<\/code> of <strong>65<\/strong>. That number is the uncertainty radius, in meters, around the reported point. How many meters?","type":"typed","short":"meters","ahashes":["4579496d2fdf9f9677311f76c229e03972dab49c418228e92289a10b6e3431eb","c5de331f3629acd8b8b35261b1b67fd2da84d41a94d5caa06c383f2cd2ec5d61","61e09924e0e1874660cd9b6711d737b3018528ecf49f0bc019d3edc36be2827a","2bbb20499d5844cd920dee8dbc29db9ed27360914101631b91b9c49197528349","a7f5c74d87c4989ec18379db0cde4c53c4ef13772680aca147b46fdf6b56479f","c6b3aa34ef090c60aba79ba9445bc29bd7c0594bba46a36378dbea16849447e0"]},{"prompt":"A teammate reverse-geocodes <em>every<\/em> incoming update to keep an address label live. Why is that the wrong call?","choices":["Geocoding is a rate-limited network service — firing it per update gets throttled and burns battery and data","Geocoding only works inside the United States","Coordinates can only be geocoded once each","The address label would update too smoothly"],"ahash":"f64519258587246561641a8d8a98e59ae81215ff609fbc4272d5185b7e4c4099"}],"hint1":"Part 1 is reading comprehension: the accuracy value IS the radius. Part 2: an address lookup is a network call, not a local property read.","hint2":"65 means the true position is somewhere in a circle of radius 65 m around the reported point — in a canyon, GPS multipath makes that circle big. Geocode when the user stops or asks, not per update.","explain":"<strong>horizontalAccuracy is a radius, not a score:<\/strong> 65 means 'the true position lies within about 65 meters of this point' — treat a canyon fix as a neighborhood, not a dot. And reverse geocoding is a shared, rate-limited network service; calling it on every update in a stream gets your app throttled and drains the battery. Filter updates by distance or significance, and geocode at meaningful moments.","revisit":"Module 7 · Location — accuracy, and 'Turn coordinates into a place name'."},"s4":{"id":"s4","mod":"Module 7 · MapKit","type":"multi","points":3,"secondTryCredit":true,"title":"MapKit judgment calls","prompt":"<p>Three small maps, three decisions from the lesson:<\/p>","parts":[{"prompt":"Each trail pin must show a small round <em>photo<\/em> of the trailhead with a colored ring. That custom content calls for:","choices":["A Marker","An Annotation with your own view","A UserAnnotation","A Polyline"],"ahash":"3cd0e65fd01c2e366f4f893bd892867ee7e8a3638407cc521ecf544ef1d1b469"},{"prompt":"A coffee search around San Francisco keeps returning cafes in other states. The request sets only <code class=\"inline\">naturalLanguageQuery<\/code>. The fix:","choices":["Set the search region so results stay local","Rename the query to include the city in quotes","Switch to satellite map type","Ask for Always authorization"],"ahash":"8711295667c534bc356c849b2c52868e21f5ee6a428f18e2ef062f00e74a6721"},{"prompt":"Code sets <code class=\"inline\">position = .automatic<\/code> on a <code class=\"inline\">Map(position:)<\/code> showing several markers. The camera:","choices":["Zooms to the user's location","Frames all the map content automatically","Never moves again","Switches to a 3D flyover"],"ahash":"69841feb1efecc47a94840dd55c86315a48278022a0e3dc8345bfe16e54d75bb"}],"hint1":"Markers are the system's styled pins; anything custom — a photo, a ring, your own drawing — is an Annotation view's job.","hint2":"Part 2: a text query alone has no geography. Part 3: .automatic means 'fit what's in the map.'","explain":"<strong>Marker = system pin with a tint and title; Annotation = your own content<\/strong> (photos, rings, anything). A local search needs a <em>region<\/em> — the words 'coffee' carry no location. And <code>.automatic<\/code> positions the camera to fit the content, which is usually what a results map wants.","revisit":"Module 7 · MapKit — Markers and annotations; Search for places; Move the camera."},"s6":{"id":"s6","mod":"Module 7 · Widgets & Surfaces","type":"multi","points":3,"secondTryCredit":true,"title":"The widget that wouldn't update","prompt":"<p>A hydration app and its home-screen widget disagree. Diagnose each case:<\/p>","parts":[{"prompt":"The App Group is set up correctly. The app now shows 3 glasses; hours later the widget still shows 2. Its timeline provider uses policy <code class=\"inline\">.never<\/code>, and the app never calls any reload. The widget:","choices":["Still shows 2 tomorrow — .never with no reload keeps the stale entry indefinitely","Updates at midnight automatically","Updates when the phone locks","Shows an error badge"],"ahash":"d07e6926a16a88cb6d9650e6b490f32f54a2d92e3aa05d3ac5d2ce6c9107b068"},{"prompt":"A different widget shows <em>no data at all<\/em>, though the app saves fine. The most likely cause:","choices":["The widget extension is a separate process — without an App Group it cannot read the app's container","The widget is too small","Widgets can't read numbers, only text","The phone needs a restart"],"ahash":"d35f972db8414c0f3e72b0438fc646f5d32271ab119bfd93b3f771db2fd79dca"},{"prompt":"A delivery app wants the minutes-remaining counting down on the Lock Screen and in the Dynamic Island during the trip. The feature is a:","choices":["Local notification","Live Activity","Widget","App Intent"],"ahash":"ca5abf274d66134868414621b3a8bbe983d018822f4852b02f7f81f7910d5e1f"}],"hint1":"Widgets run on timelines the system schedules — a policy of .never means 'keep what you have.' And an extension is its own process with its own sandbox.","hint2":"Part 3: ongoing, changing, glanceable event = Live Activity. A notification is a moment; a widget is a snapshot; an intent is an action.","explain":"<strong>Widgets are snapshots on a timeline,<\/strong> not live views: with policy <code>.never<\/code> and no <code>WidgetCenter<\/code> reload call, yesterday's entry is forever. An extension is a separate process — shared data requires an <strong>App Group<\/strong> container both processes can read. And an in-progress event with a countdown belongs in a <strong>Live Activity<\/strong>, the one surface designed to update on the Lock Screen and Dynamic Island.","revisit":"Module 7 · Widgets (timelines, App Groups) and Live Activities."},"s7":{"id":"s7","mod":"Module 7 · On-Device AI","type":"multi","points":3,"secondTryCredit":true,"title":"Ask the model — carefully","prompt":"<p>A trip app adds on-device AI summaries. Two decisions from the lesson:<\/p>","parts":[{"prompt":"Before building the feature, the app checks availability and gets <code class=\"inline\">.unavailable(.appleIntelligenceNotEnabled)<\/code>. It should:","choices":["Crash — the model is a required system service","Retry in a tight loop until it changes","Hide or gracefully fall back from the AI feature, and let the person know it needs Apple Intelligence enabled","Download a model from the app's server instead"],"ahash":"3f48d48c6384e069cc4f448a07dd9e21ab86154f4a5e9772c81f61896c06be19"},{"prompt":"The app wants a structured trip summary (title, days, highlights) from the model. Why use <code class=\"inline\">@Generable<\/code> guided generation instead of asking for JSON in a prompt?","choices":["It is faster on the Neural Engine","The model fills typed Swift values directly — no fragile parsing of free text that may not be valid JSON","JSON is not allowed in prompts","It works without checking availability"],"ahash":"9862fb274f256169a9749d97099af626fc2f9eb1406ec5420eb49d350fce4e23"}],"hint1":"Availability is a state your UI must handle, not an error to fight. And free-text answers come back as prose — the model is a writer, not a serializer.","hint2":"Part 1: degrade gracefully, like any unavailable capability. Part 2: @Generable constrains generation to your type's shape.","explain":"<strong>Check availability first, and design the fallback.<\/strong> Apple Intelligence can be off, unsupported, or still downloading its model — each is a normal state with a graceful UI answer. And guided generation with <code>@Generable<\/code> returns typed Swift values shaped by your struct, instead of a paragraph you hope is parseable JSON. Either way, treat model output as untrusted content before acting on it.","revisit":"Module 7 · On-device AI — 'Check availability first' and '@Generable guided generation'."},"s8":{"id":"s8","mod":"Module 7 · App Intents","type":"mc","points":3,"secondTryCredit":true,"title":"Log water, without opening the app","prompt":"<p>The hydration app's users should be able to say <em>\"Log water in Hydrate\"<\/em> to Siri — or tap a Shortcut — and have a glass logged without the app opening. The technology to build is:<\/p>","choices":["An App Intent","A widget","A Live Activity","A push notification"],"hint1":"Which of these is an ACTION the system can invoke on your app's behalf, from outside its window?","hint2":"Widgets display; Live Activities display; notifications announce. Intents DO.","explain":"<strong>App Intents are how your app appears outside its own window<\/strong> — Siri phrases, Shortcuts, Spotlight actions. You declare an intent ('log a glass of water') with parameters, and the system can run it without launching your UI. It's the same family as the widget and Live Activity lessons: modern iOS apps are expected to exist beyond their own screens.","revisit":"Module 7 · 'App Intents: actions Siri and Shortcuts can run'.","ahash":"990fa07388dc4c6ddfe9f5eff4aa28d17c4169b57e32c283305300e35497d51e"},"n1":{"id":"n1","mod":"Module 8 · URLSession","type":"multi","points":4,"secondTryCredit":true,"title":"The 404 that isn't an error","prompt":"<p>A fetch uses <code class=\"inline\">try await URLSession.shared.data(from: url)<\/code> and the server answers <strong>404 Not Found<\/strong> with an error page:<\/p>","parts":[{"prompt":"What does <code class=\"inline\">data(from:)<\/code> do?","choices":["Throws an error automatically — 404 is a failure","Returns normally with the response body and the response — your code must check the status code itself","Returns nil data","Crashes, because the resource doesn't exist"],"ahash":"8723b3b4a4e6408122013b757440fabf254b147462a9285f487f606612bd5e08"},{"prompt":"Write the guard that accepts only 2xx statuses, given <code class=\"inline\">response<\/code> is the <code class=\"inline\">URLResponse<\/code> from the call. Use exactly this shape: cast to HTTPURLResponse, then test the range (200..&lt;300) with .contains:","type":"typed","short":"guard line","ahashes":["1455e763eb7da6f06f96322cb1aa65735c805ec7a2c10f8ffa3f9fe6e64cd910","b36b13d33b679413d58b55a86258261ee9bce4246e50c2cf7a465f109dcc4bde","517eb5462d1bf8c52e00c854cecc56bb5dbc4c23af2aeec6ea24f229089575af","8ede2f26aacbb05dbe2034ed74880fe7eba298bbfe32ed52fb95af4b21bfab3a","68b41b734fc1530a925e0b16f5aa6e454dd30598430b13d1c34e3757db3f7bfa","fa5913a55133f79464ba0ba9398bb02e0d84c2378f82fbf8a73748e14f158dd2","c1a3c92f5b9ebc99e23412209799b05b0f75faab7ff1446e687978757a7afa0e","0b95f728ed1d9a594b6e4374bfd45d22026f614f4e8e886fcb90e8cf5bfdaf85"]}],"hint1":"URLSession's job is transport: an HTTP error status is a successful delivery of a response. Nothing in data(from:) inspects the status for you.","hint2":"Part 1 is the classic beginner bug — decoding the 404 page as if it were your model, then blaming the decoder. Part 2's line is the fix, verbatim from the lesson's pattern.","explain":"<strong>A 404 is a perfectly successful network call<\/strong> — the server answered. <code>data(from:)<\/code> throws only for transport failures (no connection, timeout, cancellation). Checking <code>(200..&lt;300).contains(http.statusCode)<\/code> before decoding is your job; skip it and you'll spend an afternoon debugging a 'decoding error' that is really a status error wearing a costume.","revisit":"Module 8 · URLSession — 'Your first real fetch' and status-code handling."},"n2":{"id":"n2","mod":"Module 8 · Errors & Retries","type":"multi","points":5,"secondTryCredit":true,"title":"Retry like you mean it","prompt":"<p>Five failure moments. For each, choose the response the module teaches:<\/p>","parts":[{"prompt":"The API answers <strong>503 Service Unavailable<\/strong> with a <code class=\"inline\">Retry-After: 30<\/code> header. The app should:","choices":["Retry immediately, as fast as possible","Wait roughly 30 seconds, then retry","Give up permanently","Switch to a different endpoint"],"ahash":"8dde694c5f84ed18905ab20d64513ea49c965c42afae4b423a317e225cedf41f"},{"prompt":"A request times out — you never learn whether the server processed it. Which request is safe to resend automatically?","choices":["A POST that creates an order","A GET that reads the menu","A PATCH that charges a card","A POST that sends a message"],"ahash":"07a3bd355849fd58f616952d82d71b8134a22f19722724026f2e491e09cda599"},{"prompt":"The user edits only their display name. The API supports partial updates. The method that fits:","choices":["PUT the entire profile","POST a new profile","PATCH just the changed field","DELETE, then POST"],"ahash":"e2aace661051eafe7e4562eb89ecc3ccb9bfdcd865a97e9dd2bb643957791550"},{"prompt":"A POST that creates an order <em>must<\/em> be retried after a timeout, and a duplicate order would be a disaster. The protection:","choices":["Retry very quickly so duplicates merge","Send an idempotency key with the request, so the server can recognize and dedupe the retry","Retry from a second device","Encode the order twice"],"ahash":"e7f1c4d7d36f1828f3999da5ab85625ab3af4fdb1e2849a187459ea155f4dc35"},{"prompt":"Backoff delays include random <em>jitter<\/em> so that:","choices":["The server can't detect retries","Thousands of clients don't all retry at the same instant and stampede the server together","Retries use less battery","The delays look natural in logs"],"ahash":"892e4017ae8616b3be46ce891dd6400f62ed76ea506509cae206c5f18345069f"}],"hint1":"Retry-After is the server telling you the wait — believe it. Safe resends are the idempotent ones: reads, and writes designed to be repeatable.","hint2":"PATCH = partial. An idempotency key turns a dangerous blind retry into a safe one. Jitter spreads a crowd of retrying clients across time.","explain":"<strong>Retries are a design, not a reflex.<\/strong> Honor Retry-After. Only idempotent requests (GET, PUT, DELETE by design) are safe to resend blind — a resent POST can create the order twice, which is why an <em>idempotency key<\/em> exists: the server dedupes on it. PATCH is the partial-update verb. And jitter in backoff keeps a thousand clients whose requests failed together from retrying together and knocking the recovering server over again.","revisit":"Module 8 · Methods and idempotency; 'Make a POST safe to retry'; retries and backoff."},"n3":{"id":"n3","mod":"Module 8 · Building Requests","type":"debug","points":5,"secondTryCredit":true,"title":"Debug: salt, pepper, and the lying ampersand","prompt":"<p>A search feature misbehaves: searching for <strong>salt &amp; pepper<\/strong> returns results for just \"salt\", as if the rest of the query vanished. <strong>Tap the buggy line<\/strong>, then pick the fix:<\/p>","lines":["func searchURL(for text: String) -> URL {","    let base = \"https://api.example.com/search?q=\"","    let url = URL(string: base + text)!","    return url","}"],"fixes":["Build the URL with URLComponents and a URLQueryItem, so the text is encoded as a value, not read as URL structure","Keep concatenation, but replace & with the word 'and' in user input","Force-unwrapping is the bug — return nil instead","Switch the search to a POST request"],"hint1":"Ask what the SERVER receives. The string the code builds says q=salt & pepper — how does a server parse an & inside a query?","hint2":"& is the separator between query parameters. In 'q=salt & pepper', everything after the & is a new (stray) parameter. (And no, the force-unwrap isn't it — since iOS 17, URL(string:) encodes the spaces instead of failing.)","explain":"<strong>The & is structural.<\/strong> The built URL reads <code>?q=salt &amp; pepper<\/code> — the server parses q='salt' plus a stray parameter, so 'pepper' never reaches the search. User text must be encoded as a <em>value<\/em>: URLComponents + URLQueryItem percent-encode it safely. String concatenation for URLs breaks on exactly the characters users actually type — &, =, spaces, + — which is why the lesson builds every URL with components.","revisit":"Module 8 · 'Build URLs with URLComponents'.","lhash":"03b9be4e448ce904d8a2e76365a3bdb2444bf789032e29e8d2837be55cf2f330","fhash":"9a6d32096d5e6dda9e64eaeba312bc62609615af4e84829a8035662897ba5e4c"},"n4":{"id":"n4","mod":"Module 8 · URLSession","type":"parsons","points":4,"title":"Assemble the fetch","prompt":"<p>Order the body of an async fetch function that loads trails and publishes them to the model. One line doesn't belong:<\/p>","lines":["let (data, response) = try await URLSession.shared.data(for: request)","let trails = try JSONDecoder().decode([Trail].self, from: data)","self.trails = trails","let request = URLRequest(url: url)","guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { throw FetchError.badStatus }"],"distractor":"URLSession.shared.invalidateAndCancel()","hint1":"You can't check a response before the call returns it, and you can't decode data you haven't validated. Publishing comes last, on the model.","hint2":"Build → await → validate the status → decode → publish. invalidateAndCancel() tears the whole session down — it belongs nowhere near a fetch.","explain":"<strong>Build, await, validate, decode, publish.<\/strong> The order is forced by the data: the status check needs the response, decoding needs to know the body is really your model and not an error page, and the UI update happens only with good data in hand. This five-step shape is the skeleton of every fetch in the module.","revisit":"Module 8 · 'A small API client' and 'Loading state as an enum'.","prank":[1,3,4,0,2]},"n5":{"id":"n5","mod":"Module 8 · Decoding & Polling","type":"typed","points":3,"secondTryCredit":true,"title":"Two numbers-and-names checks","prompt":"<p>Answer both fields:<\/p>","fields":[{"short":"error name","label":"Decoding <code class=\"inline\">{\"id\": \"42\"}<\/code> into a struct with <code class=\"inline\">let id: Int<\/code> throws a ______ error. (One word — the DecodingError case name.)","ahashes":["704ef70ccf7574ae1526fa41a3b94f7e26b0b023e7f35a84452810355f3309b6","ef25ec1c85563b47ae32900ccd0318b99c2269b28c4a2745ccc112a8913afc0b","faba59cacb2470eb7d77005c5298cd733ce661951cc20bab8d1b7b4b92363064"]},{"short":"useful polls","label":"An app polls every 5 seconds for data that changes about once every 10 minutes. Out of the 120 requests it makes in those 10 minutes, how many carry new data?","ahashes":["a7ea042d3eae54a943a8f2a257628b9027631bf4b50dc7b55687bbb4ef2a4ee9","2ebb417b1f8ebaf1560b12505cfce9d69bf0cf87c875e0ddc03a00882171913d"]}],"hint1":"Field 1: the JSON has a string where your type demands an Int — the error's name says exactly that. Field 2: in 10 minutes the data changes once.","hint2":"Polling math: 120 requests, 1 change — 119 of them downloaded what the app already had. This is the module's argument for push and WebSockets.","explain":"<strong>typeMismatch<\/strong> — a string \"42\" is not an Int, and the decoder refuses to guess. (A missing key would be keyNotFound; a missing value, valueNotFound — the three names are worth knowing cold.) And the poll: <strong>1 useful request in 120<\/strong>. Polling spends battery, data and server capacity re-downloading the unchanged — the reason the module ends with push notifications and WebSockets.","revisit":"Module 8 · 'When decoding fails'; 'When the server has news' (polling vs push)."},"n6":{"id":"n6","mod":"Module 8 · Architecture & Security","type":"multi","points":4,"secondTryCredit":true,"title":"Four rules from the back half of the module","prompt":"<p>Each part is a rule the module states outright:<\/p>","parts":[{"prompt":"<code class=\"inline\">WeatherModel<\/code> is marked <code class=\"inline\">@MainActor<\/code> because:","choices":["It publishes state the UI reads, so its updates must happen on the main actor","It makes the network calls faster","SwiftUI requires the name Model to be an actor","It encrypts the responses"],"ahash":"2045882dddc4ec24370e70ac4014c4e4875126b0ec68bae7f403f8b2de9abd07"},{"prompt":"The user leaves a screen while its <code class=\"inline\">.task<\/code> load is still running; the task is cancelled and the catch block sees a CancellationError. The right response:","choices":["Show a 'Something went wrong' alert","Swallow it silently — a cancelled load is not an error anyone should see","Retry the load three times","Log the user out"],"ahash":"c91737e4771df2b8f1a8bd4436811a1226c5c602d2234f25b602c8275b00a546"},{"prompt":"A teammate stores a paid API key as a constant in the app, arguing the compiled binary hides it. The module's answer:","choices":["Correct — binaries can't be read","Anyone can extract strings from a binary; route calls through your own backend or a token exchange so the key never ships","Base64-encode the key — that's encryption","Put the key in Info.plist instead"],"ahash":"6b0f94c29af49d6774befa14dee15469cdb88aaae16ccba99ce9783614370411"},{"prompt":"With default settings, the app requests <code class=\"inline\">http://api.example.com/data<\/code> (no s). What happens?","choices":["It loads, with a warning in the console","App Transport Security blocks the cleartext request","The request is silently upgraded and always works","The App Store reviews it later"],"ahash":"9975bd059571e0172e114d9e5fd759d44b128be2d06c2203f6e053bfcc6a037c"}],"hint1":"Part 2: cancellation is a normal ending, not a failure — alerting on it punishes users for navigating. Part 3: 'compiled' is not 'secret' — strings tools exist.","hint2":"Part 1 is about WHERE state changes happen (@MainActor). Part 4 is ATS: HTTPS by default, cleartext by exception only.","explain":"<strong>@MainActor<\/strong> because the model publishes UI state — isolation keeps those writes where SwiftUI expects them. <strong>Cancellation is silent<\/strong>: .task cancels when the view goes away, and a CancellationError deserves no alert. <strong>Secrets never ship<\/strong>: a binary's strings are readable by anyone, so real keys live behind your backend. And <strong>ATS blocks cleartext HTTP<\/strong> by default — HTTPS is the price of admission.","revisit":"Module 8 · @MainActor models and .task; error handling (silent cancellation); HTTPS, certificates and ATS; 'Never ship a secret in the app'."},"b2":{"id":"b2","mod":"Module 8 · Caching","type":"mc","points":2,"bonus":true,"secondTryCredit":true,"title":"BONUS: The polite revalidation","prompt":"<p>Your code bypasses the cache and sets the header <code class=\"inline\">If-None-Match: \"v7\"<\/code> itself. The server checks: the data still matches v7. It replies:<\/p>","choices":["304 Not Modified, with an empty body — your cached copy is still good","200 OK with the full body, to be safe","404 — the ETag is not a URL","A redirect to the v7 resource"],"hint1":"The whole point of If-None-Match is to avoid re-downloading what hasn't changed. What status code says 'unchanged'?","hint2":"304. The body is empty on purpose — the saving IS the empty body.","explain":"<strong>304 Not Modified.<\/strong> Conditional requests are how polite clients avoid downloading the same bytes forever: send the ETag you hold, and if nothing changed you get a nearly-free 304 with no body. (When URLCache does this revalidation for you, URLSession quietly hands your code the cached body as a normal 200 — you only see the raw 304 when you set the header yourself, as here.)","revisit":"Module 8 · 'HTTP caching: do not download it twice'.","ahash":"a84e8571a1f0cf8f72b63ae20225b332caa81e3fa4b64e4df30321d79e5d9e44"}};
+renderSection({id:"design",title:"Module 5 · Design",desc:"HIG principles, Liquid Glass, Dynamic Type, color and contrast, navigation, and writing for the screen. 25 points.",items:["g1","g2","g3","g4","g5","g6"].map(x=>DEFS[x])});
+renderSection({id:"data",title:"Module 6 · Data",desc:"Where data lives, Codable and JSON, files, SwiftData, the Keychain, and sync. 25 points plus a bonus.",items:["t1","t2","t3","t4","t5","t6","b1"].map(x=>DEFS[x])});
+renderSection({id:"services",title:"Module 7 · Services",desc:"Permissions and privacy, location and maps, CloudKit, photos and sharing, on-device AI, widgets and Siri. 25 points.",items:["s1","s2","s3","s4","s6","s7","s8"].map(x=>DEFS[x])});
+renderSection({id:"networking",title:"Module 8 · Networking",desc:"HTTP, URLSession, decoding, errors and retries, security, and live data. 25 points plus a bonus.",items:["n1","n2","n3","n4","n5","n6","b2"].map(x=>DEFS[x])});
+
+function acceptMatch(raw, field){
+  const cands = [norm(raw)];
+  return cands.some(c=>field.ahashes.includes(HKEY('typed', c)));
+}
+function checkItem(id){
+  const def=ITEMS[id]; const st=itemState(id); if(st.done) return;
+  if(def.type==="mc"){
+    const sel=(picks[id]||{})[0]; if(sel===undefined){ note(id,"Pick an answer first — commit to a prediction, then check."); return; }
+    grade(id, HKEY('mc',id,0,sel)===def.ahash?1:0, "chose: "+stripTags(def.choices[sel]));
+  }
+  else if(def.type==="multi"){
+    let got=0,log=[];
+    def.parts.forEach((p,pi)=>{
+      if(p.type==="typed"){ const raw=$("#typed-"+id+"-"+pi).value; const ok=acceptMatch(raw,p); if(ok)got++; log.push('part'+(pi+1)+':'+(ok?"✓":"✗ '"+raw+"'")); }
+      else { const sel=(picks[id]||{})[pi]; const ok=sel!==undefined&&HKEY('mc',id,pi,sel)===p.ahash; if(ok)got++; log.push('part'+(pi+1)+':'+(ok?"✓":"✗")); }
+    });
+    grade(id, got/def.parts.length, log.join(" "));
+  }
+  else if(def.type==="typed"){
+    let got=0,log=[];
+    def.fields.forEach((f,fi)=>{ const raw=$("#typed-"+id+"-"+fi).value; const ok=acceptMatch(raw,f); if(ok)got++; log.push(f.short+':'+(ok?"✓":"✗ '"+raw+"'")); });
+    grade(id, got/def.fields.length, log.join(" "));
+  }
+  else if(def.type==="write"){
+    const ta=$("#code-"+id); const res=CHECKERS[def.checker](ta.value);
+    st.code=ta.value; note(id,res.notes);
+    grade(id, res.fraction, "code: "+ta.value.replace(/\n/g," ⏎ "));
+  }
+  else if(def.type==="parsons"){
+    const zone=$$("#zone-"+id+" .parsons-line");
+    if(zone.length===0){ note(id,"Move lines into Your program first."); return; }
+    const expected=def.lines.map((t,si)=>[def.prank[si],t]).sort((a,b)=>a[0]-b[0]).map(x=>x[1].replace(/\s+/g," ").trim());
+    let posOK=0; zone.forEach((b,i)=>{ if(b.textContent.replace(/\s+/g," ").trim()===expected[i]) posOK++; });
+    const exact = zone.length===def.lines.length && posOK===def.lines.length;
+    grade(id, exact?1:posOK/def.lines.length, "order placed");
+  }
+  else if(def.type==="debug"){
+    const line=debugPick[id]; const fix=(picks[id]||{})[0];
+    if(line===undefined||fix===undefined){ note(id,"Do both steps: tap the buggy line AND pick a fix."); return; }
+    const lineOK = HKEY('line',id,line)===def.lhash, fixOK = HKEY('fix',id,fix)===def.fhash;
+    const frac=(lineOK?0.5:0)+(fixOK?0.5:0);
+    $$("#body-"+id+" .debugline").forEach((b,j)=>{ if(HKEY('line',id,j)===def.lhash) b.classList.add("correct"); });
+    grade(id, frac, 'line:'+line+' fix:'+stripTags(def.fixes[fix]));
+  }
+  else if(def.type==="builder"){
+    const sel=picks[id]||{};
+    if(Object.keys(sel).length<def.groups.length){ note(id,"Choose one option in every group first — the checklist shows what's still open."); return; }
+    let got=0; def.groups.forEach((g,gi)=>{ if(HKEY('grp',id,gi,sel[gi])===g.ahash) got++; });
+    grade(id, got/def.groups.length, "builder groups correct: "+got+"/"+def.groups.length);
+    updateBuilder(id);
+  }
+  else if(def.type==="custom"){ CUSTOM_CHECK[def.custom](def); }
+  const t=$("#tries-"+id); const st2=itemState(id);
+  if(t) t.textContent = st2.done? "" : (triesLeft(id)>0? triesLeft(id)+" try left":"");
+}
+
+function updateBuilder(id){
+  const def=ITEMS[id]; const sel=picks[id]||{};
+  const phone=$("#phone-"+id);
+  if(phone) phone.innerHTML='<div style="background:#182238;border:1px solid #2a3557;border-radius:16px;padding:14px;width:100%">'
+    +'<div style="font-size:1.5rem">🧭</div><strong>Trails Near Me</strong>'
+    +'<div class="mini" style="color:#a7b0cc">Authorization journey planned for '+Object.keys(sel).length+' of '+def.groups.length+' statuses.</div>'
+    +'<div class="mini" style="color:#a7b0cc">A good journey has a move for every status — including the two where the answer is "you cannot just ask again."</div></div>';
+  const cl=$("#checklist-"+id);
+  if(cl) cl.innerHTML=def.groups.map((g,gi)=>{ const chosen=sel[gi]!==undefined; const ok=chosen&&HKEY('grp',id,gi,sel[gi])===g.ahash;
+    return '<li class="'+(chosen?(ok?"ok":"no"):"")+'">'+(chosen?(ok?"✓":"✗"):"•")+' '+esc(g.checkText)+'</li>'; }).join("");
+}
+
+
+
+(function init(){
+  const nameEl=$("#studentName");
+  if(state.name) nameEl.value=state.name;
+  nameEl.addEventListener("input",()=>{ state.name=nameEl.value; save(); });
+  for(const id in ITEMS){
+    const st=state.items[id]; if(!st||st.attempts===0) continue;
+    const def=ITEMS[id];
+    if(def.type==="write"&&st.code){ const ta=$("#code-"+id); if(ta) ta.value=st.code; }
+    if(st.hint1){ const b=$("#hint1-"+id); if(b)b.classList.add("show"); }
+    if(st.hint2){ const b=$("#hint2-"+id); if(b)b.classList.add("show"); }
+    if(st.attempts>0) renderItemFeedback(id, st.bestFraction||0, st.awarded);
+    const t=$("#tries-"+id); if(t&&!st.done&&triesLeft(id)>0) t.textContent=triesLeft(id)+" try left";
+  }
+  renderProgress(); renderSummary();
+})();
+
+</script>
+</body>
+</html>
