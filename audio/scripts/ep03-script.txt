@@ -1,0 +1,76 @@
+Alex: Welcome back. I am Alex, and I explain. This is episode three, the final survey in our series on modules seven, eight and nine.
+Jordan: I am Jordan. I ask student style questions and summarize as we go. Where did we leave off?
+Alex: Episode two surveyed module eight, networking. Requests and H T T P, J S O N decoding, U R L Session, retries and security, live data, and a clean A P I layer.
+Jordan: So the app can fetch the world. Why end with shipping?
+Alex: Because working code is not finished code. Module nine asks whether the app survives change, whether tests prove it, whether it stays fast and welcoming, and whether it can pass review. Seven lessons plus worked examples, in order.
+Jordan: Lesson one, then.
+Alex: Architecture that survives change. Give every piece one job, so each part has one reason to change. A redesign touches the screen, a rule change touches the model, and neither breaks the other.
+Alex: A view model is plain Swift. The pattern is M V V M, model, view and view model. The timer view model is an observable class that caps the total and formats a status message without importing Swift U I, so it runs in tests as happily as behind a screen.
+Alex: Connect the view model to a view by letting the view own it as observed state. The view reads status and forwards taps, and Swift U I redraws only what reads the changed value.
+Jordan: Where should the rules live?
+Alex: Rules in the view versus rules in the model. One version puts the sixty minute cap inside the view body, hard to test. The better version leaves the view displaying only, so changing the goal edits the model in one place.
+Alex: Dependency injection with protocols means a view model receives what it needs from outside, usually through its initialiser, instead of building its own U R L Session and welding itself to the network.
+Alex: The contract and the view model follow. The protocol names one ability, report the current temperature, and the view model stores anything that can do that, never learning whether it talks to a server or a test.
+Alex: Prove it with a stand in. A mock returns a fixed value, so one summary function gives predictable results with no network, and a failing stand in drives the error branch on purpose.
+Alex: The live implementation calls a free weather service over H T T P, decodes the J S O N, and follows the same contract, so the view model accepts it unchanged. Only that file knows H T T P exists.
+Alex: Choose the implementation at the edges. The composition root is the one place concrete types are picked. The app injects the live service, a preview injects the mock, and view and view model stay identical.
+Alex: Organize by feature, grouping files by what the user does, not by kind, with shared services in one core area and tests mirroring the app. If deleting a feature means hunting through five folders, the structure is wrong.
+Jordan: One job each, rules in the model, a contract, stand ins for proof, folders by feature. How do we know it works?
+Alex: Lesson two, testing with Swift Testing. Verification versus validation. Verification asks did we build it right, and tests answer against requirements. Validation asks did we build the right thing, and only people answer that, through TestFlight feedback and real use.
+Alex: The testing pyramid sets the mix. Many fast unit tests at the base, fewer integration tests in the middle, a handful of U I tests at the top. A suite leaning on U I tests alone answers too slowly.
+Jordan: What does a first test look like, in words?
+Alex: Your first tests mark a function with the Test marker and check results with the expect macro, the word expect. A failing check reports what was expected and what arrived, and one shortcut runs them all in Xcode.
+Alex: Suites, readable names and the require check. The Suite marker groups related tests, names describe behaviour in plain words, and the require macro, the word require, stops the test at once if an optional is empty, so later lines never run on bad data.
+Alex: One test, many inputs. A parameterized test runs the same check for every argument, each reported separately, so one bad row never hides the others and adding a case is one line of data.
+Alex: The bug lab asks what do your tests catch. Switch on one planted bug at a time and watch which tests turn red, then meet the bug every test misses and choose the expectation that would have caught it.
+Alex: Test a view model with stand ins, the mock for success and the failing stand in for the error branch. Tests run in milliseconds, offline, the same every time, because the protocol seam exists.
+Alex: The test driven loop closes it. Write the test first and watch it fail, write the smallest code that passes, then tidy up. Good tests are fast, isolated, repeatable, self validating and timely.
+Jordan: Layers, plain names, many inputs from one test, and fail, pass, tidy. What about the app as a person sees it?
+Alex: Lesson three, U I tests, previews and accessibility checks. How a U I test sees your app is the key. It launches the real app separately and sees only the accessibility tree, elements with a type, label and identifier, the same view VoiceOver gets.
+Alex: Give elements stable identifiers. An accessibility identifier is a name only tests can see, so unlike a visible label it survives translation and rewording.
+Alex: Known data through launch arguments. The test passes a launch argument at launch, the app checks for it and seeds known data, so the test never depends on what a previous run left behind.
+Alex: Write the U I test as one complete journey. Launch with known data, open the sheet, type a title, save, and wait for the new row, querying by identifier.
+Alex: The query explorer idea lets you pick a query and see which elements it matches, then switch the app to Spanish and watch label queries fail while identifier queries keep working.
+Alex: Audit accessibility and launch time. An automated audit scans for low contrast, missing labels, small tap targets and clipped text, and a performance test measures launch time against a baseline and flags regressions.
+Alex: Previews as visual checks. Write one preview per interesting state, sample data, empty, largest text and dark mode, and you see every state at a glance without launching the app.
+Jordan: Stable identifiers, known data, automatic audits, previews as the fastest visual test. When it still breaks?
+Alex: Lesson four, debugging and Instruments. Read the crash before you change code. Xcode pauses on the failing line, the console prints the reason, and the stack trace shows the chain of calls that led there.
+Alex: Print debugging, then the fix. A screen showed thirty one for an average near thirty one point six seven, and a temporary print revealed integer division. The fix converts before dividing and guards the empty list.
+Alex: Breakpoints and L L D B. A breakpoint pauses just before a line runs, the variables view lists local values, and L L D B, the Xcode debugger, takes console commands. A breakpoint can log and continue automatically.
+Jordan: Why not keep the prints?
+Alex: Log with Logger, not print. Print vanishes once the app leaves Xcode, while Logger writes with a level, subsystem and category, so messages can be filtered later and private values stay hidden.
+Alex: Visual debuggers and Instruments. Xcode can draw your view hierarchy or your objects, and Instruments records the app over time, so profile on a real device with a release build whenever you can.
+Alex: A retain cycle and weak self. A model owns a timer whose closure captures it strongly, forming a loop freeing cannot break. Capturing self weakly breaks the loop, and both are freed.
+Alex: The memory graph lab idea draws each object as a box and each reference as an arrow with its strong count. Pop the screen and watch what frees, then repeat with a strong capture and watch the cycle flagged as leaked.
+Jordan: Read first, print to learn, log properly, break cycles weakly. Now make it fast and fair.
+Alex: Lesson five, performance, accessibility and localization. The main thread and the frame budget. The screen redraws sixty times a second, so each frame has roughly sixteen point seven milliseconds. Bodies and handlers run on the main thread, and overrunning the budget causes a hitch, a visible stutter.
+Alex: The frame budget lab idea has you scroll a list of study spots, watch frame times against the budget line, decode photos on the main thread and count hitches, then fix and see which change cures which symptom.
+Alex: Move heavy work off the main actor. Decoding a large photo can take several frames, so a concurrent function decodes a thumbnail in the background and the row displays the finished image when it arrives.
+Alex: An accessibility pass before every release. Check each screen with the Accessibility Inspector for labels, contrast, tap targets and large text, and automate that audit, because roughly one person in six lives with a significant disability.
+Alex: Make a custom control speak. An icon only button sounds like its symbol name to VoiceOver unless you give it a label, a value for its state and a hint for what happens.
+Alex: Localize with a String Catalog. Xcode collects every user facing string into the catalog at build time, translators fill in each language, and plurals, numbers and dates adapt to language and region automatically.
+Jordan: Frames inside the budget, heavy work off the main thread, controls that speak, strings in the catalog. Now ship it.
+Alex: Lesson six, from archive to App Store. Identity and signing first. I O S runs only code Apple can trace to a developer, and signing attaches that proof. With automatic signing, you choose a team and a bundle identifier that can never change after the first upload.
+Alex: Version, build and configuration. Every upload needs a version users see and a build number unique for that version. Conditional compilation picks settings per configuration, debug while developing, release when archiving.
+Alex: The privacy manifest. Purpose strings explain each permission prompt, and the manifest declares tracking, collected data and any required reason A P I use, meaning calls that could fingerprint a device. Undeclared use gets uploads rejected.
+Jordan: Who tries it before the public?
+Alex: TestFlight and App Review. TestFlight delivers beta builds to real people, then App Review checks the release build against the guidelines. Most rejections are avoidable, and a demo account in the review notes saves a build that needs a login.
+Alex: After approval, release, watch, maintain. Release manually, automatically or on a date, or phase an update over seven days, pausing if crashes spike. Shipping starts maintenance, it does not end the work.
+Alex: The release pipeline lab idea walks an imaginary release through staged decisions, where a wrong choice shows its real consequence, a rejected upload, a crash at launch or a reviewer message, and stages unlock only in order.
+Jordan: Identity, versions, privacy, beta, review, phased release, then watch. Bring it together.
+Alex: Lesson seven, the capstone, Study Buddy from idea to release. The life cycle, applied, is requirements, design, implementation, testing, deployment and maintenance, in short iterations, each delivering a small working slice.
+Alex: User stories and acceptance criteria. As a student I want to log a study session so that I can see my weekly total. Criteria are given for the start, when for the action and then for the result. If you cannot imagine the test, the criterion is too vague.
+Alex: The story to test mapper idea asks you to sort each clause into given, when or then, or flag it as not testable, while a test skeleton builds beside you and vague clauses earn a rewrite.
+Alex: Wireframes and architecture. A wireframe is a low detail sketch, boxes, labels and arrows, for screens like Today and Settings. Walk every story through the sketches, then give every requirement a home in the layered, feature based structure from lesson one.
+Alex: Build the model behind the first story. The first iteration builds only the session logging model, no interface and no storage yet, so its output matches exactly what the criteria promise.
+Alex: Turn acceptance criteria into tests. Each criterion becomes a test, with given, when and then as comments above the lines that perform them, so when these tests pass, the story is verified.
+Alex: Plan the build, the tests and the release. Build in thin vertical slices, one story end to end on a real device. A story is done only when its tests pass, its screens pass the accessibility audit and it runs on a real device. Compiling is not done.
+Jordan: Stories become criteria, criteria become tests, and done means proven. Finish with the worked examples.
+Alex: First story. Build a retain cycle, watch it leak, then break it. A pilot and a ship hold each other strongly, the outside variables are cleared, and the deinitialiser messages never print, proving both leaked. Make one reference weak and both messages print.
+Jordan: Second story?
+Alex: Find the work that busts a sixteen point seven millisecond frame. A list stutters, Instruments shows one frame decoding a full size photo inside the view body, and moving decoding off the main actor restores smooth scrolling.
+Jordan: And the release, including its failure?
+Alex: Walk a release through its gates, including the one that fails. Signing and archive pass, then upload fails because a required reason A P I lacks a declared reason. Declare it, archive again, and review and release pass.
+Jordan: My recap. Architecture gives every piece one job. Tests verify in a pyramid. Debugging reads before it edits, performance respects the frame, and accessibility and localization welcome everyone. Release is a gated road, and the capstone runs the full life cycle.
+Alex: A farewell look back. Module seven borrowed the device with permission. Module eight reached the network through a clean A P I layer. Module nine made the result change proof, test proof and ready for strangers to install.
+Jordan: My student version. Build it in pieces with one job each, prove it before you ship it, and keep proving it after. Thank you for listening, and good luck shipping your own app.
