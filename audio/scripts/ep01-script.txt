@@ -1,0 +1,93 @@
+Alex: Welcome to this three episode series. I am Alex.
+Jordan: And I am Jordan. I ask questions and sum up.
+Alex: Episode one surveys Module Seven, Services, touching permissions, location, maps, cloud, photos, intelligence, and life outside the app window, plus three worked stories.
+Jordan: Why survey it all at once.
+Alex: Because every lesson shares one pattern. Your app borrows something it does not own, and each lesson is about borrowing honestly and handling a no well.
+Alex: First, permission and privacy. A protected resource is data or hardware used only with permission, like location, camera, microphone, photos, contacts, calendars, and notifications.
+Alex: Your app never draws the question. It calls an A P I, the operating system shows a standard alert your code cannot restyle, and the person can change their answer in Settings.
+Alex: First read the authorization status. It says not asked yet, allowed, denied, or restricted, where restricted means Screen Time or management blocked it and the person cannot change it.
+Alex: Follow least privilege, the smallest access that works, like location while in use instead of always, or one picked photo instead of the whole library.
+Jordan: Where does the wording in that alert come from.
+Alex: From a usage description, a specific sentence in the app information property list file. Saying it shows trails within walking distance beats a vague claim that it needs your location.
+Alex: A missing key breaks things differently. For location the request is silently ignored and the status never moves. For the camera the app crashes on touching the sensor. Notifications are the exception, needing no usage description.
+Jordan: Quick check. My location request does nothing at all. What do I suspect.
+Alex: The missing key, especially if the status still says not asked yet. A denial would change the status.
+Alex: Check the status before you ask, the TrailFinder pattern. Not asked means ask. Allowed means run it. Denied means fall back and offer Settings. Restricted means a calm note, no Settings button.
+Alex: That check, ask, fallback, and recheck is the whole permission journey.
+Alex: Ask in context, right after a tap that clearly needs it, like show trails near me. Asking at launch looks suspicious and is often refused.
+Alex: If the reason is not clear, prime honestly with a short explanation. Apple allows one priming button, Continue, leading straight to the system alert, because a dodge button is manipulative.
+Alex: Recover gracefully. Degrade, do not block. The trail app lists trails alphabetically instead of by distance, or lets the person type a city.
+Alex: Send people to Settings with a button opening your app page there, saying what will improve. The system alert shows only once per install, so reasking in code does nothing.
+Alex: Finally, privacy manifests and App Store labels. The manifest lists data collected, tracking domains, and why you call sensitive A P I s. The label is its public store page version, and labels must match reality.
+Jordan: Permission is a relationship, not a hurdle.
+Alex: Next, location, with Core Location.
+Alex: A phone blends G P S satellites outdoors, wireless networks and cell towers in cities, and motion sensors between fixes. You never pick a source. You describe the need and the framework chooses.
+Alex: Degrees are not meters. One degree of latitude is about one hundred eleven kilometers everywhere, but longitude degrees shrink toward the poles, so measure distance with the proper call.
+Alex: Updates arrive over time, because position changes as people walk, so location comes as a stream handled value by value without freezing the screen.
+Alex: Stream updates into an observable model the screen watches, so each position redraws the view. Each update carries an optional location plus flags, giving five states.
+Alex: Live means a real position arrived. Denied means show the fallback. Unavailable means no signal now, as in a canyon. Limited means approximate location and rough distances. Stationary means the device stopped, so updates pause to save battery.
+Jordan: Quick check. Why does the old position linger after denial.
+Alex: Denial arrives as a flag, not a position, and nothing clears the stored value unless your code handles that branch. The stream keeps running, so positions return if access returns.
+Alex: Distance between two places is one call returning meters along the curved Earth, formatted in local units, as when sorting trails by distance.
+Alex: Turn coordinates into a place name with reverse geocoding, returning a readable address from Apple servers. Do it once per place, not per update, since each lookup costs a network trip.
+Alex: Accuracy costs power and G P S is hungriest, so pass a configuration matching the activity, like fitness or navigation. Background updates need a background mode and a visible indicator, and stop when done, ending the session as the feature closes.
+Jordan: Location is a borrowed stream, not a one time fetch.
+Alex: Next, maps, with MapKit, behind the Maps app.
+Alex: A map is just another view. In Swift U I it sits in a layout like text, its content goes in its builder, and which part of the world shows is a separate camera value.
+Alex: The blue dot still needs permission, because it uses the person location. Without a usage description and a grant, the camera falls back to a default view.
+Alex: Markers are balloon pins with a title, symbol, and tint. Annotations are any view pinned to a coordinate, like a photo in a ring, and you can draw circles and route lines too.
+Alex: Move the camera by changing its value. It can fit all content, show a region, offer a three dimensional viewpoint, follow the person, or center on one place.
+Alex: Search for places sends plain words and a region to Apple servers and returns place items with name, address, and location, each becoming a selectable marker.
+Alex: Directions returns a route with a path, expected travel time, and distance, drawn as a line. Look Around adds a street level photographic preview where coverage exists.
+Jordan: A view, a camera value, and services behind both.
+Alex: Next, cloud storage, with CloudKit in iCloud.
+Alex: Apps keep data in the cloud because local files live on one device, while people expect a grocery list on their tablet too, surviving a lost phone and shared with family.
+Alex: Turn CloudKit on in Xcode by adding the iCloud capability and creating a container, your app own space in iCloud, with a signed entitlement. A web console manages the schema, in development and production.
+Jordan: Who pays for the storage.
+Alex: Private records count against the person own iCloud storage, not yours. Public storage counts against your app allowance, so a private grocery list costs you nothing to store.
+Alex: Check the iCloud account first, because the status has five answers, each deserving a different message.
+Alex: Available means sync on, the list on every signed in device. No account means save locally and hint that signing in enables sync. Restricted means iCloud is off here, so the list stays local.
+Alex: Temporarily unavailable means the person must verify their Apple Account in Settings to resume syncing. Could not determine means iCloud could not be reached, the list is safe here, and offer to try again.
+Jordan: Quick check. Signed out, can I read public data, and can I save.
+Alex: Reading public data works with no account. Writing anywhere fails as not authenticated, which is why checking first lets you explain instead of failing silently.
+Alex: Save a record by building one with a type, like grocery item, filling its fields, and saving it. Query records back by type, with filtering and sorting, to rebuild your list.
+Alex: The private database holds one person data only they can see. The public database is readable by every user, suiting shared data like trail conditions. Signed out, public reads work and writes fail. Offline, keep changes on device and send later.
+Alex: Handle errors by code. Not authenticated deserves sign in guidance. A network error deserves keeping the change and retrying later. A quota error means their storage is full, and some errors carry a wait time.
+Alex: For small settings use iCloud key value storage, like local defaults except values follow the person everywhere. It holds about one megabyte and about one thousand twenty four keys, so use it for preferences only.
+Alex: Choose your own backend when people also use other platforms, when a server must run logic like payments, or when sign in is not an Apple Account. And SwiftData can sync for you, mirroring local models through CloudKit.
+Jordan: Private for personal, public for shared, account checked first.
+Alex: Next, photos, camera, and sharing.
+Alex: The system photo picker keeps the library private. It runs in its own process and your app sees nothing until the person chooses, so it needs no permission at all.
+Alex: Pick a photo and load it in two steps. The picker returns a handle, and loading its data happens in the background. A new selection cancels the old load, so a slow load cannot overwrite the new pick.
+Alex: Load straight into your own type when it can turn itself into data and back, the shared transfer language behind pickers, drag and drop, and sharing, so a photo type arrives ready to use.
+Alex: The camera is a protected sensor, the opposite of the picker. It needs a usage description and crashes without one, the Simulator has no camera so testing needs a real device, and video with sound needs microphone permission.
+Alex: Check camera permission like location. Read the status, ask if unasked, shoot if allowed, and if denied explain and offer Settings.
+Alex: Share with ShareLink, which hands the item to the system share sheet. The person picks the destination, message, mail, or a nearby device, with no custom code needed.
+Jordan: Picker for private, camera with permission, share sheet for sending.
+Alex: Next, on device intelligence.
+Alex: It runs entirely on device, private, fast, offline capable, and free per request. It is good at summarizing, extracting, classifying, and short writing, but it is not a fact source, since it can sound confident and still be wrong.
+Alex: Check availability first. Available means ready. Device not eligible means the hardware can never run it, so hide the feature. Apple Intelligence off means point to Settings. Model not ready means still downloading, so try later.
+Alex: Treat it as an extra. The app must work without it, and the feature should hide or explain itself when the model is missing.
+Alex: Ask with a session. Open one, give optional instructions setting its role, and send a prompt. The session remembers context, so somewhere warmer builds on an earlier Lisbon answer.
+Alex: Get Swift values back with guided generation. Mark a type as generable, add guides constraining each property, and the model fills that exact shape, like a trip idea with name, reason, and days.
+Jordan: How does that beat plain text.
+Alex: Plain text suits a paragraph a person reads. Guided generation guarantees the shape code needs, while prompting for structure can still return something invalid that code must repair.
+Alex: Vision reads text in images and finds faces, barcodes, and document edges. Core M L runs models you trained, like a plant classifier. Other frameworks detect language, tag names, turn speech into text, and translate. Prefer on device first.
+Jordan: Check it can run, ask by session, demand structure for code.
+Alex: Next, widgets, intents, and notifications, your app outside its window.
+Alex: These surfaces run as app extensions, small separate programs the system launches on its own schedule with tight limits. Each has its own sandbox, so app and extension share data through an App Group container.
+Alex: A widget is a timeline of snapshots, never live code. Your provider hands over entries, each frozen with its show date, plus a reload policy, at the end or never, in which case the app must request reloads itself.
+Alex: Declaring a widget means assembling its entry, provider, entry view, and a configuration with gallery name and description. The same provider also supplies placeholders for previews and the gallery.
+Alex: Across a day the widget swaps entries as dates arrive. A water tracker shows two glasses in the morning, five at midday, and eight by evening, all made earlier, and it can stay stale until the next timeline.
+Alex: App Intents are actions Siri and Shortcuts can run. Describe one, like logging water, with title and parameters, and register sayable phrases. The same intent powers Siri, Shortcuts, Spotlight, the Action button, and widget buttons, often without opening the app.
+Alex: Live Activities cover an event in progress, like a delivery or a hike, updating on the Lock Screen and in the island area at the top of the screen, which widget refreshes cannot match.
+Alex: Schedule a local notification in four moves. Ask permission once, build content with title, body, and sound, choose a trigger, a delay, a calendar time, or arriving somewhere, and hand it to the notification center, which delivers even if the app is closed.
+Jordan: Quick check. The app shows three glasses, the widget shows two, and the policy never reloads itself. What fixes it.
+Alex: The app requests a timeline reload right after logging the glass. A timer in the view cannot help, because widget views are snapshots rendered ahead of time.
+Alex: Finally, the worked examples.
+Alex: Asking for location goes like this. A hiker taps show trails near me, the check finds nothing asked, the alert appears, and allowing sorts trails by distance. On another phone the answer is no, so the app falls back to manual city entry, and later that person flips the switch in Settings and a fresh check reads granted.
+Alex: Building a widget timeline goes like this. The builder starts at nine with one sunny entry, adds another thirty minutes later, adds a third at ten where the title turns breezy, and finishes with a fourth covering two hours. The at end policy then asks for a fresh timeline.
+Alex: One delivery, four endings, goes like this. One order is requested, printed, and delivered. A second is cancelled before printing with nothing charged, an ending, not an error. A third fails on the network, so a retry is scheduled, and that retry reaches delivered.
+Jordan: Let me recap. Permission is checked before asked, asked in context, and met with a graceful fallback. Location is a stream with five states, maps are views fed by search and directions, and the cloud splits private, public, and tiny.
+Jordan: The picker protects the library, the camera demands permission, and the share sheet sends. Intelligence is checked first and returns real Swift values. Outside the window, widgets are timelines, intents are system run actions, and notifications are content plus a trigger.
+Alex: That is Module Seven. Next time, Module Eight leaves the device for the network. Until then, check the status before you ask.
