@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework 3 — iOS Development Studio (Module 9: Shipping)</title>
+<style>
+:root{
+  --bg:#0b1020; --panel:#131a2e; --panel2:#182238; --ink:#eef1ff; --muted:#a7b0cc;
+  --line:#2a3557; --accent:#ff9f0a; --accent2:#64d2ff; --good:#30d158; --bad:#ff453a;
+  --warn:#ffd60a; --code-bg:#0a0e1a; --radius:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0b1020,#0d1330 40%,#0b1020);color:var(--ink);line-height:1.55}
+a{color:var(--accent2)}
+header.hero{padding:34px 20px 10px;max-width:1020px;margin:0 auto}
+.kicker{color:var(--accent);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:.78rem}
+h1{font-size:2rem;margin:.3rem 0 .4rem;line-height:1.15}
+.sub{color:var(--muted);max-width:760px}
+main{max-width:1020px;margin:0 auto;padding:10px 20px 70px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin:18px 0;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.card h2{margin:.1rem 0 .5rem;font-size:1.3rem}
+.card h3{margin:.2rem 0 .4rem;font-size:1.08rem}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.18rem .55rem;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:.4rem;vertical-align:middle}
+.tag.mod{color:#0b1020;background:var(--accent2);border-color:transparent}
+.tag.bonus{color:#0b1020;background:var(--warn);border-color:transparent}
+.tag.write{color:#0b1020;background:var(--good);border-color:transparent}
+.pts{float:right;color:var(--accent);font-weight:700;white-space:nowrap}
+pre.code{background:var(--code-bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:.92rem;line-height:1.5}
+pre.code code,code.inline{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+code.inline{background:var(--code-bg);padding:.08rem .35rem;border-radius:6px;border:1px solid var(--line);font-size:.88em}
+.tok-k{color:#ff7eb6}.tok-s{color:#a5d6a7}.tok-n{color:#82aaff}.tok-c{color:#697098;font-style:italic}
+.sticky{position:sticky;top:0;z-index:50;background:rgba(11,16,32,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.sticky-in{max-width:1020px;margin:0 auto;padding:10px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.progresswrap{flex:1;min-width:180px}
+.progressbar{height:10px;background:var(--panel2);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.progressbar>div{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+.scorebox{font-weight:700}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:.55rem 1rem}
+button:hover{border-color:var(--accent2)}
+button.primary{background:var(--accent);color:#14100a;border-color:transparent;font-weight:700}
+button.primary:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{background:transparent}
+button.small{padding:.3rem .7rem;font-size:.9rem}
+.choices{display:grid;gap:10px;margin:12px 0}
+.choice{text-align:left;width:100%;padding:.7rem .9rem;display:flex;gap:.6rem;align-items:flex-start}
+.choice.sel{border-color:var(--accent);background:#1d2a4a}
+.choice.correct{border-color:var(--good);background:rgba(48,209,88,.12)}
+.choice.wrong{border-color:var(--bad);background:rgba(255,69,58,.10)}
+.choice:disabled{cursor:default;opacity:1}
+.feedback{border-radius:12px;padding:12px 14px;margin:12px 0;display:none}
+.feedback.show{display:block}
+.feedback.good{border:1px solid var(--good);background:rgba(48,209,88,.10)}
+.feedback.bad{border:1px solid var(--bad);background:rgba(255,69,58,.08)}
+.feedback.info{border:1px solid var(--accent2);background:rgba(100,210,255,.08)}
+.hintbox{display:none;border-left:4px solid var(--warn);background:rgba(255,214,10,.07);padding:10px 14px;margin:10px 0;border-radius:0 10px 10px 0}
+.hintbox.show{display:block}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+input[type=text],textarea,select{font:inherit;background:var(--code-bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem}
+textarea.codein{width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92rem;min-height:96px}
+input.typed{width:110px}
+input.namein{width:min(420px,100%);font-size:1.05rem;padding:.7rem .9rem}
+select{max-width:100%}
+.parsons-bank,.parsons-zone{display:grid;gap:8px;margin:10px 0}
+.parsons-line{text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;width:100%}
+.parsons-line.inzone{border-color:var(--accent2)}
+.parsons-line.distractor-used{border-color:var(--bad)}
+.zone-label{color:var(--muted);font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.debugline{display:block;width:100%;text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;margin:4px 0;background:var(--code-bg)}
+.debugline.sel{border-color:var(--accent)}
+.debugline.correct{border-color:var(--good)}
+.debugline.wrong{border-color:var(--bad)}
+.phone{width:270px;max-width:88vw;margin:14px auto;background:#000;border:3px solid #39466e;border-radius:38px;padding:16px 14px 22px;min-height:340px;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.phone .notch{width:110px;height:20px;background:#39466e;border-radius:0 0 12px 12px;margin:-16px auto 12px}
+.phone .screen{display:grid;gap:12px;align-content:start;justify-items:center;text-align:center}
+.pill-demo{font-weight:700;color:#111}
+.state-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+.state-table th,.state-table td{border:1px solid var(--line);padding:.45rem .6rem;text-align:left}
+.state-table th{background:var(--panel2)}
+.timeline{display:grid;gap:8px;margin:12px 0}
+.tl-row{display:flex;align-items:center;gap:10px}
+.tl-label{width:120px;color:var(--muted);font-size:.88rem}
+.tl-track{flex:1;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;height:26px;position:relative;overflow:hidden}
+.tl-fill{position:absolute;top:0;bottom:0;border-radius:6px}
+.checklist{list-style:none;padding:0;margin:10px 0;display:grid;gap:8px}
+.checklist li{padding:.55rem .8rem;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.checklist li.ok{border-color:var(--good)}
+.checklist li.no{border-color:var(--bad)}
+.mini{font-size:.88rem;color:var(--muted)}
+.scoregrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.scorecell{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+.scorecell b{font-size:1.25rem;display:block}
+#summaryList{display:grid;gap:8px}
+footer{max-width:1020px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:.9rem}
+@media print{
+  body{background:#fff;color:#000}
+  .sticky,.no-print{display:none!important}
+  .card{border:1px solid #bbb;box-shadow:none;background:#fff;break-inside:avoid}
+  pre.code{background:#f4f4f4;border-color:#bbb}
+  .feedback{display:none}
+  #printSummary{display:block!important}
+}
+#printSummary{display:none}
+</style>
+</head>
+<body>
+<div class="sticky no-print"><div class="sticky-in">
+  <div class="scorebox">Homework 3</div>
+  <div class="progresswrap"><div class="progressbar"><div id="progressFill"></div></div><div class="mini" id="progressText">0 of 0 points</div></div>
+  <div class="scorebox" id="scoreBox">Score: 0 / 100</div>
+  <button class="small" onclick="scrollToId('finish')">Finish &amp; results ↓</button>
+</div></div>
+
+<header class="hero">
+  <div class="kicker">iOS Development Studio · Homework 3</div>
+  <h1>Test it. Debug it. Ship it.</h1>
+  <p class="sub">This homework is built from the course in the
+  <a href="https://github.com/joepangallo/ios" target="_blank" rel="noopener">joepangallo/ios</a> repo
+  (live course: <a href="https://joepangallo.github.io/ios/" target="_blank" rel="noopener">joepangallo.github.io/ios</a>).
+  It covers the final module, <strong>Module 9: Shipping</strong> — Architecture (14 points), Testing with Swift Testing (16),
+  UI Tests, Previews and Accessibility Checks (14), Debugging and Instruments (18),
+  Performance, Accessibility and Localization (18), From Archive to App Store (14), and the
+  Study Buddy Capstone (6) — <strong>100 points total</strong>, plus one clearly-marked <em>bonus</em>
+  item (+4) that can never hurt your grade.</p>
+  <div class="card">
+    <h3>How this works — read this first (2 minutes)</h3>
+    <ul>
+      <li><strong>Time:</strong> about 90 minutes. <strong>Total:</strong> 100 points, plus up to +4 bonus that can never hurt your grade.</li>
+      <li><strong>Learn while you work:</strong> almost every item asks you to <em>commit to a prediction before anything is revealed</em>. Guessing after you see the answer teaches nothing — predicting first is where the learning happens. Your first prediction is kept in your results, so you can see what your instincts got right.</li>
+      <li><strong>Feedback explains why</strong>, not just right/wrong. If you miss, read the explanation — it names the exact lesson to revisit.</li>
+      <li><strong>Second tries:</strong> on questions with 4+ choices and on typed / built / written answers, a correct second try earns half credit. On 2–3 choice questions there is no second-try credit (elimination would make it free). Multi-part items earn credit per correct part.</li>
+      <li><strong>Hints are free.</strong> Hint 1 is a concept reminder; Hint 2 is a bigger nudge. Using hints is recorded in your results (so your instructor can see where the class got stuck), but it never lowers your score — being stuck and using help is part of learning.</li>
+      <li><strong>The two labs grade menus, not essays:</strong> in the frame-budget lab and the accessibility audit, every selection you make counts — including the elements where the right verdict is "this is fine." A false alarm costs exactly as much as a miss.</li>
+      <li><strong>Two frameworks, never blurred:</strong> unit tests in this module are Swift Testing (<code>@Test</code>, <code>#expect</code>, <code>#require</code>); UI automation is XCTest / XCUIApplication. The homework keeps them separate, and so should you.</li>
+      <li><strong>Your work saves automatically</strong> in this browser. At the end, use <em>Download results</em> or <em>Print</em> to turn it in, exactly as your instructor directs.</li>
+    </ul>
+    <label for="studentName"><strong>Your name:</strong></label><br>
+    <input class="namein" type="text" id="studentName" placeholder="First and last name" autocomplete="name">
+    <span class="mini" id="saveNote">Progress saves automatically on this device.</span>
+  </div>
+</header>
+<main id="app"></main>
+
+<section class="card" id="finish">
+  <h2>Finish &amp; results</h2>
+  <p>When every section shows as complete, review what you missed below — each miss names the module and lesson to revisit in the course. Then turn this in the way your instructor directed.</p>
+  <div class="scoregrid" id="sectionScores"></div>
+  <div class="scorebox" id="finalScore" style="font-size:1.2rem"></div>
+  <h3>Review what you missed</h3>
+  <div id="summaryList"><p class="mini">Nothing missed yet — or nothing attempted yet. Items you attempt will be summarized here.</p></div>
+  <div class="row no-print">
+    <button class="primary" onclick="downloadResults()">Download results (.txt)</button>
+    <button onclick="window.print()">Print / save as PDF</button>
+    <button onclick="copyBackup()">Copy backup code</button>
+    <button onclick="restoreBackup()">Restore from backup code</button>
+    <button class="ghost" onclick="resetAll()">Reset everything</button>
+  </div>
+  <p class="mini no-print">Honesty note: this page grades in your browser and its answers live in the page source, like every take-home practice file. Your downloaded result includes your attempts, hints used, and a timestamp — that's the record to turn in.</p>
+  <div id="printSummary"></div>
+</section>
+<footer>Built from the iOS Development Studio course (Module 9) · Homework 3 · Test → Debug → Ship</footer>
+
+<script>
+"use strict";
+/* ============ tiny helpers ============ */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function hl(code){ // very small Swift highlighter for display snippets
+  let e=esc(code);
+  e=e.replace(/(\/\/[^\n]*)/g,'<span class="tok-c">$1</span>');
+  e=e.replace(/(&quot;[^&]*?&quot;|"(?:[^"\\]|\\.)*")/g,'<span class="tok-s">$1</span>');
+  e=e.replace(/\b(import|struct|class|enum|protocol|func|var|let|return|if|else|guard|switch|case|default|for|while|repeat|in|break|continue|try|catch|do|throws|async|await|some|any|mutating|static|private|true|false|nil|self|super|init|extension|where|inout|defer|typealias)\b/g,'<span class="tok-k">$1</span>');
+  e=e.replace(/\b(\d+(?:\.\d+)?)\b/g,'<span class="tok-n">$1</span>');
+  return e;
+}
+const norm=s=>String(s).toLowerCase().replace(/\s+/g," ").trim();
+const normCode=s=>String(s).replace(/\/\/[^\n]*/g,"").replace(/\s+/g," ").trim();
+function scrollToId(id){document.getElementById(id)?.scrollIntoView({behavior:"smooth"});}
+
+/* ============ state ============ */
+const LS_KEY="ios-hw3-v1";
+let state={name:"",items:{},finishedAt:null};
+try{const raw=localStorage.getItem(LS_KEY); if(raw) state=JSON.parse(raw);}catch(e){}
+function save(){ try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){} renderProgress(); }
+function itemState(id){ if(!state.items[id]) state.items[id]={attempts:0,hint1:false,hint2:false,awarded:0,done:false,answers:[]}; return state.items[id]; }
+
+/* ============ scoring core ============
+   grade(id, fraction, detail): fraction = share of the item answered correctly (0..1).
+   Attempt factor: 1st graded try x1; 2nd try x0.5 when def.secondTryCredit (or the item is
+   multi-part / typed / written / built), otherwise x0 and the item locks after one try.
+   def.attemptFactors overrides this (capstone builder: [1, .5, .25], max 3 checks).
+   Hints are FREE (never reduce the score); hint use is logged for the instructor.
+   Partial credit: multi-part items keep the best fraction earned across tries. */
+function maxAttempts(def){ return def.attemptFactors? def.attemptFactors.length : (def.secondTryCredit?2:1); }
+function attemptFactor(def,attempt){
+  if(def.attemptFactors) return def.attemptFactors[Math.min(attempt-1,def.attemptFactors.length-1)];
+  if(attempt===1) return 1;
+  return def.secondTryCredit? 0.5 : 0;
+}
+function grade(id,fraction,detail){
+  const def=ITEMS[id]; const st=itemState(id);
+  if(st.done) return st.awarded;
+  fraction=Math.max(0,Math.min(1,fraction));
+  st.attempts++;
+  st.answers.push(detail||("fraction="+fraction));
+  if(st.attempts===1) st.firstAnswer=detail||("fraction="+fraction);
+  const f=attemptFactor(def,st.attempts);
+  const earned=Math.round(def.points*fraction*f*100)/100;
+  if(earned>st.awarded) st.awarded=earned;
+  st.bestFraction=Math.max(st.bestFraction||0,fraction);
+  if(fraction>=1 || st.attempts>=maxAttempts(def)) st.done=true;
+  save(); renderItemFeedback(id,fraction,st.awarded); renderSummary();
+  return st.awarded;
+}
+function useHint(id,n){
+  const st=itemState(id); if(n===1)st.hint1=true; if(n===2)st.hint2=true; save();
+  const box=$("#hint"+n+"-"+id); if(box) box.classList.add("show");
+  const b=$("#hintbtn"+n+"-"+id); if(b) b.disabled=true;
+}
+function triesLeft(id){ const def=ITEMS[id]; const st=itemState(id); if(st.done)return 0; return def.secondTryCredit? Math.max(0,2-st.attempts): Math.max(0,1-st.attempts); }
+
+/* ============ ITEMS registry (renderers fill this) ============ */
+const ITEMS={}; const SECTIONS=[];
+function registerSection(sec){ SECTIONS.push(sec); }
+function registerItem(def){ ITEMS[def.id]=def; }
+
+/* feedback renderer: every item has #fb-<id> */
+function renderItemFeedback(id,fraction,awarded){
+  const def=ITEMS[id]; const st=itemState(id); const fb=$("#fb-"+id); if(!fb)return;
+  const full=fraction>=1, label=def.bonus?`Bonus earned: +${awarded} pts`:`Score so far on this item: ${awarded} / ${def.points} pts`;
+  fb.className="feedback show "+(full?"good":(st.done?"bad":"info"));
+  if(full){
+    fb.innerHTML=`<strong>✓ Correct — ${label}.</strong><br>${def.explain}`;
+  } else if(st.done){
+    fb.innerHTML=`<strong>${st.bestFraction>0?"◐ Partially there":"✗ Not quite"} — ${label}.</strong><br>${def.explain}<br><span class="mini">Revisit: ${esc(def.revisit)}</span>`;
+  } else {
+    fb.innerHTML=`<strong>◐ Not fully there yet (${Math.round((st.bestFraction||0)*100)}% of this item so far).</strong> You have another try — a fully correct second try earns half credit on this item. Re-read carefully${st.hint1?"":" — Hint 1 is free"}.`;
+  }
+  if(st.done){ $$("[data-lock='"+id+"']").forEach(el=>{el.disabled=true;}); const c=$("#check-"+id); if(c)c.disabled=true; }
+}
+</script>
+<script>
+"use strict";
+/* ============ renderers ============ */
+const app=document.getElementById("app");
+function tagsHTML(def){
+  let t=`<span class="tag mod">${esc(def.mod)}</span>`;
+  if(def.extension) t+=`<span class="tag">Extension · scored separately</span>`;
+  if(def.bonus) t+=`<span class="tag bonus">Bonus · can't hurt you</span>`;
+  if(def.type==="write") t+=`<span class="tag write">You write the Swift</span>`;
+  if(def.type==="parsons") t+=`<span class="tag write">Build the code</span>`;
+  if(def.type==="builder") t+=`<span class="tag write">Capstone builder</span>`;
+  return t;
+}
+function cardShell(def){
+  const sec=document.createElement("section"); sec.className="card"; sec.id="card-"+def.id;
+  sec.innerHTML=`<span class="pts">${def.bonus?"+":""}${def.points} pts</span>${tagsHTML(def)}
+    <h3>${esc(def.title)}</h3>
+    <div class="prompt">${def.prompt||""}</div>
+    ${def.code?`<pre class="code"><code>${hl(def.code)}</code></pre>`:""}
+    <div id="body-${def.id}"></div>
+    <div id="notes-${def.id}"></div>
+    ${(def.hint1||def.hint2)?`<div class="row no-print">
+      ${def.hint1?`<button class="small" id="hintbtn1-${def.id}" onclick="useHint('${def.id}',1)">Hint 1 (free)</button>`:""}
+      ${def.hint2?`<button class="small" id="hintbtn2-${def.id}" onclick="useHint('${def.id}',2)">Hint 2 (free, bigger nudge)</button>`:""}
+    </div>
+    ${def.hint1?`<div class="hintbox" id="hint1-${def.id}"><strong>Hint 1:</strong> ${def.hint1}</div>`:""}
+    ${def.hint2?`<div class="hintbox" id="hint2-${def.id}"><strong>Hint 2:</strong> ${def.hint2}</div>`:""}`:""}
+    <div class="row no-print"><button class="primary" id="check-${def.id}" onclick="checkItem('${def.id}')">${def.checkLabel||"Commit &amp; check"}</button>
+    <span class="mini" id="tries-${def.id}"></span></div>
+    <div class="feedback" id="fb-${def.id}"></div>`;
+  return sec;
+}
+function sectionHeader(sec){
+  const d=document.createElement("div"); d.innerHTML=`<h2 style="margin:26px 4px 4px">${esc(sec.title)}</h2><p class="mini" style="margin:0 4px">${sec.desc||""}</p>`; return d;
+}
+function renderSection(sec){
+  registerSection(sec); app.appendChild(sectionHeader(sec));
+  for(const def of sec.items){ registerItem(def); app.appendChild(cardShell(def)); buildBody(def); }
+}
+function choicesHTML(id,partIdx,choices){
+  return `<div class="choices" id="choices-${id}-${partIdx}">`+choices.map((c,i)=>
+    `<button class="choice" data-lock="${id}" onclick="pickChoice('${id}',${partIdx},${i},this)"><span>○</span><span>${c}</span></button>`).join("")+`</div>`;
+}
+const picks={}; // id -> {partIdx: choiceIndex}
+function pickChoice(id,partIdx,i,btn){
+  if(itemState(id).done) return;
+  picks[id]=picks[id]||{}; picks[id][partIdx]=i;
+  $$( "#choices-"+id+"-"+partIdx+" .choice").forEach((b,j)=>{ b.classList.toggle("sel",j===i); b.querySelector("span").textContent=j===i?"●":"○"; });
+}
+function buildBody(def){
+  const body=$("#body-"+def.id); if(!body) return;
+  if(def.type==="mc"){ body.innerHTML=choicesHTML(def.id,0,def.choices); }
+  else if(def.type==="multi"){
+    body.innerHTML=def.parts.map((p,pi)=>`<div style="margin:14px 0"><p><strong>Part ${pi+1}.</strong> ${p.prompt||""}</p>
+      ${p.code?`<pre class="code"><code>${hl(p.code)}</code></pre>`:""}
+      ${p.type==="typed"?`<input type="text" class="typed" data-lock="${def.id}" id="typed-${def.id}-${pi}" placeholder="${esc(p.placeholder||"type here")}"> ${esc(p.suffix||"")}`
+        : choicesHTML(def.id,pi,p.choices)}</div>`).join("");
+  }
+  else if(def.type==="typed"){
+    body.innerHTML=def.fields.map((f,fi)=>`<p>${f.label} <input type="text" class="typed" data-lock="${def.id}" id="typed-${def.id}-${fi}" placeholder="${esc(f.placeholder||"")}"> ${esc(f.suffix||"")}</p>`).join("");
+  }
+  else if(def.type==="write"){
+    body.innerHTML=`${def.before||""}<textarea class="codein" data-lock="${def.id}" id="code-${def.id}" spellcheck="false">${esc(def.starter||"")}</textarea>
+      <p class="mini">Spacing doesn't matter. Equivalent correct Swift is accepted. Your code is saved into your results.</p>`;
+    const ta=$("#code-"+def.id); ta.addEventListener("input",()=>{ itemState(def.id).code=ta.value; save(); });
+  }
+  else if(def.type==="parsons"){
+    const order=def.lines.map((_,i)=>i); // deterministic shuffle
+    let seed=[...def.id].reduce((a,c)=>a+c.charCodeAt(0),0);
+    for(let i=order.length-1;i>0;i--){ seed=(seed*31+7)%997; const j=seed%(i+1); [order[i],order[j]]=[order[j],order[i]]; }
+    const all=def.lines.map((t,i)=>({t,correct:i})); if(def.distractor) all.push({t:def.distractor,correct:-1});
+    const bankOrder=[...all]; for(let i=bankOrder.length-1;i>0;i--){ seed=(seed*31+13)%997; const j=seed%(i+1); [bankOrder[i],bankOrder[j]]=[bankOrder[j],bankOrder[i]]; }
+    body.innerHTML=`<p class="mini">Tap a line to move it into your program (tap again in the program to send it back). Keyboard: Tab to a line, press Enter. One line below is a distractor — a real program won't use it.</p>
+      <div class="zone-label">Line bank</div><div class="parsons-bank" id="bank-${def.id}">
+      ${bankOrder.map((o,k)=>`<button class="parsons-line" data-lock="${def.id}" data-correct="${o.correct}" onclick="parsonsMove('${def.id}',this)">${esc(o.t)}</button>`).join("")}</div>
+      <div class="zone-label">Your program</div><div class="parsons-zone" id="zone-${def.id}"></div>`;
+  }
+  else if(def.type==="debug"){
+    body.innerHTML=`<p><strong>Step 1:</strong> tap the line that causes the problem.</p>`+
+      def.lines.map((l,i)=>`<button class="debugline" data-lock="${def.id}" onclick="pickDebugLine('${def.id}',${i},this)">${esc(l)}</button>`).join("")+
+      `<p style="margin-top:12px"><strong>Step 2:</strong> pick the fix.</p>`+choicesHTML(def.id,0,def.fixes);
+  }
+  else if(def.type==="builder"){
+    body.innerHTML=def.groups.map((g,gi)=>`<div style="margin:14px 0"><p><strong>${esc(g.label)}</strong></p>${choicesHTML(def.id,gi,g.options)}</div>`).join("")+
+      `<div class="phone" aria-label="Simulated phone preview"><div class="notch"></div><div class="screen" id="phone-${def.id}"></div></div>
+       <p class="mini" style="text-align:center">Simulated preview — fixed outcomes for the choices above.</p>
+       <div class="zone-label">Live checklist (feedback only — your choices are what's graded)</div><ul class="checklist" id="checklist-${def.id}"></ul>`;
+    updateBuilder(def.id);
+  }
+  else if(def.type==="custom"){ CUSTOM_BUILD[def.custom](def,body); }
+}
+function parsonsMove(id,btn){
+  if(itemState(id).done) return;
+  const bank=$("#bank-"+id), zone=$("#zone-"+id);
+  if(btn.parentElement===bank){ zone.appendChild(btn); btn.classList.add("inzone"); }
+  else { bank.appendChild(btn); btn.classList.remove("inzone"); }
+}
+let debugPick={};
+function pickDebugLine(id,i,btn){
+  if(itemState(id).done) return; debugPick[id]=i;
+  $$("#body-"+id+" .debugline").forEach((b,j)=>b.classList.toggle("sel",j===i));
+}
+function updateBuilder(id){
+  const def=ITEMS[id]; const sel=picks[id]||{};
+  const phone=$("#phone-"+id); if(phone&&def.preview) phone.innerHTML=def.preview(sel);
+  const cl=$("#checklist-"+id);
+  if(cl) cl.innerHTML=def.groups.map((g,gi)=>{ const ok=sel[gi]===g.answer; const chosen=sel[gi]!==undefined;
+    return `<li class="${chosen?(ok?"ok":"no"):""}">${chosen?(ok?"✓":"✗"):"•"} ${esc(g.checkText)}</li>`; }).join("");
+}
+/* generic check dispatcher */
+/* teacher checkItem removed in the student edition — replaced by the hash-based checkItem in the final script */
+function note(id,html){ const n=$("#notes-"+id); if(n) n.innerHTML=`<div class="feedback show info">${html}</div>`; }
+function stripTags(s){ const d=document.createElement("div"); d.innerHTML=s; return d.textContent; }
+/* builder picks also refresh preview */
+const _pick=pickChoice;
+pickChoice=function(id,partIdx,i,btn){ _pick(id,partIdx,i,btn); if(ITEMS[id]&&ITEMS[id].type==="builder") updateBuilder(id); };
+
+/* ============ progress / summary / export ============ */
+function totals(){
+  let core=0,coreDone=0,ext=0,bonus=0,attempted=0,doneCount=0,totalItems=0;
+  for(const id in ITEMS){ const def=ITEMS[id], st=state.items[id]; totalItems++;
+    if(st&&st.attempts>0)attempted++; if(st&&st.done)doneCount++;
+    if(!st) continue;
+    if(def.bonus) bonus+=st.awarded; else if(def.extension) ext+=st.awarded; else core+=st.awarded;
+  }
+  return {core:Math.round(core*100)/100,ext:Math.round(ext*100)/100,bonus:Math.round(bonus*100)/100,attempted,doneCount,totalItems};
+}
+function renderProgress(){
+  const t=totals();
+  $("#progressFill").style.width=Math.min(100,t.core)+"%";
+  $("#progressText").textContent=`${t.doneCount} of ${t.totalItems} items finished`;
+  $("#scoreBox").textContent=`Score: ${t.core} / 100 · Bonus: +${t.bonus}`;
+  const fs=$("#finalScore"); if(fs) fs.textContent=`Score (Module 9): ${t.core} / 100`+(t.bonus>0?` · Bonus: +${t.bonus}`:"");
+  const sg=$("#sectionScores");
+  if(sg){ sg.innerHTML=SECTIONS.map(sec=>{ let got=0,max=0; for(const def of sec.items){ if(def.bonus)continue; max+=def.points; const st=state.items[def.id]; if(st)got+=st.awarded; }
+    return `<div class="scorecell"><span class="mini">${esc(sec.title)}</span><b>${Math.round(got*100)/100} / ${max}</b></div>`; }).join(""); }
+}
+function renderSummary(){
+  renderProgress();
+  const list=$("#summaryList"); if(!list) return;
+  const missed=[];
+  for(const sec of SECTIONS) for(const def of sec.items){ const st=state.items[def.id];
+    if(st&&st.attempts>0&&(st.bestFraction||0)<1) missed.push({def,st});
+  }
+  if(!missed.length){ list.innerHTML=`<p class="mini">Nothing missed yet — or nothing attempted yet. Items you attempt will be summarized here.</p>`; return; }
+  list.innerHTML=missed.map(({def,st})=>`<div class="feedback show info"><strong>${esc(def.title)}</strong> — ${st.awarded} / ${def.points} pts after ${st.attempts} ${st.attempts===1?"try":"tries"}${st.hint1||st.hint2?" · used a hint":""}.<br><span class="mini">Revisit: ${esc(def.revisit)}</span></div>`).join("");
+  const ps=$("#printSummary");
+  if(ps) ps.innerHTML="<h3>Results summary</h3>"+list.innerHTML;
+}
+function resultsText(){
+  const t=totals(); const lines=[];
+  lines.push("iOS Development Studio — Homework 3 (Module 9: Shipping)");
+  lines.push("Name: "+(state.name||"(not entered)"));
+  lines.push("Exported: "+new Date().toLocaleString());
+  lines.push(`Score (Module 9): ${t.core} / 100`);
+  lines.push(`Bonus: +${t.bonus}`);
+  lines.push("");
+  for(const sec of SECTIONS){ lines.push("== "+sec.title+" ==");
+    for(const def of sec.items){ const st=state.items[def.id];
+      if(!st||st.attempts===0){ lines.push(`- ${def.title}: not attempted (0/${def.points})`); continue; }
+      lines.push(`- ${def.title}: ${st.awarded}/${def.points} pts, ${st.attempts} ${st.attempts===1?"try":"tries"}, hints: ${st.hint1?"1":"-"}${st.hint2?"+2":""}`);
+      if(st.firstAnswer) lines.push(`    first answer: ${st.firstAnswer}`);
+      if(st.code) lines.push(`    submitted code:\n      ${st.code.replace(/\n/g,"\n      ")}`);
+      if(st.answers&&st.answers.length>1) lines.push(`    all attempts: ${st.answers.join(" | ")}`);
+    } lines.push("");
+  }
+  return lines.join("\n");
+}
+function downloadResults(){
+  state.name=$("#studentName").value; save();
+  const blob=new Blob([resultsText()],{type:"text/plain"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="ios-homework-3-results-"+(state.name||"student").replace(/\s+/g,"-").toLowerCase()+".txt"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function copyBackup(){
+  const code=btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  if(navigator.clipboard) navigator.clipboard.writeText(code).then(()=>alert("Backup code copied. Keep it somewhere safe — pasting it into Restore brings your work back on any device."));
+  else prompt("Copy your backup code:",code);
+}
+function restoreBackup(){
+  const code=prompt("Paste your backup code:"); if(!code) return;
+  try{ state=JSON.parse(decodeURIComponent(escape(atob(code.trim())))); save(); location.reload(); }
+  catch(e){ alert("That code didn't work — check you pasted the whole thing."); }
+}
+function resetAll(){ if(confirm("Erase all answers and scores on this device and start over?")){ localStorage.removeItem(LS_KEY); location.reload(); } }
+</script>
+<script>
+"use strict";
+/* STUDENT EDITION — self-grading uses salted hash checks; this file contains no readable answer key. */
+
+function sha256hex(ascii){function rr(v,a){return (v>>>a)|(v<<(32-a));}
+var maxWord=Math.pow(2,32),i,j,result='';var words=[],asciiBitLength=ascii.length*8;
+var hash=sha256hex.h=sha256hex.h||[],k=sha256hex.k=sha256hex.k||[];
+var primeCounter=k.length,isComposite={};
+for(var candidate=2;primeCounter<64;candidate++){if(!isComposite[candidate]){
+for(i=0;i<313;i+=candidate){isComposite[i]=candidate;}
+hash[primeCounter]=(Math.pow(candidate,.5)*maxWord)|0;k[primeCounter++]=(Math.pow(candidate,1/3)*maxWord)|0;}}
+ascii+='\x80';while(ascii.length%64-56)ascii+='\x00';
+for(i=0;i<ascii.length;i++){var code=ascii.charCodeAt(i);if(code>255)return sha256hex(unescape(encodeURIComponent(ascii)));
+words[i>>2]|=code<<((3-i)%4)*8;}
+words[words.length]=(asciiBitLength/maxWord)|0;words[words.length]=(asciiBitLength);
+for(j=0;j<words.length;){var w=words.slice(j,j+=16);var oldHash=hash;hash=hash.slice(0,8);
+for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2];var a=hash[0],e=hash[4];
+var temp1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]
++(w[i]=(i<16)?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);
+var temp2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+hash=[(temp1+temp2)|0].concat(hash);hash[4]=(hash[4]+temp1)|0;}
+for(i=0;i<8;i++){hash[i]=(hash[i]+oldHash[i])|0;}}
+for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;result+=((b<16)?0:'')+b.toString(16);}}
+return result;}
+const HKEY=(...p)=>sha256hex("hwkey-v1|"+p.join("|"));
+
+const FRAMELAB={}; const A11Y={};
+const CUSTOM_BUILD={
+  "frameLab": function frameLab(def,body){
+    FRAMELAB[def.id]={};
+    body.innerHTML=`<table class="state-table"><thead><tr><th>Main-thread work</th><th>Cost</th><th>Repair</th></tr></thead><tbody>`+
+      def.tasks.map((t,i)=>`<tr><td>${esc(t.name)}</td><td style="white-space:nowrap">${t.cost.toFixed(1)} ms</td><td><select data-lock="${def.id}" id="fl-${def.id}-${i}" onchange="FRAMELAB['${def.id}'][${i}]=this.value"><option value="">— choose a repair —</option>${def.options.map(o=>`<option value="${o.key}">${esc(o.label)}</option>`).join("")}</select></td></tr>`).join("")+
+      `</tbody></table><p class="mini">Starting total: ${def.tasks.reduce((a,t)=>a+t.cost,0).toFixed(1)} ms against a 16.7 ms frame budget.</p>`;
+  },
+  "a11yAudit": function a11yAudit(def,body){
+    A11Y[def.id]={};
+    body.innerHTML=def.elements.map((e,i)=>`<div style="margin:14px 0"><p><strong>Element ${i+1}.</strong> ${esc(e.note)}</p><pre class="code"><code>${esc(e.code)}</code></pre><select data-lock="${def.id}" id="ax-${def.id}-${i}" onchange="A11Y['${def.id}'][${i}]=this.value"><option value="">— choose a verdict —</option>${def.options.map(o=>`<option value="${o.key}">${esc(o.label)}</option>`).join("")}</select></div>`).join("");
+  }
+};
+const CUSTOM_CHECK={
+  frameLab(def){
+    const sel=FRAMELAB[def.id]||{};
+    if(def.tasks.some((_,i)=>!sel[i])){ note(def.id,"Choose a repair for every piece of work first — leaving one on the main thread by accident is how frames stay busted."); return; }
+    let correct=0,total=0;
+    def.tasks.forEach((t,i)=>{ const fix=sel[i]; if(def.vhashes[i].includes(HKEY('frame',def.id,i,fix))) correct++;
+      total += fix==="keep"? t.cost : fix==="lazy"? (t.lazyResult||0) : 0; });
+    total=Math.round(total*10)/10;
+    note(def.id,`Your repairs put the main-thread total at <strong>${total.toFixed(1)} ms</strong> — ${total<=16.7?"inside the 16.7 ms budget.":"still over the 16.7 ms budget."}`);
+    grade(def.id, correct/def.tasks.length, "frame fixes correct: "+correct+"/"+def.tasks.length+"; resulting total "+total.toFixed(1)+" ms");
+  },
+  a11yAudit(def){
+    const sel=A11Y[def.id]||{};
+    if(def.elements.some((_,i)=>!sel[i])){ note(def.id,"Give every element a verdict first — clearing the good design is part of an audit, and a false alarm counts the same as a miss."); return; }
+    let correct=0; def.elements.forEach((e,i)=>{ if(HKEY('audit',def.id,i,sel[i])===e.ahash) correct++; });
+    grade(def.id, correct/def.elements.length, "audit verdicts correct: "+correct+"/"+def.elements.length);
+  }
+};
+const DEFS={"a1":{"id":"a1","mod":"Module 9 · View Models","type":"mc","points":3,"secondTryCredit":true,"title":"Predict: the focus timer's message","prompt":"<p>The focus timer's rules live in a plain view model (the cap is a business rule, so it lives here, not in a view). After the three calls below run, what does <code class=\"inline\">status<\/code> return?<\/p>","code":"final class FocusModel {\n    let goal = 60\n    private(set) var logged = 0\n    var status: String {\n        logged >= goal ? \"Goal reached\" : \"\\(goal - logged) min left\"\n    }\n    func log(_ minutes: Int) {\n        guard minutes > 0 else { return }\n        logged = min(logged + minutes, goal)\n    }\n}\n// calls: model.log(40); model.log(-5); model.log(30)","choices":["\"Goal reached\"","\"20 min left\"","\"-10 min left\"","\"25 min left\""],"hint1":"Track logged through all three calls. One of them never lands.","hint2":"log(-5) is rejected by the guard. 40 + 30 = 70 — and then the cap speaks.","explain":"<strong>\"Goal reached.\"<\/strong> log(40) logs 40; log(-5) is rejected by the guard, so nothing changes; log(30) would make 70, but <code>min<\/code> caps the total at the 60-minute goal. \"-10 min left\" is exactly the nonsense the cap exists to prevent — and because the rule lives in the model, one test covers it for every screen.","revisit":"Module 9 · Architecture — 'A view model is plain Swift'.","ahash":"a47184bb815d2a3ab16c298653d4d7036e80f39130958dc0e9c04d912fc05408"},"a2":{"id":"a2","mod":"Module 9 · Dependency Injection","type":"multi","points":4,"secondTryCredit":true,"title":"One view model, three services","prompt":"<p><code class=\"inline\">WeatherViewModel<\/code> never builds its own service — its initializer takes <code class=\"inline\">any WeatherService<\/code>. Three different callers create it. For each, name what gets injected and what comes out:<\/p>","parts":[{"prompt":"The running app: <code class=\"inline\">StudyBuddyApp<\/code> (the composition root) creates the view model with:","choices":["LiveWeatherService, configured for Miami","MockWeatherService with its default reading","FailingWeatherService","URLSession.shared"],"ahash":"1c545f8f4f675e9e03beb2cdcc84bb6fbec2b50032a335a7bdb98d6c1632694f"},{"prompt":"The <code class=\"inline\">#Preview(\"Mock data\")<\/code> creates it with:","choices":["LiveWeatherService, so the preview shows real weather","MockWeatherService with its default reading","No service — previews cannot run load()","FailingWeatherService, to test the canvas"],"ahash":"c0abb15ddfad367125ebcaf7e1c8d4f2ec11f8bb943a82c8dd9032f22c6f2d1e"},{"prompt":"The preview's model finishes <code class=\"inline\">load()<\/code> against the default mock. <code class=\"inline\">summary<\/code> is now:","choices":["\"Now: 21.5 °C\"","\"Now: 30.0 °C\"","\"Could not load weather\"","\"Not loaded\""],"ahash":"585fe20e56676c59d5eda37108a66edcc4932ad5a3f612e044b86cbe9086004b"},{"prompt":"Your weather provider shuts down and you switch to a different one. Where does the app code that names the concrete service live?","choices":["In one place — the composition root line in StudyBuddyApp that injects LiveWeatherService","In every screen that shows weather","In the view model and every preview","Nowhere — Swift picks the implementation at run time"],"ahash":"8bb374847e78c820e13e5ab8eb2e205eb505ef87d65701068e37f30438fa9368"}],"hint1":"The app, the preview and the test are three composition roots. Each chooses the implementation; the view model never does.","hint2":"The default mock reading is 21.5. The failing stand-in lives in tests, not previews.","explain":"<strong>Injection moves the choice to the edges.<\/strong> The app injects <code>LiveWeatherService<\/code> (Miami's coordinates); the preview injects <code>MockWeatherService<\/code>, whose default reading 21.5 produces \"Now: 21.5 °C\" instantly, offline. Only one line in the app names the live type, so swapping providers is a one-line edit — the view, the view model and the previews never change.","revisit":"Module 9 · Architecture — 'Dependency injection with protocols' and 'Choose the implementation at the edges'."},"a3":{"id":"a3","mod":"Module 9 · Architecture","type":"multi","points":4,"secondTryCredit":true,"title":"Rules live in the model; files live by feature","prompt":"<p>Four architecture judgments, all from the lesson's own comparisons:<\/p>","parts":[{"prompt":"Which line belongs in the view model rather than the view?","choices":["Text(model.status).font(.title2)","logged = min(logged + minutes, goal)",".buttonStyle(.borderedProminent)","VStack(spacing: 16) { Text(model.status) }"],"ahash":"8548f7f1877b4b2a3c40d140f03b00c126e974a3bf65446a3ba0e4966559cb6f"},{"prompt":"In the 'before' version, where the rules are buried inside <code class=\"inline\">body<\/code>, how many times does the goal (60) appear?","choices":["Once — it is a stored constant","Twice","Three times","It never appears; the view reads model.goal"],"ahash":"fdff4bc4ae0d9021f948f75608b2850c97b8338e604e205ce0d053ff12b781da"},{"prompt":"Your team adds a Flashcards feature. <code class=\"inline\">FlashcardDeckViewModel.swift<\/code> goes in:","choices":["ViewModels/, next to every other view model in the app","Core/Services/","Resources/","Features/Flashcards/, beside the views it serves"],"ahash":"3ef5b6312e415b3e20a99d95280259f0b590039689aaa708f268715d2d360f31"},{"prompt":"The view model's file imports <code class=\"inline\">Observation<\/code> but not <code class=\"inline\">SwiftUI<\/code>. Why does that matter?","choices":["It compiles faster","It cannot accidentally depend on views, which keeps it testable anywhere","App Review forbids SwiftUI in view models","Observation replaces SwiftUI for classes"],"ahash":"720774696376ba59181200b38aa0c3cb305ffec8d45095ee0eeffe2132a021a1"}],"hint1":"Capping a total is a rule; fonts, styles and stacks are layout. The 'before' view repeats the goal in the message expression (twice) and in the button action (once more).","hint2":"Organize by what the user does (feature), not by what the file is (kind).","explain":"<strong>One job per piece.<\/strong> The cap is a business rule, so it lives in the model where a test can reach it. The buried-rules view mentions the goal three times — change one copy and the screen lies. Files are grouped by feature so a change touches one folder. And a view model that cannot import SwiftUI cannot quietly grow view dependencies, which is what keeps it testable in a console, a test, or behind any screen.","revisit":"Module 9 · Architecture — 'Rules in the view vs. rules in the model' and 'Organize by feature'."},"a4":{"id":"a4","mod":"Module 9 · Test Doubles","type":"mc","points":3,"secondTryCredit":true,"title":"What is a mock, exactly?","prompt":"<p>In the architecture lesson, <code class=\"inline\">MockWeatherService<\/code> is the mock and the failing service is a 'stand-in'. Which sentence matches the module's own definition of a <strong>mock<\/strong>?<\/p>","choices":["A stand-in that returns fixed data instantly, for previews and tests","A live service pointed at a staging server","A UI test that taps through the app like a person","A second copy of the app kept for screenshots"],"hint1":"The mock in the lesson never touches the network, a disk or a clock. Its reading is a stored property.","hint2":"Fixed data, instantly — that is the whole job description.","explain":"<strong>A mock is a stand-in that returns fixed data instantly<\/strong> — <code>MockWeatherService<\/code> just hands back its stored <code>reading<\/code>. That is what makes previews render offline and tests run in milliseconds with the same result every time. A staging server is still a live service, with real timing and real failures.","revisit":"Module 9 · Architecture — 'Dependency injection with protocols' (the points list) and 'Prove it with a stand-in'.","ahash":"0ffea2ad941708264fef14251ef61a7e1a960704b6ea99c559e8fc157bdc6cec"},"t1":{"id":"t1","mod":"Module 9 · Swift Testing","type":"multi","points":4,"secondTryCredit":true,"title":"Compute the shares the tests check","prompt":"<p>The bill-splitting function from the lesson. Its tests call it four times — work out each result by hand (type <code class=\"inline\">nil<\/code> when the guard returns nil):<\/p>","code":"func share(of bill: Double, tip: Int, people: Int) -> Double? {\n    guard people > 0, bill >= 0 else { return nil }\n    let total = bill * (1 + Double(tip) / 100)\n    let each = total / Double(people)\n    return (each * 100).rounded() / 100\n}","parts":[{"prompt":"<code class=\"inline\">share(of: 100, tip: 20, people: 4)<\/code> =","type":"typed","short":"share(100,20,4)","placeholder":"a number","ahashes":["65df6704ddd8d9230b4f953c2985f9d7c451b34b8634ce8db139fbdfa630bd06","9b2646b1088f6613dfa225b703c431d947809f8962d7138eb5f23900f631ed60","5180e06fa26958c73c0e939e1efd7388744693be6a33edd68303f546c3aa9ef8"]},{"prompt":"<code class=\"inline\">share(of: 50, tip: 10, people: 0)<\/code> =","type":"typed","short":"share(50,10,0)","placeholder":"a number or nil","ahashes":["ca0e0be6e7d644dc9515a2ef4b1f7a57515cc34957765be805275db1a10987b0"]},{"prompt":"<code class=\"inline\">share(of: 20, tip: 0, people: 3)<\/code> =","type":"typed","short":"share(20,0,3)","placeholder":"a number","ahashes":["602c43406db234ce5c6bc4c22993ee7be248616f25dd908c7882c54ee7cc3509"]},{"prompt":"<code class=\"inline\">share(of: 60, tip: 15, people: 2)<\/code> =","type":"typed","short":"share(60,15,2)","placeholder":"a number","ahashes":["1cbc16caccfaf1e9fb7e557cfe24637844512f31b522a0cba1f7985b0c1beccc","588489bfb15e5595013d49e0916c08c67fe55a672e29d4252cae784e87440a5d"]}],"hint1":"Tip first, then split, then round to the cent. The guard runs before any arithmetic.","hint2":"100 with 20% is 120, split 4 ways. 20 split 3 ways is 6.666…, which rounds UP to 6.67.","explain":"<strong>30, nil, 6.67, 34.5.<\/strong> Splitting happens <em>after<\/em> the tip is added (doing it the other way round is the classic bug); zero people trips the guard and returns nil instead of infinity; and the result is rounded to the nearest cent — 6.666… becomes 6.67, which is why a test with an input that needs rounding catches a function that truncates.","revisit":"Module 9 · Testing — 'Your first tests' and the parameterized cases in 'One test, many inputs'."},"t2":{"id":"t2","mod":"Module 9 · Swift Testing","type":"multi","points":4,"secondTryCredit":true,"title":"#expect keeps going; #require stops","prompt":"<p>Swift Testing has two ways to check. They differ in exactly one behavior — what happens after a failure:<\/p>","parts":[{"prompt":"A test runs <code class=\"inline\">let each = try #require(share(of: 90, tip: 0, people: 0))<\/code>, followed by two <code class=\"inline\">#expect<\/code> lines. How many issues are recorded?","choices":["Three — #require and both #expect lines fail","Two — both #expect lines fail","Zero — #require only warns","One — #require fails and ends the test"],"ahash":"1814bc5d1f02520d188242fb32ef89e4cfa03d63d3a8b9f911d3c485f7b7f50e"},{"prompt":"An <code class=\"inline\">#expect<\/code> fails in the middle of a test. The lines after it:","choices":["Still run — #expect records the failure and keeps going","Never run — the test stops immediately","Run only if the suite is marked throws","Are reported as a separate test"],"ahash":"c3f655fa03d978a1ed97c1525d57d81b7f903ad56290ef525c3ae75bb319f78d"},{"prompt":"Why must a test that calls <code class=\"inline\">#require<\/code> be marked <code class=\"inline\">throws<\/code>?","choices":["Because #require throws to stop the test early when its value is missing","Because #require is asynchronous","Because only throwing tests are discovered by Xcode","Because throws makes the test run before the others"],"ahash":"a498529895f82ed329b1588c074628c0d338d7b11afe5a2c7b8c5db0ace778d3"},{"prompt":"<code class=\"inline\">@Test(arguments: [0, -1, -12])<\/code> marks a test that receives one <code class=\"inline\">Int<\/code>. Xcode reports it as:","choices":["One test that stops at the first failing value","Three separate test cases, each showing its argument","Three copies of the test function you must write yourself","A compile error — arguments must be tuples"],"ahash":"f92906600e7e535334c3f2dcb4e4171b11da859312d39b7ebc056137fddcc231"}],"hint1":"#require unwraps an optional and stops the test on the spot if it is nil — the two #expect lines below it never run. A failing #expect, by contrast, lets you see every failure at once.","hint2":"Part 4: each element of arguments becomes its own case, so one bad row never hides the others.","explain":"<strong>#expect records and continues; #require records and stops.<\/strong> With zero people, <code>share<\/code> returns nil, so <code>#require<\/code> files exactly <em>one<\/em> issue and throws — which is why the test needs <code>throws<\/code>, and why the expectations below never run on bad data. And each argument in a parameterized test becomes its own separately reported case: 0, -1 and -12 are three cases, not one.","revisit":"Module 9 · Testing — 'Suites, readable names and #require' and 'One test, many inputs'."},"t3":{"id":"t3","mod":"Module 9 · Parameterized Tests","type":"mc","points":3,"secondTryCredit":true,"title":"One test, many inputs","prompt":"<p>You want ONE function to check the tip rule on four rows — (100.0, 20, 4) → 30.0, (60.0, 15, 2) → 34.5, (10.0, 0, 3) → 3.33, (0.0, 18, 5) → 0.0 — with each row reported as its own test case, its inputs named in any failure. Which declaration does that?<\/p>","choices":["@Test(\"Each share includes the tip\", arguments: [(bill: 100.0, tip: 20, people: 4, expected: 30.0), (bill: 60.0, tip: 15, people: 2, expected: 34.5), (bill: 10.0, tip: 0, people: 3, expected: 3.33), (bill: 0.0, tip: 18, people: 5, expected: 0.0)])","Four separate @Test functions, one per row, each with its numbers hard-coded","@Suite(\"Each share includes the tip\") on a struct, with the four rows checked by one #expect","A for loop over the rows inside one @Test, calling share and asserting with #expect"],"hint1":"The requirement has two halves: one function, AND each row reported separately with its inputs. Only one option delivers both.","hint2":"A loop reports one test, and a failure inside it does not name its row the way the arguments list does. Four functions is four tests to maintain, not one test with data.","explain":"<strong>The parameterized <code>@Test(..., arguments:)<\/code>.<\/strong> Each tuple becomes its own test case, reported separately with its arguments (a failure names the exact row, e.g. bill → 60.0), and the cases can run in parallel. Adding a case is one line of data instead of a new function. Four hand-written functions duplicate the assertion; a loop hides which row failed; a <code>@Suite<\/code> only groups tests under a heading.","revisit":"Module 9 · Testing — 'One test, many inputs'.","ahash":"aaa530275b15b80f444796957ddc5e9cf9828eecb80de774355dc4ef2b931a75"},"t4":{"id":"t4","mod":"Module 9 · Verification & Test Design","type":"multi","points":3,"secondTryCredit":true,"title":"What a green suite actually proves","prompt":"<p>Four situations, four lessons about the limits of tests:<\/p>","parts":[{"prompt":"Every unit test passes, but in a hallway session three of five students cannot find how to start a study session. That is:","choices":["A verification failure — the tests check the wrong thing","A validation finding — the app misses a real need","A flaky test that passes only on some machines","An integration failure between the view and the view model"],"ahash":"391df2d586bc57a132d466a38fb7aaa994749459ed20e89d906adcebe36eb272"},{"prompt":"Bug D lets negative bills through <code class=\"inline\">share<\/code>, yet all four of its tests stay green. Why?","choices":["The tests are broken and should be deleted","No test ever tried a negative bill — a suite proves only the cases it checks","Negative bills cannot reach the function in the real app","The suite needs parallel execution to catch it"],"ahash":"f4d279883b764edd5171e0d4400656441ef8f64dea988d4cec2d72f1e8fc311d"},{"prompt":"In the test-driven loop, the order is:","choices":["Green, then refactor, then red","Write the code, then the test, then refactor","Red (watch the test fail), green (the simplest code that passes), refactor (clean up while green)","Refactor, then red, then green"],"ahash":"24c5c35f0144a55fb19237a17b2e5927068a487a2143187ccb4656939069a620"},{"prompt":"A test injects <code class=\"inline\">FailingWeatherService<\/code> — its <code class=\"inline\">currentTemperature()<\/code> always throws — and awaits <code class=\"inline\">load()<\/code>. <code class=\"inline\">model.summary<\/code> is now:","choices":["\"Now: 21.5 °C\"","\"Loading…\"","\"Could not load weather\"","\"Not loaded\""],"ahash":"fb444324bf1df6118546ac5b54e7790bcf773925f27831d82e48309b12c95d72"}],"hint1":"Verification asks 'did we build it right?'; validation asks 'did we build the right thing?' — hallway sessions are the second question.","hint2":"Part 2 is the bug-lab lesson: a green suite is silent about inputs nobody tried. Part 4: only the injected dependency differs from the success test.","explain":"<strong>Tests verify; people validate.<\/strong> The hallway problem is validation — the specification itself misses a need, and no unit test can see that. Bug D survived because no test tried a negative bill: a suite proves the function correct <em>for the cases it checks, and nothing more<\/em> — the fix is the missing edge case, not new tests everywhere. TDD runs red, green, refactor. And the failing stand-in drives <code>load()<\/code> down its catch branch on demand, producing \"Could not load weather\" — a failure path you can test precisely because it no longer depends on a real outage.","revisit":"Module 9 · Testing — 'Verification and validation', 'Bug lab', 'The test-driven loop', and 'Test a view model with stand-ins'."},"t5":{"id":"t5","mod":"Module 9 · Swift Testing","type":"parsons","points":2,"title":"Assemble the #require test","prompt":"<p>Assemble the Swift Testing test for the zero-tip rule. One line below is an XCTest assertion — it does not belong in a Swift Testing test.<\/p>","lines":["    let each = try #require(share(of: 90, tip: 0, people: 3))","func zeroTip() throws {","    #expect(each == 30); #expect(each * 3 == 90)","@Test(\"Zero tip splits only the bill\")","}"],"distractor":"    XCTAssertEqual(each, 30)","hint1":"The attribute names the test; #require must come before anything that uses the unwrapped value.","hint2":"XCTAssertEqual is XCTest's assertion. Swift Testing's is #expect — that line is the distractor.","explain":"<strong>Attribute, throwing function, #require, then the expectations.<\/strong> <code>#require<\/code> unwraps the optional share (90 split 3 ways with no tip is 30) and would stop the test if it were nil; the two <code>#expect<\/code> lines then check the value itself and the property that the shares add back up to the bill. <code>XCTAssertEqual<\/code> belongs to XCTest — reaching for it inside Swift Testing is the tell that two frameworks are being blurred.","revisit":"Module 9 · Testing — 'Suites, readable names and #require'.","prank":[2,1,3,0,4]},"u1":{"id":"u1","mod":"Module 9 · Identifiers vs Labels","type":"multi","points":4,"secondTryCredit":true,"title":"Identifiers are for tests; labels are for people","prompt":"<p>Two similar-sounding accessibility properties do opposite jobs. Keep them straight:<\/p>","parts":[{"prompt":"A UI test queries <code class=\"inline\">app.buttons[\"Save\"]<\/code>. It passes in English and fails after the app is translated into Spanish. The best fix:","choices":["Launch the app in English for UI tests, whatever the simulator language","Query by identifier: app.buttons[\"saveSessionButton\"]","Add a sleep before the tap so the label can load","Use app.buttons.element(boundBy: 2) instead"],"ahash":"75113042ce5277793655c6554e800ffd4fb4490de7310f77cc3e465dbf069ce4"},{"prompt":"<code class=\"inline\">.accessibilityIdentifier(\"addSessionButton\")<\/code> is seen by:","choices":["VoiceOver users, who hear it spoken","Tests only — it is invisible to users and to VoiceOver","Translators, who localize it for each language","Anyone, as a caption under the button"],"ahash":"ca88cc18bae0a95b0fc31ab18bec1cd187f2da2c5ed38ecdc5c028ada8c0be87"},{"prompt":"<code class=\"inline\">.accessibilityLabel(\"Add 15 minutes\")<\/code> on an icon-only button is:","choices":["Read aloud by VoiceOver when the button is focused","The string UI tests use to find the button","Drawn as small text beneath the icon","Applied only in Dark Mode"],"ahash":"6617a30699caed0a17a5fc8acff966568d931dfeb61cb11462c607419f22517c"},{"prompt":"The sessions UI test finds the new row with <code class=\"inline\">app.staticTexts[\"Chemistry quiz prep\"]<\/code> — a <em>label<\/em> query. Why is that one safe?","choices":["Labels are safe everywhere; the identifiers were just a style choice","The row's text is user data, not interface copy, so translation never changes it","Static texts cannot carry identifiers","The test only ever runs in English"],"ahash":"67cab31de8366011fe52bd13320b71bfcfb54903fa786233146608afaa6db447"}],"hint1":"A subscript string matches an identifier OR a label. Labels are interface copy — they change with language. Identifiers are a contract with your tests that does not.","hint2":"Part 4 turns on whose words the text is: 'Save' is the app's copy; 'Chemistry quiz prep' is the user's own data.","explain":"<strong>Identifiers are test-only names; labels are spoken names.<\/strong> An identifier does not change when you translate the app or reword a button, which is why queries use it — forcing English would hide the failure from every other user, and a sleep changes nothing about the label. The label is what VoiceOver speaks. The row query is the exception that proves the rule: 'Chemistry quiz prep' is user data typed by the test itself, not interface copy, so no translation will ever rewrite it.","revisit":"Module 9 · UI Tests — 'Give elements stable identifiers' and 'Write the UI test'."},"u2":{"id":"u2","mod":"Module 9 · UI Tests","type":"multi","points":4,"secondTryCredit":true,"title":"Drive the journey, then audit it","prompt":"<p>The sessions UI test and the quality tests, decision by decision:<\/p>","parts":[{"prompt":"Before <code class=\"inline\">app.launch()<\/code>, the test sets <code class=\"inline\">app.launchArguments = [\"-ui-testing\"]<\/code>. Why?","choices":["So the app launches faster in the simulator","Because XCTest requires at least one launch argument","So the app starts from known, seeded in-memory data","So VoiceOver is switched on for the audit"],"ahash":"18452f88bbf1e0a795b53ab08d843423ba5b24b87ef5c63b459f4182a40ae3cd"},{"prompt":"The test taps <code class=\"inline\">saveSessionButton<\/code>; the sheet's closing animation takes a moment. How does the test confirm the new row appeared?","choices":["It waits with waitForExistence(timeout: 2) and asserts the row exists","It sleeps for five seconds, then queries","It retries the whole test up to three times","It turns animations off with UIView.setAnimationsEnabled(false)"],"ahash":"c52893e56af84efd6785d26125c07fb258ba2835c29c6307b8b62824911615ee"},{"prompt":"After launch, a quality test calls <code class=\"inline\">try app.performAccessibilityAudit()<\/code>. It scans the current screen for:","choices":["Slow functions and retain cycles","Contrast, missing labels, hit-region size, Dynamic Type problems and clipped text","Duplicate version and build numbers","Missing purpose strings in Info.plist"],"ahash":"1c1e7f693b30a6cd6b40021e1c77e69cf8e955c2a70f61c2761afe9b0c21b5a1"},{"prompt":"Which of these checks belongs in a <em>unit<\/em> test rather than a UI test?","choices":["Tapping Save on the sheet shows the new row in the list","The first screen passes an accessibility audit","share(of:tip:people:) returns nil for zero people","Cold launch stays under its recorded baseline"],"ahash":"96ec764987f1e4ea24931df2d78ceacc83187e20b8ede0256e4c55f28b634c08"}],"hint1":"Launch arguments are how the app knows a test is driving, so it can seed data the test can assert on. Waiting for a condition beats sleeping a fixed time — it returns the moment the row appears.","hint2":"Part 4: pure logic is checked in milliseconds by a unit test; journeys, audits and launch metrics need the running app.","explain":"<strong>Known data, patient waits, automated audits.<\/strong> The <code>-ui-testing<\/code> flag makes the app seed 'Algebra review' and 'Biology flashcards' in memory, so the test asserts on exact rows instead of whatever the simulator happened to hold. <code>waitForExistence<\/code> polls until the row appears — fast when things work, honest when they don't. <code>performAccessibilityAudit()<\/code> automates the Module 5 checklist (contrast, descriptions, hit regions, Dynamic Type, clipping) and throws on each issue. And the nil-for-zero-people rule is pure logic: a unit test checks it in milliseconds and points straight at the failure.","revisit":"Module 9 · UI Tests — 'Known data through launch arguments', 'Write the UI test', and 'Audit accessibility and launch time'."},"u3":{"id":"u3","mod":"Module 9 · Previews","type":"multi","points":3,"secondTryCredit":true,"title":"Previews: one per state that matters","prompt":"<p>Previews are the fastest visual test you have — one per interesting state. Match each preview to how the lesson builds it:<\/p>","parts":[{"prompt":"Which preview shows what a brand-new user sees on first launch?","choices":["#Preview(\"Sample data\") rendering SessionListView(store: .sample)","#Preview(\"Empty state\") rendering SessionListView(store: SessionStore(titles: []))","#Preview(\"Largest text\") at an accessibility size","The UI test, which seeds two rows"],"ahash":"df7f55dfa56d517bf4a81f6e5cbcdcd6407d0058a4f6732f81247ab415c61fd5"},{"prompt":"The \"Largest text\" preview forces its text size with:","choices":[".environment(\\.dynamicTypeSize, .accessibility3)",".font(.system(size: 40)) on the root view",".accessibilityLabel(\"Largest text\")","The -ui-testing launch argument"],"ahash":"690dbc081f6ba21e34253e44a7997fcc5efb5f9d21014b999f5a92e1fb90a612"},{"prompt":"Following the lesson's own try-it, a Dark Mode preview applies:","choices":[".preferredColorScheme(.dark)",".background(Color.black) to the list",".accessibilityHidden(true)","A launch argument naming the scheme"],"ahash":"3a7d8635ab24db2aed89a875df5458ab7fc3a676c8a90542a1d48079f49a7301"}],"hint1":"Sample data is the normal state; the empty state is a separate preview with an empty store — easy to forget, and the first thing a new user sees.","hint2":"Previews change the ENVIRONMENT, not the view: a dynamic type size in the environment, a color scheme as a modifier.","explain":"<strong>One preview per state:<\/strong> sample data for the normal case, an <em>empty<\/em> store for first launch (which is where you discover the view needs a ContentUnavailableView), and the sample store again under <code>.environment(\\.dynamicTypeSize, .accessibility3)<\/code> so clipped or overlapping text shows instantly. Dark mode is the same trick with <code>.preferredColorScheme(.dark)<\/code>. None of this launches the app or taps through screens.","revisit":"Module 9 · UI Tests — 'Previews as visual checks'."},"u4":{"id":"u4","mod":"Module 9 · Two Frameworks","type":"mc","points":3,"secondTryCredit":true,"title":"Which framework taps the button?","prompt":"<p>A test launches the app in the simulator, taps the + button, types 'Chemistry quiz prep', taps Save, and waits for the new row. That test is written with:<\/p>","choices":["Swift Testing — @Test functions and #expect checks","XCTest — XCUIApplication, living in the separate UI-testing target","Swift Testing — it drives unit, integration and UI tests alike","The Logger framework, filtered by category"],"hint1":"The lesson's callout is blunt about this: one of these frameworks does not drive user interfaces.","hint2":"The test talks to the app through a proxy in a separate process, seeing only the accessibility tree.","explain":"<strong>XCTest.<\/strong> Swift Testing does not drive user interfaces — UI tests use XCTest's <code>XCUIApplication<\/code> in a separate UI-testing target, driving the real app from another process through the accessibility tree. Both frameworks live happily in one project: Swift Testing for unit and integration tests, XCTest for journeys, audits and launch metrics.","revisit":"Module 9 · UI Tests — 'How a UI test sees your app' and its 'Two frameworks, one project' callout.","ahash":"d62f84ce2caecffc9d613705593be68b34491d7ce7d09a0340221de07aa34df4"},"d1":{"id":"d1","mod":"Module 9 · Reading Crashes","type":"multi","points":4,"secondTryCredit":true,"title":"Read the crash before you change code","prompt":"<p>When a Swift program hits a programmer error it traps — it stops instead of continuing with corrupt data. Each message below names its own cause:<\/p>","parts":[{"prompt":"\"Fatal error: Unexpectedly found nil while unwrapping an Optional value\" — the most likely cause:","choices":["A retain cycle kept an object alive too long","A force unwrap (!) met nil","An array was indexed past its last element","The main thread was blocked too long"],"ahash":"39aaef457257a7c5e1dc3702dcb3642d2bb5c9433ec31c0d6ce23a61226c53e5"},{"prompt":"Code reads <code class=\"inline\">sessions[3]<\/code> in an array holding exactly three sessions. The trap reports:","choices":["Unexpectedly found nil","EXC_BAD_ACCESS","Index out of range","Division by zero"],"ahash":"b56457911d58d40e18709ca7ae3660cf61bd230a037b269e452134fcfa49b35b"},{"prompt":"<code class=\"inline\">EXC_BAD_ACCESS<\/code> usually means:","choices":["Code touched memory that was already freed — often through unowned references or unsafe pointers","A force unwrap met nil","The device ran out of disk space","A network request timed out"],"ahash":"c5b2cbe3c8b45febd9fdabc86b295bbcff3e405218b3e9b19ce661dc149fe754"},{"prompt":"The stack trace shows twenty frames, most of them system frameworks. You read it:","choices":["From the bottom up — the oldest call is the bug","Top-down, until the first frame from your own code — that is usually where to look","Only the frames with the longest names matter","After editing the code that looks wrong, to confirm the fix"],"ahash":"90e0d92bc7b3dde6a23564321d509421d025c190cc0360a6be78b0cc497db0fd"}],"hint1":"Each trap message is specific: nil has its own message, arrays have theirs, and freed memory has its own signal name.","hint2":"Retain cycles never crash — they quietly leak. And the debugger pauses on the failing line before you change anything.","explain":"<strong>The message is the diagnosis.<\/strong> 'Unexpectedly found nil' comes from <code>!<\/code> meeting nil (fix it with if let, guard let or ?? — and handle the empty case). Reading past an array's end is 'Index out of range'. EXC_BAD_ACCESS is freed memory, the signature of a wrong <code>unowned<\/code> promise. And the stack trace reads top-down to the first frame of <em>your<\/em> code. Crashes from testers arrive the same way in Xcode's Organizer, symbolicated back to function names and lines using your archive's dSYM.","revisit":"Module 9 · Debugging — 'Read the crash before you change code'."},"d2":{"id":"d2","mod":"Module 9 · Debugging","type":"debug","points":5,"secondTryCredit":true,"title":"Debug: the average that drops the fraction","prompt":"<p><strong>The specification<\/strong> (from the requirements, and from the unit test written against it): <code class=\"inline\">averageMinutes([25, 30, 40])<\/code> must return <strong>31.666666666666668<\/strong> — the exact average — and an empty week must return <strong>0.0<\/strong> instead of crashing. The function below returns 31.0 for the sample and divides by zero on an empty list. <strong>Tap the buggy line<\/strong>, then pick the repair the specification forces:<\/p>","lines":["func averageMinutes(_ sessions: [Int]) -> Double {","    let total = sessions.reduce(0, +)","    print(\"debug: total=\\(total) count=\\(sessions.count)\")","    return Double(total / sessions.count)","}"],"fixes":["Fix the code: convert before dividing — return Double(total) / Double(sessions.count) — and guard the empty list to return 0","Fix the test: change its expected value to 31.0, since the screen rounds for display anyway","Delete the debug print — the stray print is what corrupts the result","Convert before dividing, but leave the empty case alone — an empty week can just crash"],"hint1":"The debug print tells you total=95 and count=3 are both right, yet the answer is 31.0. So the inputs are fine — where does the fraction go? And which document outranks the code: the specification, or the code as written?","hint2":"Integer division happens INSIDE the conversion: Double(95 / 3) converts 31, not 31.666…. A repair that only fixes the fraction still leaves the empty-week crash the specification forbids.","explain":"<strong>Fix the code — the specification is the authority.<\/strong> <code>total / sessions.count<\/code> is integer division: 95 / 3 is 31 before <code>Double(...)<\/code> ever sees it, so the fraction is gone. Converting both sides first (<code>Double(total) / Double(sessions.count)<\/code>) keeps it, and the guard returns 0 for an empty week instead of trapping on division by zero. Changing the test to expect 31.0 would rewrite the requirement to match the bug. The print is innocent here — it is how you proved the inputs were right — though like all debug prints it should come out before you commit.","revisit":"Module 9 · Debugging — 'Print debugging, then the fix'.","lhash":"bedb359da09941a5065cfe060d73a0dc9fd2bef60fd3cb3efdd3dcd0a5832602","fhash":"11dff3e3241e6a7895ca47645fbad5da44617a1bc7d1979cc96df8bcb05575a6"},"d3":{"id":"d3","mod":"Module 9 · Breakpoints & LLDB","type":"multi","points":4,"secondTryCredit":true,"title":"Ask the debugger; don't edit the code","prompt":"<p>Paused at a breakpoint, the console accepts LLDB commands. Match each tool to its job:<\/p>","parts":[{"prompt":"<code class=\"inline\">v total<\/code>","choices":["Reads the variable directly from memory without running code — the fastest and safest command","Evaluates an expression and prints it with type-aware formatting","Prints an object's description","Steps over the current line"],"ahash":"d19e9315efed092b0c3d6ae887f1d2767e5b970fde009e6c200ea2bd73771fd6"},{"prompt":"<code class=\"inline\">po model<\/code>","choices":["Reads a variable directly from memory","Prints the object's description — its CustomStringConvertible or debugDescription text","Sets a conditional breakpoint","Continues running the app"],"ahash":"f93da61ed86f05d983ae67f83807a28a6306db68d4299082a9a94d357038ed4d"},{"prompt":"You want execution to pause only when <code class=\"inline\">log(_:)<\/code> receives a negative number — without editing any code:","choices":["A conditional breakpoint with the condition minutes < 0","A print inside the guard, deleted before committing","The Memory Graph Debugger, filtered to FocusModel","Instruments Allocations, recording while you tap"],"ahash":"70575a4ca4de09036b322e5dfbc2b2e22d97d9ea778242a9ac8962fac50eebe6"},{"prompt":"Scrolling feels jerky and you suspect slow work on the main thread. The tool that shows where the CPU time goes:","choices":["The view hierarchy debugger","Leaks","Instruments Time Profiler","Logger, at the debug level"],"ahash":"eea6c8f22be6a17a934a7cbab145ab2d6822250375b7cc469b16ff1681caaf4a"}],"hint1":"v reads, p evaluates, po describes an object. Stepping is F6 (over), F7 (into), F8 (out).","hint2":"Part 3: a breakpoint can carry a condition, so it stops only when the bug happens. Part 4: time questions go to the instrument that samples call stacks.","explain":"<strong><code>v<\/code> reads memory, <code>p<\/code> evaluates, <code>po<\/code> prints an object's description.<\/strong> A conditional breakpoint (condition <code>minutes &lt; 0<\/code>) stops only on the bad call — and a breakpoint can even carry a Log Message action with 'Automatically continue', printing like <code>print<\/code> without ever touching your source. For slow scrolling, Time Profiler samples call stacks many times a second and shows where CPU time goes, especially on the main thread; the view debugger shows layout and Leaks shows memory, not time.","revisit":"Module 9 · Debugging — 'Breakpoints and LLDB' and 'Visual debuggers and Instruments'."},"d4":{"id":"d4","mod":"Module 9 · Retain Cycles","type":"multi","points":5,"secondTryCredit":true,"title":"Lab: the timer that keeps its owner alive","prompt":"<p>A model owns a timer; the timer's closure bumps the model's counter:<\/p>","code":"final class StudyTimer {\n    var onTick: (() -> Void)?\n    deinit { print(\"StudyTimer freed\") }\n}\nfinal class SessionModel {\n    var seconds = 0\n    let timer = StudyTimer()\n    init() {\n        timer.onTick = { self.seconds += 1 }\n    }\n    deinit { print(\"SessionModel freed\") }\n}\nvar model: SessionModel? = SessionModel()\nmodel = nil\nprint(\"screen closed\")","parts":[{"prompt":"<strong>Lifetime facts for this lab:<\/strong> the timer is handed to a shared scheduler, so its <code class=\"inline\">onTick<\/code> closure can still be called <em>after<\/em> the SessionModel that created it has been dismissed. Which capture breaks the cycle AND stays safe under those facts?","choices":["Keep the strong capture — a cycle is a warning, not a leak","[weak self], with self?.seconds in the closure body","[unowned self] — the closure is owned by the timer, so it is safe","Make the model's timer property weak instead"],"ahash":"342aa27ae7414119170ae825524e2fa6818adbfae9f0161ed385c0b9c298b6d4"},{"prompt":"As written (strong capture), the program prints:","choices":["Only \"screen closed\"","\"SessionModel freed\", \"StudyTimer freed\", \"screen closed\"","\"StudyTimer freed\", \"SessionModel freed\", \"screen closed\"","Nothing — it crashes with EXC_BAD_ACCESS"],"ahash":"5ecef90d4ceab6f3fb3ec2ed44faf8991bc9955ae6d44b674fed10dd8ab7f013"},{"prompt":"With the safe capture in place, the program prints, in order:","choices":["Only \"screen closed\"","\"StudyTimer freed\", then \"SessionModel freed\", then \"screen closed\"","\"SessionModel freed\", then \"StudyTimer freed\", then \"screen closed\"","\"SessionModel freed\", then \"screen closed\""],"ahash":"3a4592a9c3b6357968144aa5899cf7f5c4ebac0a597da82b754e642a7a921f45"},{"prompt":"You open the Memory Graph Debugger on the leaking version. The leaked objects are marked with:","choices":["A red error badge","A purple warning","A gray question mark","Nothing — the graph only draws objects that were freed"],"ahash":"073219eadb3ad02cfd53ebd18e6554b34332d4183d3c17ef31805e7e2f9692a3"},{"prompt":"In the fixed version, why does \"SessionModel freed\" print <em>before<\/em> \"StudyTimer freed\"?","choices":["deinit messages print in alphabetical order","ARC frees the model first; releasing the timer it owns happens as part of that","The scheduler delays the timer's deinit","print buffers the timer's line until the end"],"ahash":"bcabc5bd459e7af30054915f63df3cbb7007a4116c25d0c7e73fc1462650cbb5"}],"hint1":"A cycle needs EVERY arrow in the loop strong: model → timer → closure → model. The closure is the arrow to weaken — but weak and unowned differ in what happens when the object is already gone, and the lifetime facts decide between them.","hint2":"In the leaking version neither deinit ever runs — the absence of those two lines IS the proof. In the fixed version the owner goes first, and what it owns follows.","explain":"<strong>[weak self] is the only safe break.<\/strong> The strong capture closes the loop, so setting <code>model = nil<\/code> frees nothing and only \"screen closed\" prints — the missing deinit lines are the leak, proven. <code>unowned<\/code> would break the cycle too, but it <em>promises<\/em> the model outlives the reference; here the closure can fire after the model is dismissed, so that promise crashes. A weak capture adds nothing to the count and becomes nil automatically, so <code>self?.seconds<\/code> safely does nothing once the model is gone. Fixed, the model is freed first (\"SessionModel freed\"), and ARC then releases the timer it owned (\"StudyTimer freed\"). In the Memory Graph Debugger, the leaked pair shows up with a purple warning — the visual version of the same evidence.","revisit":"Module 9 · Debugging — 'A retain cycle, and [weak self]' and the 'Memory graph lab'."},"p1":{"id":"p1","mod":"Module 9 · Frame Budget","type":"custom","custom":"frameLab","points":5,"secondTryCredit":true,"title":"Lab: fit the frame (60 Hz)","prompt":"<p><strong>The simplified model, as in the module:<\/strong> this phone redraws <strong>60 times a second<\/strong>, so every frame has <strong>16.7 ms<\/strong> to be ready, and all layout, tap handlers and <code class=\"inline\">body<\/code> work run on the main thread. The five pieces of main-thread work below total <strong>21.0 ms<\/strong> — every frame is late. For each piece, choose its repair from the menu. The menu is the module's own toolkit: offload heavy work to a background task, cache what you computed or created once, lazy-load the rows, or keep cheap work where it belongs. After you check, the lab reports the main-thread total your choices produce.<\/p>","options":[{"key":"offload","label":"Offload to a background task"},{"key":"cache","label":"Cache the expensive object"},{"key":"lazy","label":"Lazy-load"},{"key":"keep","label":"Keep on the main thread"}],"tasks":[{"name":"Decode a full-size photo inside the row's body","cost":9},{"name":"Sort 200 study spots from scratch on every frame","cost":4},{"name":"Build all 40 rows up front in a VStack","cost":5,"lazyResult":1},{"name":"Create a brand-new date formatter inside body","cost":2},{"name":"Draw the visible text","cost":1}],"hint1":"Decoding is the heavyweight: it belongs in a background task, with the finished thumbnail stored in state. Building every row up front is the eager-stack mistake the module names.","hint2":"Sorting and formatting are 'compute once, store the result' work — body should only ever display finished values. Drawing text is cheap and is the main thread's actual job.","explain":"<strong>Decode off the main thread<\/strong> (a thumbnail at display size, decoded in the background and stored in state — the module's <code>@concurrent<\/code> pattern). <strong>Sorting<\/strong> leaves the frame either way it is done once and cached, or moved to a background task — what it cannot do is rerun inside every <code>body<\/code>. <strong>The eager VStack becomes a LazyVStack/List<\/strong>, building only the rows on screen (5.0 ms → 1.0 ms). <strong>The formatter is created once and reused<\/strong>, never minted inside <code>body<\/code>. And <strong>drawing the text stays<\/strong> — cheap work that belongs on the main thread. Total after the repairs: 2.0 ms, comfortably inside 16.7.","revisit":"Module 9 · Performance — 'The main thread and the frame budget', 'Frame budget lab', and 'Move heavy work off the main actor'.","vhashes":[["cd96661c835c0ae1b01070547f4ce5db1b452c0106992cf3acd818b5e653edf6"],["fc3ff57b8b1d34fe4599e7b4ab3aba01b4e8ced2ae1f3439bab141c0b899d4eb","f850d725ca200fa0ee44a138e019a3a85b90fb19a3c890be325dd493a982fd60"],["bc95b842ee69f3250984df8e663d9708e1d6414695e1549fa6a2b9d3bc4d535d"],["3f276b693be42ccce02387f1cee84ff60aef924d8ad6d61f5e6280acf8a4bc9c"],["c2c415e55004d05d4c923e729534d6127cf6c65a9a844951011499f792ca532e"]]},"p2":{"id":"p2","mod":"Module 9 · Accessibility Audit","type":"custom","custom":"a11yAudit","points":5,"secondTryCredit":true,"title":"Lab: audit the screen — every element gets a verdict","prompt":"<p>Six elements from a Study Buddy screen, each shown with its code. The module's rule: <strong>a control needs a label if VoiceOver would announce nothing meaningful for it<\/strong>; standard controls label themselves from their title; decorative content should be hidden so VoiceOver does not stop on it. Grade <em>every<\/em> element — a false alarm counts against you exactly like a miss.<\/p>","options":[{"key":"fine","label":"Accessible as-is"},{"key":"label","label":"Needs an accessibility label"},{"key":"hide","label":"Should be hidden from accessibility"}],"elements":[{"code":"Button(\"Save\") { store.add(title) }","note":"The New Session sheet's Save button.","ahash":"b4d7ff9941dd6686eb5eda520d15ea504ebcdc69a33548fdaf0ec9718bfdd44f"},{"code":"Image(\"app-logo\")","note":"The app's logo in the header, sitting directly beside Text(\"Study Buddy\").","ahash":"1757435594b841b307910220e8a165cf6e41839f3e5ab90506208eb81e7c99dd"},{"code":"Button { toggleFavorite() } label: { Image(\"star-fill\") }","note":"A favorites button on each row. The star is a custom asset image, and the button has no accessibilityLabel.","ahash":"92687c16390b31fc073d625e6fe1fa4ab2fd58453d00bb3aa5661471bd48228a"},{"code":"Text(\"Sessions this week\")","note":"A section heading above the list.","ahash":"016f148a8af1f4f1fd1cbbef06a44a51a3cb21dd9ad1dc0821865e69653450f3"},{"code":"Button { share() } label: { Image(\"share-arrow\") }","note":"A share button in the toolbar. The arrow is a custom asset image, and the button has no accessibilityLabel.","ahash":"b970468955268a0976107f1d083ad231b8cabb1b85225800503f90657f7a5637"},{"code":"Image(\"pattern-dots\")","note":"A dotted pattern filling the background behind the header.","ahash":"bcb38ab13d1a09e7edcf97d010f1b6899773c9cde218b02f2511bda1bd4bf89c"}],"hint1":"Count the verdicts before you commit: two elements are fine, two need labels, two should be hidden. Ask of each icon: what would VoiceOver actually say?","hint2":"A custom asset image has no built-in name — VoiceOver announces nothing meaningful for those buttons. A Button with a text title labels itself; that is the Module 5 rule this module's checklist repeats.","explain":"<strong>Fine:<\/strong> the Save button (a standard control labels itself from its title) and the heading (Text is accessible by default). <strong>Needs a label:<\/strong> both icon-only buttons — their images are custom assets with no built-in name, so VoiceOver would announce nothing meaningful; each needs an <code>accessibilityLabel<\/code> like the module's 'Add 15 minutes'. <strong>Hidden:<\/strong> the logo beside the app's name and the background pattern are decoration — <code>.accessibilityHidden(true)<\/code> keeps VoiceOver from stopping on content that says nothing. This is the audit <code>performAccessibilityAudit()<\/code> automates.","revisit":"Module 9 · Performance, Accessibility and Localization — 'An accessibility pass before every release' and 'Make a custom control speak'."},"p3":{"id":"p3","mod":"Module 9 · Localization & Dynamic Type","type":"multi","points":4,"secondTryCredit":true,"title":"Catalogs, plurals and text that scales","prompt":"<p>Four localization and Dynamic Type decisions from the lesson:<\/p>","parts":[{"prompt":"<code class=\"inline\">Text(\"\\(count) sessions\")<\/code> reads \"1 sessions\" when count is 1. The fix lives:","choices":["In body, as an if statement for count == 1","In the String Catalog — set the key to Vary by Plural","In code, appending \"s\" only when count != 1","In a second string built by concatenation"],"ahash":"c8252b59a1e75b4d1533885ce63e87537103d24b17cad17472f5f0081da0ec93"},{"prompt":"A view model builds an alert message as a plain <code class=\"inline\">String<\/code> — no <code class=\"inline\">Text<\/code> view involved. The module localizes it with:","choices":["String(localized: \"Weekly goal reached\", comment: \"Banner shown when the weekly goal is met\")","Text(verbatim:) — it extracts automatically","A hand-written translation table in the view model","String concatenation of translated fragments"],"ahash":"2c4dc848816c5413e55c8db5f7c4208e28ead9080328d9e7b7c366bbba05b670"},{"prompt":"<code class=\"inline\">Text(verbatim:)<\/code> is the right choice when:","choices":["The string contains a plural","The text is a code or identifier that must NOT be translated","The string will be shown in an alert","The view is a preview"],"ahash":"17708aa31499838b85290829f538183745d725428c3c2266feaaaa9db3d5b528"},{"prompt":"At the largest accessibility text size, which label keeps scaling?","choices":["One set with .font(.system(size: 14))","One set with a text style such as .font(.body), its metrics from @ScaledMetric","One given a fixed 44-point frame","One hidden from accessibility"],"ahash":"01c0a070f5143411abc0ef28f57ca7d2c3022007c35d06e2e33d9462cf4fdccd"}],"hint1":"Plural rules differ by language — some have three or more forms — so no English if-statement or string surgery can be right. Non-UI strings are not localized automatically; they must ask.","hint2":"Part 4: text styles and @ScaledMetric follow the user's setting. A point size is a frozen number.","explain":"<strong>Plurals belong to the catalog:<\/strong> the key for \"\\(count) sessions\" becomes \"%lld sessions\", and Vary by Plural supplies each language's forms — an if statement only ever works for English. Strings built outside a <code>Text<\/code> need <code>String(localized:)<\/code>, with a comment so translators have context; <code>Text(verbatim:)<\/code> is the opt-out for codes that must never be translated. SwiftUI <code>Text<\/code> literals are extracted into the String Catalog automatically. And Dynamic Type scales <em>text styles<\/em> and <code>@ScaledMetric<\/code> values — a fixed point size stays frozen at every setting.","revisit":"Module 9 · Performance, Accessibility and Localization — 'Localize with a String Catalog' and 'An accessibility pass before every release'."},"p4":{"id":"p4","mod":"Module 9 · Performance","type":"multi","points":4,"secondTryCredit":true,"title":"Hitches, hangs and the two budgets","prompt":"<p>Vocabulary first — the diagnostics only make sense with the module's exact definitions:<\/p>","parts":[{"prompt":"One frame arrives late because its main-thread work overran the budget, and the scroll stutters. That is a:","choices":["Hang","Hitch","Trap","Leak"],"ahash":"56c1d482252e3d557f0e59fedc118f98c654232e2cdd6ade9cc9e5305303d5d5"},{"prompt":"Taps stop responding and scrolling freezes for about 300 ms. Xcode reports a hang, which means:","choices":["The app used more than 1 GB of memory","The main thread was blocked for 250 ms or more","A network request waited more than 60 seconds","Exactly one frame missed its budget"],"ahash":"1f6cd0ee5825d446131e2c5f986673134bc6c1b0a1bb434f67d1c59aea48a9bc"},{"prompt":"On a ProMotion display refreshing 120 times a second, each frame's budget is about:","choices":["16.7 ms","8.3 ms","33 ms","250 ms"],"ahash":"f0353cee0ecd8b02ec1861f9eb5ac35f5c37475ee77480219246c6171b16d086"},{"prompt":"Scrolling is jerky and Time Profiler points at <code class=\"inline\">UIImage(data:)<\/code> inside a row's <code class=\"inline\">body<\/code>. The module's fix:","choices":["Lower the display to 60 Hz so each frame gets 16.7 ms","Decode a thumbnail off the main actor and store it in state","Wrap the rows in a VStack so they are built up front","Call UIImage(data:) twice so the second call hits a cache"],"ahash":"792cc8380c837f90f193755185141f62fa9c128ce83558fd7cc3346c0337e383"}],"hint1":"A late frame and a frozen interface are different failures with different thresholds: one frame's budget vs a quarter of a second.","hint2":"Part 4: the work is not wrong, its ADDRESS is — decoding belongs in the background, at display size, once.","explain":"<strong>A hitch is a late frame; a hang is a blocked main thread (250 ms or more)<\/strong>, where taps and scrolling freeze outright. The budget halves on ProMotion: 8.3 ms at 120 Hz against 16.7 ms at 60 Hz. And decoding inside <code>body<\/code> is the frame lab's villain — decode a thumbnail off the main actor, store it in state, and let <code>body<\/code> only display finished work. You cannot lower a user's refresh rate, and an eager VStack builds every row up front, making it worse.","revisit":"Module 9 · Performance — 'The main thread and the frame budget' and 'Move heavy work off the main actor'."},"b1":{"id":"b1","mod":"Module 9 · Frame Budget","type":"multi","points":4,"bonus":true,"secondTryCredit":true,"title":"BONUS: the 120 Hz frame","prompt":"<p>The same list on a faster screen: a ProMotion display redraws <strong>120 times a second<\/strong>, so the frame budget is <strong>8.33 ms<\/strong>. One frame's main-thread work: decode a full-size photo <strong>6.0 ms<\/strong>; layout <strong>1.0 ms<\/strong>; sort <strong>1.0 ms<\/strong>; format a date <strong>1.0 ms<\/strong>; render <strong>1.0 ms<\/strong> — 10.0 ms in total, so the frame hitches. You may move <strong>exactly one<\/strong> task to a background thread.<\/p>","parts":[{"prompt":"Which single move makes the frame fit the 8.33 ms budget?","choices":["Move the photo decode off the main thread","Move the layout off the main thread","Move the sort off the main thread","Move the render off the main thread"],"ahash":"2db373be7d84bf954d1e08f709c23d550a603858a77ce1c4488ddd3ab097130c"},{"prompt":"After that one move, the main-thread total is","type":"typed","short":"new total","placeholder":"a number","suffix":"ms","ahashes":["c9e4754166b21308b5328f4efb162d89a83b325a476fec15c7329fc51a4cb6ab","58dd6c5a0c3086cc97a2b8068aa54386fd9456f22fb0962cd0bea43e3efdc273","a1bc2074986931c83f6c1762ff1ef92f2226a5c831e79bf1c0172f8f85b9e866","cacf360e3bf1b630da4b5e1af2754eea63ff496191c4da38c0c47c2dd2c3ffa2","fc68cd55e6eda65e262679d21233e1f413121bf8bf9c8cefe3ed1bea66705bcc","fea8a2d02e7f2200fa20a6e7fd56b6aa3ad28c5ae387f1cbe6e9ff7c5bb933a3"]}],"hint1":"Do the subtraction for each candidate: the budget is 8.33, the total is 10.0, so the moved task must be worth more than 1.67 ms on its own.","hint2":"Only one task is bigger than the 1.67 ms shortfall. Every other single move leaves 9.0 ms of main-thread work.","explain":"<strong>Only the photo decode is big enough.<\/strong> The frame is 1.67 ms over budget; moving any 1.0 ms task still leaves 9.0 ms of main-thread work — over 8.33, still hitching. Moving the 6.0 ms decode leaves 4.0 ms, comfortably inside the budget, with the fewest possible offloads: one. This is the frame lab's lesson at twice the refresh rate — the budget halves, so heavy work has half the room to hide.","revisit":"Module 9 · Performance — 'The main thread and the frame budget' (60 Hz vs ProMotion budgets)."},"r1":{"id":"r1","mod":"Module 9 · Version, Build & Signing","type":"multi","points":4,"secondTryCredit":true,"title":"Version, build, and the rules that never bend","prompt":"<p>Four facts of shipping life, all stated in the lesson:<\/p>","parts":[{"prompt":"Version 1.2 (build 41) is live. You fix a crash. The upload should use:","choices":["1.2.0 (42)","1.1 (42)","1.2.1 (42)","1.2 (41)"],"ahash":"4623e2e73d7972a35227019d012dd717a0853f121dfc26026e656a5f7c2346cc"},{"prompt":"Which upload rule is always safe to rely on?","choices":["The same version and build pair can be re-uploaded if the binary changed","Build numbers restart at 1 for every new version","The same version+build pair cannot be re-uploaded — each upload needs a pair App Store Connect has not seen","The version string must contain the build number"],"ahash":"27eec6daa045110d8e963c88f94c3c32a65effb2f181577273250fb2d36b9572"},{"prompt":"After the first upload, the app record's bundle ID:","choices":["Can be changed once, from App Store Connect","Can never change for that app record","Is released for another app to use","Changes automatically with each version"],"ahash":"2124d4492f663e9d07eadc5d81da2c6ba7b05ed105523ee9449d07a64cd8ce27"},{"prompt":"A free personal team (no paid Developer Program membership) lets you:","choices":["Run the app on your own device — but no TestFlight and no App Store","Beta test with up to 100 internal testers","Submit one app for review per year","Use push notifications and App Groups"],"ahash":"29e7c884588f52d13483d735288db1b7ae33693fbd0ea1462d80d826f375ec8b"}],"hint1":"A new release needs a HIGHER version than the live one, and a build number that version has never used. Reusing 1.2 (41) is rejected at upload.","hint2":"Part 4: the free team's limit is in the Identity lesson — it runs apps, but distribution is what the membership buys.","explain":"<strong>1.2.1 (42).<\/strong> A maintenance release raises the version above the live one and uses a fresh build number; the one claim you can always lean on is that a version+build pair, once uploaded, can never be uploaded again. The bundle ID is just as permanent — fixed from the first upload, which is why the lesson warns against version numbers or temporary names in it. And a free personal team only runs apps on your own devices: TestFlight and the App Store require the paid program, whose certificates (Apple Distribution for release) and provisioning profiles tie the bundle ID, certificate, devices and capabilities together.","revisit":"Module 9 · Release — 'Identity and signing' and 'Version, build and configuration'."},"r2":{"id":"r2","mod":"Module 9 · Release Pipeline","type":"parsons","points":4,"title":"Order this project's release","prompt":"<p>Assemble <strong>Study Buddy's own release pipeline<\/strong> for version 1.2.1, build 42. The order is forced: each stage consumes the stage before it. (The TestFlight soak is this project's own workflow step — Apple does not require TestFlight before App Review; this team ships that way.) One line in the bank is an upload that would be rejected — leave it there.<\/p>","lines":["Bump the version to 1.2.1 and the build number to 42","Wait for processing to finish","Submit the build for App Review","Upload the archive to App Store Connect","Run the full test suite — every acceptance test passes","Archive the Release build, signed with the distribution certificate","Soak the build with external testers on TestFlight"],"distractor":"Re-upload 1.2.1 (build 42) to fix a typo in the release notes","hint1":"Ask of each stage what it consumes. The archive carries the version and build numbers, so the bump must happen before it exists.","hint2":"Processing stands between upload and TestFlight — there is no build to soak until processing finishes. And a pair that has been uploaded once can never be uploaded again.","explain":"<strong>Tests → bump → archive (signed) → upload → processing → TestFlight soak → submit.<\/strong> Testing comes first because everything after it ships what the tests approved; the bump precedes the archive because the archive is stamped with those numbers; signing happens as part of archiving, with the distribution certificate; processing turns the upload into a testable build; the soak spends it; review judges it. The rejected line is the re-upload: 1.2.1 (42) already exists in App Store Connect, and the same pair can never be uploaded twice — a fix means a new build number.","revisit":"Module 9 · Release — 'TestFlight and App Review', 'Version, build and configuration', and the 'Release pipeline lab'.","prank":[1,4,6,3,0,2,5]},"r3":{"id":"r3","mod":"Module 9 · Upload Errors","type":"mc","points":3,"secondTryCredit":true,"title":"ITMS-90683 lands in the inbox","prompt":"<p>The upload succeeds — then App Store Connect emails an error: <strong>ITMS-90683<\/strong>. Study Buddy asks for the user's location to sort study spots by distance. What is missing?<\/p>","choices":["A required-reason entry in PrivacyInfo.xcprivacy","The location purpose string in Info.plist — the text that explains the permission prompt","A working demo account in App Review Information","An App Groups capability on the provisioning profile"],"hint1":"Two different emails guard two different files. ITMS-91053 is the privacy manifest's error; this one is about what the user READS when the permission prompt appears.","hint2":"Purpose strings live in Info.plist, one per permission, written for the person about to be asked.","explain":"<strong>The purpose string.<\/strong> Every permission prompt must carry an explanation the user can judge — the location usage description in Info.plist is what appears in the prompt, and its absence is ITMS-90683. The privacy manifest is a different file with a different error (ITMS-91053 covers missing required-reason declarations, like UserDefaults with reason CA92.1). A demo account matters later, during review; a capability problem would have stopped the archive itself.","revisit":"Module 9 · Release — 'The privacy manifest' (purpose strings vs the manifest) and 'Identity and signing'.","ahash":"d8e2889f87a7ed604d4683873437aea41e1af8f9ccf4fbbc469d1ddfbe9a03cb"},"r4":{"id":"r4","mod":"Module 9 · TestFlight","type":"multi","points":3,"secondTryCredit":true,"title":"TestFlight, by the numbers","prompt":"<p>Fill in the three numbers the lesson states outright:<\/p>","parts":[{"prompt":"Internal testers — members of your App Store Connect team — up to","type":"typed","short":"internal testers","placeholder":"a number","suffix":"people","ahashes":["01997250cbf2d7b48db5d0ed85860bb3bed0790becc59e48d5071e9bfe82877c"]},{"prompt":"External testers — reached by email or a public link — up to","type":"typed","short":"external testers","placeholder":"a number","suffix":"people","ahashes":["49290e3692a3f9b27755fe1c6da1998a741f17a1976edc15c1461cdc624d6c57","6ea18452ad8ceb57d9f214e3bf87b16eeee370340ca547bd6d88a1b918621751","8f6482477cc0023ca43b0383679d3923967f2f5bc6be37e33808e5af19442c91"]},{"prompt":"A TestFlight build stops working after","type":"typed","short":"build lifetime","placeholder":"a number","suffix":"days","ahashes":["6f636b05f2e2405b8c5f6b7f462a56141c99238727528add5a88d45948c188ca","44e6ed6053748cd9527305afeb1eb3b9f9892b0e5fde5113d86bd4d73631e3a3","315f8301af60717d79f21f2fe0e37e09e6ce90b8163834df81d25ef3265c182b"]}],"hint1":"Internal is your own team — a meeting-room number. External is a small town. Builds are perishable: think one quarter.","hint2":"100 internal, and external is a hundred times that. The first external build of a version also needs Beta App Review.","explain":"<strong>100 internal, 10,000 external, 90 days.<\/strong> Internal testers are your App Store Connect team, and their builds are available as soon as processing finishes. External testers — up to 10,000 by email or public link — get builds that expire after 90 days, and the first build of each version must pass Beta App Review before it reaches them.","revisit":"Module 9 · Release — 'TestFlight and App Review'."},"c1":{"id":"c1","mod":"Module 9 · Acceptance Criteria","type":"multi","points":3,"secondTryCredit":true,"title":"From story to test: Given, When, Then","prompt":"<p>The story: <em>As a student, I want to log a study session so that I can see my weekly total.<\/em> Its criterion: <strong>Given<\/strong> a planner with 90 minutes of Algebra logged, <strong>When<\/strong> the student logs a 30-minute Biology session, <strong>Then<\/strong> the weekly total is 120 minutes and the newest session is listed first.<\/p>","parts":[{"prompt":"Which clause becomes the <code class=\"inline\">#expect<\/code> lines in the test?","choices":["Given","When","Then","The story title"],"ahash":"513ce190d6a723395feaf0e731e30703c9cb80b1cd64649419f6981158c2a5e6"},{"prompt":"The Given clause becomes:","choices":["The expectations at the end of the test","Setup code that builds the starting state","The test's display name","A comment — Given is never coded"],"ahash":"a2ae13b616090d4c75ff67b48e807d8a6654a08522d5d1903638fbe6da6439ab"},{"prompt":"\"Logging a session feels quick\" is not testable as written. The module's measurable rewrite:","choices":["\"Logging is fast\"","\"Logging takes at most two taps from the Today screen\"","\"Students enjoy logging\"","\"Logging usually takes a few seconds\""],"ahash":"1ad3d5acdf0fd65030d6f3b9def29b6ca98a9c91cb310ec2290c4ce8e8572a5c"}],"hint1":"If you cannot imagine the test, the criterion is too vague. Each clause maps to one part of the test: setup, one action, expectations.","hint2":"A test has exactly one When. 'Feels quick' becomes countable — taps are countable.","explain":"<strong>Given becomes setup, When becomes the single action, Then becomes the expectations<\/strong> — in the capstone's test, the Given/When/Then are even kept as comments above the lines that perform them, so the report reads like the specification. And vague criteria get rewritten into measurable ones: 'feels quick' cannot be tested, but 'at most two taps from the Today screen' can.","revisit":"Module 9 · Capstone — 'User stories and acceptance criteria' and 'Turn acceptance criteria into tests'."},"c2":{"id":"c2","mod":"Module 9 · Definition of Done","type":"mc","points":3,"secondTryCredit":true,"title":"When is a story done?","prompt":"<p>Under Study Buddy's definition of done, a story is done when:<\/p>","choices":["It compiles without warnings","Its acceptance tests pass, its screens pass the accessibility audit, and it runs on a real device","It has been uploaded to TestFlight for internal testers","Its wireframes have been approved and the code is written"],"hint1":"The capstone's callout is blunt about the weakest candidate on this list.","hint2":"Done includes verification (tests), the accessibility audit, and real hardware — three separate kinds of evidence.","explain":"<strong>Tests green, audit passed, running on a real device.<\/strong> Compiling is not done — it proves the code parses, nothing more. The definition of done is the capstone's quality gate: acceptance tests verify the story, the audit checks its screens (the same <code>performAccessibilityAudit()<\/code> from the UI-testing lesson), and a real device catches what simulators hide. TestFlight is part of the release plan, not the definition of done.","revisit":"Module 9 · Capstone — 'Plan the build, the tests and the release' (the Definition of done callout).","ahash":"f9aff1d6489e87cf3abb09a7a6d879ae40796ac4ba2150d965264cfeff8229af"}};
+renderSection({id:"arch",title:"Module 9 · Architecture That Survives Change",desc:"MVVM, view models as plain Swift, dependency injection with protocols, and organizing by feature. 14 points.",items:["a1","a2","a3","a4"].map(x=>DEFS[x])});
+renderSection({id:"testing",title:"Module 9 · Testing with Swift Testing",desc:"#expect and #require, suites, parameterized tests, stand-ins, and what a green suite proves. 16 points.",items:["t1","t2","t3","t4","t5"].map(x=>DEFS[x])});
+renderSection({id:"uitests",title:"Module 9 · UI Tests, Previews and Accessibility Checks",desc:"XCTest and XCUIApplication, identifiers vs labels, launch arguments, the automated audit, and previews as visual checks. 14 points.",items:["u1","u2","u3","u4"].map(x=>DEFS[x])});
+renderSection({id:"debug",title:"Module 9 · Debugging and Instruments",desc:"Reading crashes, breakpoints and LLDB, Logger, the visual debuggers, and the retain-cycle lab. 18 points.",items:["d1","d2","d3","d4"].map(x=>DEFS[x])});
+renderSection({id:"perf",title:"Module 9 · Performance, Accessibility and Localization",desc:"The frame budget, two hands-on labs, String Catalogs and Dynamic Type. 18 points plus a bonus.",items:["p1","p2","p3","p4","b1"].map(x=>DEFS[x])});
+renderSection({id:"release",title:"Module 9 · From Archive to App Store",desc:"Signing, version and build, the privacy manifest, TestFlight and App Review. 14 points.",items:["r1","r2","r3","r4"].map(x=>DEFS[x])});
+renderSection({id:"capstone",title:"Module 9 · Capstone: Study Buddy from Idea to Release",desc:"User stories, acceptance criteria, and the definition of done. 6 points.",items:["c1","c2"].map(x=>DEFS[x])});
+
+function acceptMatch(raw, field){
+  if(field.shashes){ const t=seqTokens(raw).join(","); return t!=="" && field.shashes.includes(HKEY('seq', t)); }
+  const cands = [norm(raw)];
+  return cands.some(c=>field.ahashes.includes(HKEY('typed', c)));
+}
+function checkItem(id){
+  const def=ITEMS[id]; const st=itemState(id); if(st.done) return;
+  if(def.type==="mc"){
+    const sel=(picks[id]||{})[0]; if(sel===undefined){ note(id,"Pick an answer first — commit to a prediction, then check."); return; }
+    grade(id, HKEY('mc',id,0,sel)===def.ahash?1:0, "chose: "+stripTags(def.choices[sel]));
+  }
+  else if(def.type==="multi"){
+    let got=0,log=[];
+    def.parts.forEach((p,pi)=>{
+      if(p.type==="typed"){ const raw=$("#typed-"+id+"-"+pi).value; const ok=acceptMatch(raw,p); if(ok)got++; log.push('part'+(pi+1)+':'+(ok?"✓":"✗ '"+raw+"'")); }
+      else { const sel=(picks[id]||{})[pi]; const ok=sel!==undefined&&HKEY('mc',id,pi,sel)===p.ahash; if(ok)got++; log.push('part'+(pi+1)+':'+(ok?"✓":"✗")); }
+    });
+    grade(id, got/def.parts.length, log.join(" "));
+  }
+  else if(def.type==="typed"){
+    let got=0,log=[];
+    def.fields.forEach((f,fi)=>{ const raw=$("#typed-"+id+"-"+fi).value; const ok=acceptMatch(raw,f); if(ok)got++; log.push(f.short+':'+(ok?"✓":"✗ '"+raw+"'")); });
+    grade(id, got/def.fields.length, log.join(" "));
+  }
+  else if(def.type==="write"){
+    const ta=$("#code-"+id); const res=CHECKERS[def.checker](ta.value);
+    st.code=ta.value; note(id,res.notes);
+    grade(id, res.fraction, "code: "+ta.value.replace(/\n/g," ⏎ "));
+  }
+  else if(def.type==="parsons"){
+    const zone=$$("#zone-"+id+" .parsons-line");
+    if(zone.length===0){ note(id,"Move lines into Your program first."); return; }
+    const expected=def.lines.map((t,si)=>[def.prank[si],t]).sort((a,b)=>a[0]-b[0]).map(x=>x[1].replace(/\s+/g," ").trim());
+    let posOK=0; zone.forEach((b,i)=>{ if(b.textContent.replace(/\s+/g," ").trim()===expected[i]) posOK++; });
+    const exact = zone.length===def.lines.length && posOK===def.lines.length;
+    grade(id, exact?1:posOK/def.lines.length, "order placed");
+  }
+  else if(def.type==="debug"){
+    const line=debugPick[id]; const fix=(picks[id]||{})[0];
+    if(line===undefined||fix===undefined){ note(id,"Do both steps: tap the buggy line AND pick a fix."); return; }
+    const lineOK = HKEY('line',id,line)===def.lhash, fixOK = HKEY('fix',id,fix)===def.fhash;
+    const frac=(lineOK?0.5:0)+(fixOK?0.5:0);
+    $$("#body-"+id+" .debugline").forEach((b,j)=>{ if(HKEY('line',id,j)===def.lhash) b.classList.add("correct"); });
+    grade(id, frac, 'line:'+line+' fix:'+stripTags(def.fixes[fix]));
+  }
+  else if(def.type==="custom"){ CUSTOM_CHECK[def.custom](def); }
+  const t=$("#tries-"+id); const st2=itemState(id);
+  if(t) t.textContent = st2.done? "" : (triesLeft(id)>0? triesLeft(id)+" try left":"");
+}
+
+(function init(){
+  const nameEl=$("#studentName");
+  if(state.name) nameEl.value=state.name;
+  nameEl.addEventListener("input",()=>{ state.name=nameEl.value; save(); });
+  for(const id in ITEMS){
+    const st=state.items[id]; if(!st||st.attempts===0) continue;
+    if(ITEMS[id].type==="custom"&&ITEMS[id].custom==="screenAudit"&&st.answers&&st.answers.length){ /* audit re-check happens live; selections are not persisted across reloads in v1 of the lab */ }
+    if(ITEMS[id].type==="write"&&st.code){ const ta=$("#code-"+id); if(ta) ta.value=st.code; }
+    if(st.hint1){ const b=$("#hint1-"+id); if(b)b.classList.add("show"); }
+    if(st.hint2){ const b=$("#hint2-"+id); if(b)b.classList.add("show"); }
+    renderItemFeedback(id, st.bestFraction||0, st.awarded);
+    const t=$("#tries-"+id); if(t&&!st.done&&triesLeft(id)>0) t.textContent=triesLeft(id)+" try left";
+  }
+  renderProgress(); renderSummary();
+})();
+</script>
+</body>
+</html>
